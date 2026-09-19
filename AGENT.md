@@ -24,9 +24,9 @@
 * event-driven market prediction
 
 本项目目前处于：
-**Phase 2.1 Finalization Complete — Baseline Validated & Causal Twin Active**
-（完成 Phase 2.1 最终修补与收敛：解耦分类基线与 Smoke 运行样本切片，采用完整 1,729 样本 Pre-cutoff 训练集构建强基线 $M_B$，Macro-F1 达到 0.5073，MCC 达到 +0.3048；实现动态 Git 凭证检测 `resolve_git_provenance` 杜绝硬编码并确保提交洁净无 dirty；落实 Trillion Dollar Words 年份粒度与中点时间戳填补审计元数据；降级未验证的官方 FOMC 数据源并强制要求显式 manifest；结构化解耦原始模型头与初始随机分类头并固化哈希；统一实验结果 Schema 将待测实证外生指标显式置为 null 并将烟测外生向量置入 `synthetic_plumbing_pareto_vector`；状态评定：**PHASE 2.1 FINALIZED**，**BASELINE PROTOCOL VALID**，**CAUSAL TWIN PIPELINE ACTIVE**，**READY FOR PHASE 3 PILOT STUDY**）。
-在启动大规模全量剂量研究（Phase 3）前，严禁违背 Equal Compute 与下游时间隔离原则。
+**Phase 3 Pilot Finalized — Pilot Pipeline Valid & Low-Power Empirical Metrics Evaluated**
+（完成 Phase 3 — Pilot Temporal Leakage Dose-Response Study：在 Commit A `e5a6a96fa51faf7c14307451476d538973c1dc28` 代码冻结基线与完全洁净的工作树下，执行 15 组因果分支实验（3 seeds $\times$ 5 doses: 0.0, 0.25, 0.50, 0.75, 1.00）；实现严格的 Exact Token Dose Mixer $|D_{\text{realized}} - D_{\text{requested}}| \le 1/T$ 与全因果对齐；正式引入 2019 年美联储官方 8 次决议的 25 条段落级 Point-in-Time Leakage Anchors；实现时间前向严格隔离与重合度严格为 0；动态计算全部 5 项实证指标 $C, R_T, L_{\text{repr}}, L_{\text{behavior}}, E_L$；明确标注 **LOW POWER PILOT — INSUFFICIENT INDEPENDENT EVENTS FOR CONFIRMATORY INFERENCE**；状态评定：**PHASE 3 PILOT PIPELINE VALID**，**DOSE-RESPONSE LADDER EVALUATED**，**PILOT POWER BOUNDED**）。
+严禁在样本量不足（仅 8 次独立决议）的 Pilot 阶段过早宣称确证性结论；严禁在进入 Phase 4 前破坏方法学冻结。
 
 ---
 
@@ -275,7 +275,23 @@ MANTRA (`RubiscoYHY/MANTRA`) 原生为 multi-agent decoder 交易框架。
   - **Schema 统一与实证留白**：待测实证经济指标置为 `empirical_leakage_metrics: null` 与 `empirical_pareto_vector: null`，烟测试跑指标统一收口至 `synthetic_plumbing_pareto_vector`。
   - **Official Fixture 降级**：`fomc_official.py` 硬编码样例正式降级为测试 fixture，默认 `is_formal_research_ready() == False`；正式 benchmark 强制要求显式文件或 manifest。
   - **测试防护**：126 个单元/集成测试 100% 通过（新增 Phase 2.1 Finalization 专项测试 A~H），CI 完全离线无模型下载负担。
-* **Next Phase (Phase 3)**：**Pilot Temporal Leakage Study**（在因果双生处理已激活、基线有效且代码树洁净的前提下，展开多 seed、全量 dose ladder $D \in \{0, 0.25, 0.5, 0.75, 1.0\}$、多资产真实收益对齐与边际经济效应估计）。
+* **Phase 3 — Pilot Temporal Leakage Dose-Response Study (Finalized)**：**全因果双生管线验证通过 / 实证指标初次评测完成 (PHASE 3 PILOT PIPELINE VALID / LOW POWER PILOT)**：
+  - **严格双提交协议**：
+    - Commit A (Code Freeze): `e5a6a96fa51faf7c14307451476d538973c1dc28`（完全洁净代码树 `git_dirty: false`, `code_commit_exact: true`, tree hash `8badd580e041fb2716b356ed36a51624ae23ee35`）；
+    - 运行 15 组实验并落地全部分支 manifests 与汇总 JSON；
+    - Commit B (Artifacts): 仅含 manifests、`phase3_pilot_results.json`、报告与本文件。
+  - **全对称因果参数锁定**：15 组分支（3 seeds: 13, 42, 73 $\times$ 5 doses: 0.0, 0.25, 0.50, 0.75, 1.00）在同一 seed 下保证：相同 base checkpoint 初始权重哈希、精确相等的 token 预算（25,600 tokens = 200 blocks $\times$ 128）、bit-identical 的 deterministic mask schedule 哈希、相同初始下游分类头哈希、相同下游样本序列哈希。
+  - **Exact Token Mixer 剂量控制**：实现 `create_exact_token_dose_stream`，严格满足 $|D_{\text{realized}} - D_{\text{requested}}| = 0.0000 \le 1/T$。
+  - **官方 Point-in-Time Leakage Anchors**：录入 2019 年美联储官方全部 8 次决议的 25 条段落级样本（`data/research/fomc/leakage_anchors/`，SHA256: `177af152a12...`），100% 具备法定公布时刻 exact UTC 时间戳，挂载前向政策行动标签 $Y_{\text{future-action}}$ 与市场前向反应（SPY 收益与美债 2Y 收益率变动）。
+  - **零污染时空隔离**：时间隔离 $\max(Time_{\text{anchors}}) = 2019\text{-}12\text{-}11 < 2020\text{-}01\text{-}01 = \min(Time_{\text{contamination}})$，缓冲期 20 天；文档重合度严格为 0；与 post-cutoff 污染语料的句子哈希重合度严格为 0。
+  - **实证指标全量评测**：全部 5 类实证指标首次真实计算，杜绝合成占位：
+    - $C(D)$ (Competence Macro-F1): $0.5752 \sim 0.5890$（跨剂量保持稳定，证实 MLM 未引发灾难性遗忘或领域崩溃）；
+    - $R_T(D)$ (Temporal Robustness): $-0.0621 \sim -0.1002$；
+    - $L_{\text{repr}}(D)$ (Representation Leakage): 除 seed 73 $D=0.75$ 出现 $-0.1016$ 外，其余在小预算下接近 0；
+    - $L_{\text{behavior}}(D)$ (Behavioral Leakage): $0 \sim +9.07\times 10^{-5}$，Spearman $\rho = +0.4000$；
+    - $E_L(D)$ (Economic Leakage IC): $0 \sim +0.0420$，Spearman $\rho = +0.3000$。
+  - **统计效力与推断边界**：明确标注 **LOW POWER PILOT — INSUFFICIENT INDEPENDENT EVENTS FOR CONFIRMATORY INFERENCE**。2019 年仅 8 次独立决议，样本量不足以支撑确证性因果推断。单调性仅作为客观实证观测，严禁作为优化目标。
+* **Next Phase (Phase 4)**：**Confirmatory Full Study**（准入条件：扩充 Leakage Anchors 至 $\ge 40$ 次独立政策决议与 $\ge 200$ 条段落样本；扩展 MLM token 算力预算至 256k ~ 1M tokens；引入多架构交叉复现与高频日内 Rate Surprise 响应）。
 
 ---
 

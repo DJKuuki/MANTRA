@@ -1,0 +1,390 @@
+{
+  "phase": "phase3_pilot",
+  "verdict": "PHASE 3 PILOT PIPELINE VALID \u2014 EMPIRICAL POWER INSUFFICIENT FOR CONFIRMATORY STUDY (LOW POWER PILOT)",
+  "protocol": {
+    "doses": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "seeds": [
+      13,
+      42,
+      73
+    ],
+    "total_branches": 15,
+    "mlm_steps": 100,
+    "total_tokens_per_branch": 25600,
+    "block_length": 128,
+    "num_blocks": 200
+  },
+  "dataset_status": {
+    "stance_dataset": "data\\research\\fomc\\fomc_temporal_dataset.jsonl",
+    "stance_dataset_sha256": "344f6cda7f59a6fcc2b088fd188dd03cc6dc53a8c25b862ce529e3e1218b073d",
+    "leakage_anchor_dataset": "data/research/fomc/leakage_anchors/anchors.jsonl",
+    "leakage_anchor_sha256": "177af152a12d796e19bf843476ecab8057484ade7986c75b931bfa0973e18609",
+    "anchor_count": 25,
+    "independent_documents_count": 8,
+    "temporal_separation_pass": true,
+    "document_isolation_pass": true,
+    "sentence_hash_isolation_pass": true
+  },
+  "temporal_separation_audit": {
+    "anchor_count": 25,
+    "anchor_doc_count": 8,
+    "anchor_min_time": "2019-01-30T19:00:00Z",
+    "anchor_max_time": "2019-12-11T19:00:00Z",
+    "contamination_min_time": "2020-01-01T00:00:00Z",
+    "contamination_max_time": "2022-12-31T23:59:59Z",
+    "strict_future_separation": true,
+    "document_level_isolation": "enforced",
+    "document_overlap_count": 0,
+    "sentence_hash_overlap_with_contamination": 0,
+    "sentence_hash_overlap_with_pre_cutoff": 0,
+    "audit_pass": true
+  },
+  "dose_response_table": {
+    "0.0": {
+      "dose": 0.0,
+      "C_mean": 0.5763131767219546,
+      "C_std": 0.0023843640884065134,
+      "C_values": [
+        0.5729541615563593,
+        0.5777366550152173,
+        0.578248713594287
+      ],
+      "R_T_mean": -0.06207066166188387,
+      "R_T_std": 0.08506465925921496,
+      "R_T_values": [
+        -0.14768075907856137,
+        0.05392713120569348,
+        -0.09245835711278372
+      ],
+      "L_repr_mean": 0.0,
+      "L_repr_std": 0.0,
+      "L_repr_values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "L_behavior_mean": 0.0,
+      "L_behavior_std": 0.0,
+      "L_behavior_values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "E_L_ic_mean": 0.0,
+      "E_L_ic_values": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "0.25": {
+      "dose": 0.25,
+      "C_mean": 0.5840223971616595,
+      "C_std": 0.01511252855784154,
+      "C_values": [
+        0.6015585355686879,
+        0.5646738900444991,
+        0.5858347658717914
+      ],
+      "R_T_mean": -0.08321052375447331,
+      "R_T_std": 0.03189042145798757,
+      "R_T_values": [
+        -0.12621924220908998,
+        -0.049950907242836906,
+        -0.07346142181149307
+      ],
+      "L_repr_mean": 0.0,
+      "L_repr_std": 0.0,
+      "L_repr_values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "L_behavior_mean": 1.7387962240415316e-05,
+      "L_behavior_std": 5.529359377688138e-05,
+      "L_behavior_values": [
+        9.551987750455737e-05,
+        -1.8916631233878434e-05,
+        -2.4439359549432993e-05
+      ],
+      "E_L_ic_mean": 0.027724378565819312,
+      "E_L_ic_values": [
+        -0.020497644816435068,
+        0.0780487244933491,
+        0.025622056020543904
+      ]
+    },
+    "0.5": {
+      "dose": 0.5,
+      "C_mean": 0.5815811978027152,
+      "C_std": 0.014628535469709672,
+      "C_values": [
+        0.6019293708639023,
+        0.5681736974744743,
+        0.574640525069769
+      ],
+      "R_T_mean": -0.08225059553571945,
+      "R_T_std": 0.08156311514911088,
+      "R_T_values": [
+        -0.18092606521734012,
+        0.01881891282557202,
+        -0.08464463421539026
+      ],
+      "L_repr_mean": 0.0,
+      "L_repr_std": 0.0,
+      "L_repr_values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "L_behavior_mean": 6.921230184768017e-05,
+      "L_behavior_std": 0.00021099664030613068,
+      "L_behavior_values": [
+        0.00036543403984978795,
+        -0.00011002548126270995,
+        -4.777165304403752e-05
+      ],
+      "E_L_ic_mean": 0.04204645090550794,
+      "E_L_ic_values": [
+        -0.0070953385903044786,
+        0.09696962740082771,
+        0.036265063906000594
+      ]
+    },
+    "0.75": {
+      "dose": 0.75,
+      "C_mean": 0.5889684966523137,
+      "C_std": 0.0011265914069686564,
+      "C_values": [
+        0.590439402300343,
+        0.5877028177177291,
+        0.588763269938869
+      ],
+      "R_T_mean": -0.08355018601068132,
+      "R_T_std": 0.05256567302174023,
+      "R_T_values": [
+        -0.15333939954297493,
+        -0.026478468831978352,
+        -0.07083268965709066
+      ],
+      "L_repr_mean": -0.03386243386243387,
+      "L_repr_std": 0.04788871322321593,
+      "L_repr_values": [
+        0.0,
+        0.0,
+        -0.10158730158730161
+      ],
+      "L_behavior_mean": -1.4586512406822294e-05,
+      "L_behavior_std": 4.865963568331391e-05,
+      "L_behavior_values": [
+        -3.0751340091228485e-05,
+        -6.443219172069803e-05,
+        5.142399459145963e-05
+      ],
+      "E_L_ic_mean": 0.03849878161035571,
+      "E_L_ic_values": [
+        -0.014190677180608957,
+        0.08238476474297962,
+        0.04730225726869647
+      ]
+    },
+    "1.0": {
+      "dose": 1.0,
+      "C_mean": 0.5752042370892977,
+      "C_std": 0.0072484912564301646,
+      "C_values": [
+        0.5854280876581512,
+        0.5707369806354577,
+        0.5694476429742839
+      ],
+      "R_T_mean": -0.10021565703581121,
+      "R_T_std": 0.09251934497647094,
+      "R_T_values": [
+        -0.21293301132065545,
+        0.013682939506811098,
+        -0.1013968992935893
+      ],
+      "L_repr_mean": 0.0,
+      "L_repr_std": 0.0,
+      "L_repr_values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "L_behavior_mean": 9.068874108682697e-05,
+      "L_behavior_std": 0.0001899891984500701,
+      "L_behavior_values": [
+        0.00035530031891539693,
+        -1.251493813470006e-06,
+        -8.198260184144601e-05
+      ],
+      "E_L_ic_mean": 0.021417410929993108,
+      "E_L_ic_values": [
+        -0.008277895022021864,
+        0.07765453901610997,
+        -0.005124411204108781
+      ]
+    }
+  },
+  "dose_response_monotonicity": {
+    "L_repr_spearman": -0.35355339059327373,
+    "L_behavior_spearman": 0.39999999999999997,
+    "E_L_ic_spearman": 0.3,
+    "interpretation": "Monotonicity is an empirical observation, not an optimization objective."
+  },
+  "empirical_metrics_status": {
+    "C": "EVALUATED",
+    "R_T": "EVALUATED",
+    "L_repr": "EVALUATED",
+    "L_behavior": "EVALUATED",
+    "E_L": "EVALUATED"
+  },
+  "per_seed_results": {
+    "seed_13": {
+      "d000": {
+        "dose": 0.0,
+        "C": 0.5729541615563593,
+        "R_T": -0.14768075907856137,
+        "L_repr": 0.0,
+        "L_behavior": 0.0,
+        "E_L_ic": 0.0
+      },
+      "d025": {
+        "dose": 0.25,
+        "C": 0.6015585355686879,
+        "R_T": -0.12621924220908998,
+        "L_repr": 0.0,
+        "L_behavior": 9.551987750455737e-05,
+        "E_L_ic": -0.020497644816435068
+      },
+      "d050": {
+        "dose": 0.5,
+        "C": 0.6019293708639023,
+        "R_T": -0.18092606521734012,
+        "L_repr": 0.0,
+        "L_behavior": 0.00036543403984978795,
+        "E_L_ic": -0.0070953385903044786
+      },
+      "d075": {
+        "dose": 0.75,
+        "C": 0.590439402300343,
+        "R_T": -0.15333939954297493,
+        "L_repr": 0.0,
+        "L_behavior": -3.0751340091228485e-05,
+        "E_L_ic": -0.014190677180608957
+      },
+      "d100": {
+        "dose": 1.0,
+        "C": 0.5854280876581512,
+        "R_T": -0.21293301132065545,
+        "L_repr": 0.0,
+        "L_behavior": 0.00035530031891539693,
+        "E_L_ic": -0.008277895022021864
+      }
+    },
+    "seed_42": {
+      "d000": {
+        "dose": 0.0,
+        "C": 0.5777366550152173,
+        "R_T": 0.05392713120569348,
+        "L_repr": 0.0,
+        "L_behavior": 0.0,
+        "E_L_ic": 0.0
+      },
+      "d025": {
+        "dose": 0.25,
+        "C": 0.5646738900444991,
+        "R_T": -0.049950907242836906,
+        "L_repr": 0.0,
+        "L_behavior": -1.8916631233878434e-05,
+        "E_L_ic": 0.0780487244933491
+      },
+      "d050": {
+        "dose": 0.5,
+        "C": 0.5681736974744743,
+        "R_T": 0.01881891282557202,
+        "L_repr": 0.0,
+        "L_behavior": -0.00011002548126270995,
+        "E_L_ic": 0.09696962740082771
+      },
+      "d075": {
+        "dose": 0.75,
+        "C": 0.5877028177177291,
+        "R_T": -0.026478468831978352,
+        "L_repr": 0.0,
+        "L_behavior": -6.443219172069803e-05,
+        "E_L_ic": 0.08238476474297962
+      },
+      "d100": {
+        "dose": 1.0,
+        "C": 0.5707369806354577,
+        "R_T": 0.013682939506811098,
+        "L_repr": 0.0,
+        "L_behavior": -1.251493813470006e-06,
+        "E_L_ic": 0.07765453901610997
+      }
+    },
+    "seed_73": {
+      "d000": {
+        "dose": 0.0,
+        "C": 0.578248713594287,
+        "R_T": -0.09245835711278372,
+        "L_repr": 0.0,
+        "L_behavior": 0.0,
+        "E_L_ic": 0.0
+      },
+      "d025": {
+        "dose": 0.25,
+        "C": 0.5858347658717914,
+        "R_T": -0.07346142181149307,
+        "L_repr": 0.0,
+        "L_behavior": -2.4439359549432993e-05,
+        "E_L_ic": 0.025622056020543904
+      },
+      "d050": {
+        "dose": 0.5,
+        "C": 0.574640525069769,
+        "R_T": -0.08464463421539026,
+        "L_repr": 0.0,
+        "L_behavior": -4.777165304403752e-05,
+        "E_L_ic": 0.036265063906000594
+      },
+      "d075": {
+        "dose": 0.75,
+        "C": 0.588763269938869,
+        "R_T": -0.07083268965709066,
+        "L_repr": -0.10158730158730161,
+        "L_behavior": 5.142399459145963e-05,
+        "E_L_ic": 0.04730225726869647
+      },
+      "d100": {
+        "dose": 1.0,
+        "C": 0.5694476429742839,
+        "R_T": -0.1013968992935893,
+        "L_repr": 0.0,
+        "L_behavior": -8.198260184144601e-05,
+        "E_L_ic": -0.005124411204108781
+      }
+    }
+  },
+  "provenance": {
+    "git_head": "e5a6a96fa51faf7c14307451476d538973c1dc28",
+    "git_dirty": false,
+    "code_commit_exact": true,
+    "source_tree_hash": "8badd580e041fb2716b356ed36a51624ae23ee35",
+    "config_sha256": "f1a18a15810129061173d93275a5bbaaa9d65bf32e75aac2f485215375dce770"
+  },
+  "limitations": [
+    "Shared FinBERT base checkpoint pre-training cutoff remains bounded / uncertain.",
+    "Pilot training budget (mlm_steps=100, downstream_epochs=1) is an exploratory pilot budget.",
+    "Anchor sample size (25 paragraphs across 8 meetings) yields a LOW POWER PILOT.",
+    "Market outcome resolution is daily-resolution post-event response, not tick-level intraday surprise.",
+    "Competence variation C(D) must be checked for domain adaptation / forgetting confounding."
+  ]
+}

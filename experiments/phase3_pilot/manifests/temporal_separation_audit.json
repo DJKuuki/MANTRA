@@ -1,0 +1,14 @@
+{
+  "anchor_count": 25,
+  "anchor_doc_count": 8,
+  "anchor_min_time": "2019-01-30T19:00:00Z",
+  "anchor_max_time": "2019-12-11T19:00:00Z",
+  "contamination_min_time": "2020-01-01T00:00:00Z",
+  "contamination_max_time": "2022-12-31T23:59:59Z",
+  "strict_future_separation": true,
+  "document_level_isolation": "enforced",
+  "document_overlap_count": 0,
+  "sentence_hash_overlap_with_contamination": 0,
+  "sentence_hash_overlap_with_pre_cutoff": 0,
+  "audit_pass": true
+}
