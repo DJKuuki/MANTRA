@@ -1,0 +1,39 @@
+{
+  "status": "ENGINEERING SMOKE TEST ONLY \u2014 NOT RESEARCH CONCLUSIONS",
+  "experiment": "phase2_real_encoder_smoke",
+  "base_model": {
+    "name": "ProsusAI/finbert",
+    "revision": "4556d13015211d73dccd3fdd39d39232506f3e43"
+  },
+  "compute_budget": {
+    "equal_steps": 5,
+    "equal_samples": 40,
+    "equal_optimizer": "AdamW"
+  },
+  "baseline_competence": {
+    "macro_f1": 0.23154623154623155,
+    "mcc": -0.08842943061171123,
+    "brier_score": 1.179225267394194,
+    "ece": 0.5641778185963632
+  },
+  "twins_comparison": {
+    "clean_d0_macro_f1": 0.1761006289308176,
+    "leak_d100_macro_f1": 0.1761006289308176,
+    "delta_macro_f1": 0.0,
+    "l_repr": 0.0,
+    "l_repr_pvalue": 1.0,
+    "l_behavior_delta": 0.0,
+    "l_entity_delta": 0.0,
+    "l_date_delta": 0.0,
+    "delta_ic": 0.0,
+    "delta_sharpe": 0.0,
+    "delta_annual_return": 0.0
+  },
+  "pareto_vector": {
+    "competence_C": 0.1761006289308176,
+    "leakage_L_repr": 0.0,
+    "leakage_L_behavior": 0.0,
+    "economic_E_L_ic": 0.0,
+    "economic_E_L_sharpe": 0.0
+  }
+}

@@ -1,0 +1,45 @@
+# Real Encoder Baseline Configuration: ProsusAI/finbert Evaluation
+# All hyperparameter configurations and checkpoint revisions are pinned.
+
+experiment_name: encoder_baseline_evaluation
+random_seed: 42
+
+model:
+  name: finbert_baseline
+  base_checkpoint: ProsusAI/finbert
+  base_revision: 4556d13015211d73dccd3fdd39d39232506f3e43
+  pooling: mean
+  num_labels: 3
+  output_classes:
+    - -1  # Dovish
+    - 0   # Neutral
+    - 1   # Hawkish
+
+training:
+  random_seed: 42
+  learning_rate: 2.0e-5
+  batch_size: 16
+  max_seq_length: 128
+  weight_decay: 0.01
+  epochs: 3
+  warmup_ratio: 0.1
+  optimizer: AdamW
+  scheduler: linear
+  early_stopping_policy:
+    metric: macro_f1
+    mode: max
+    patience: 2
+
+splits:
+  train_end: "2018-12-31T23:59:59Z"
+  dev_start: "2019-01-01T00:00:00Z"
+  dev_end: "2019-12-31T23:59:59Z"
+  test_start: "2020-01-01T00:00:00Z"
+
+evaluation:
+  metrics:
+    - macro_f1
+    - mcc
+    - brier
+    - ece
+    - confusion_matrix

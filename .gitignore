@@ -227,9 +227,22 @@ notes/
 results/
 reports/
 runs/
-data/
-experiments/
 *.rtf
+
+# Large dataset caches and model weights
+data/*
+!data/research/
+data/research/**/raw_cache/
+
+experiments/*
+!experiments/encoder_phase2/
+!experiments/encoder_phase2/**
+**/checkpoints/
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.h5
 
 # macOS metadata
 **/.DS_Store

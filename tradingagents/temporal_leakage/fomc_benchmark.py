@@ -92,11 +92,12 @@ def validate_temporal_sample(
         raise DatasetValidationError(f"Sample '{sample.sample_id}' text must be a non-empty string.")
 
     # 3. Label: strictly {-1, 0, 1}
-    if sample.task_label not in {-1, 0, 1} or isinstance(sample.task_label, bool):
+    try:
+        parse_task_label(sample.task_label)
+    except DatasetValidationError as e:
         raise DatasetValidationError(
-            f"Sample '{sample.sample_id}' has invalid task_label {sample.task_label!r}. "
-            "task_label must be an integer in {-1 (Dovish), 0 (Neutral), 1 (Hawkish)}."
-        )
+            f"Sample '{sample.sample_id}' has invalid task_label {sample.task_label!r}: {e}"
+        ) from e
 
     # 4. Timestamps & Timezones
     try:

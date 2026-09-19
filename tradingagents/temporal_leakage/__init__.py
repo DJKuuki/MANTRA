@@ -8,6 +8,7 @@ from .temporal_model import (
     MockTwinEncoder,
     parse_iso_utc,
 )
+from .hf_encoder import HuggingFaceTemporalEncoder
 from .metrics import (
     stationary_block_bootstrap_indices,
     evaluate_competence,
@@ -41,6 +42,7 @@ __all__ = [
     "NullConstantModel",
     "SyntheticTemporalTwinEncoder",
     "MockTwinEncoder",
+    "HuggingFaceTemporalEncoder",
     "parse_iso_utc",
     "stationary_block_bootstrap_indices",
     "evaluate_competence",

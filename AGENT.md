@@ -24,9 +24,9 @@
 * event-driven market prediction
 
 本项目目前处于：
-**Pre-experiment validation complete / entering empirical encoder phase after gate passes**
-（方法学加固与实验前准入 Gate 验证通过，合成双生基准已冻结；进入真实 Encoder 经验研究与受控 Continued Pretraining Twins 阶段）。
-在通过正式 Gate 之前，严禁提前启动非受控模型训练或调优。
+**Phase 2 Baseline & Clean/Leak Twin Pipeline Complete**
+（真实 FOMC Trillion Dollar Words 数据集接入与严格 PIT 审计完成；Hugging Face 真实模型适配器落地，固定 ProsusAI/finbert 校验版本；受控 Continued Pretraining MLM 等算力双生管线与第一轮 D0/D100 Smoke 验证打通；状态评定：PHASE 2 BASELINE & TWIN PIPELINE READY）。
+在启动大规模全量剂量训练前，严禁违背 Equal Compute 与下游时间隔离原则。
 
 ---
 
@@ -242,7 +242,7 @@ MANTRA (`RubiscoYHY/MANTRA`) 原生为 multi-agent decoder 交易框架。
 * 避免 BERT 2018 vs DeBERTa 2024 等跨架构、跨容量的无效对比。
 * 控制单一变量：相同 base checkpoint + 受控的 post-cutoff exposure（Continued Pretraining）。
 * 不从零训练大模型，优先利用公开时间 cutoff 的模型或构建受控 Twins。
-* **合成双生模型状态**：`SyntheticTemporalTwinEncoder` 已落地，基于 SHA-256 纯函数确定性特征与外生标签受控注入，剂量单调性检验通过；**真实 Encoder Twin 训练尚未启动**（留待 Phase 2）。
+* **合成双生模型状态**：`SyntheticTemporalTwinEncoder` 已落地，基于 SHA-256 纯函数确定性特征与外生标签受控注入，剂量单调性检验通过；**真实 Encoder Baseline 与受控双生管线已就绪**（Phase 2 完成）。
 
 ---
 
@@ -262,14 +262,14 @@ MANTRA (`RubiscoYHY/MANTRA`) 原生为 multi-agent decoder 交易框架。
 * **Task 2 — Formalize Variables**：**已完成形式化规范**（五维 Pareto 空间，解耦 Level A $\Delta \text{IC}$ 与 Level B $\Delta \text{Sharpe}$，平稳块 Bootstrap）。
 * **Task 3 — Design FOMC Benchmark & PIT Protocols**：**已完成并加固**（`FOMCBenchmark` 禁止静默加载 Toy 数据；Loader 实施 Fail-Fast 校验；入库时间戳规范化为 UTC ISO；时区统一为 `America/New_York` / UTC）。
 * **Task 4 — Synthetic Twin Validation**：**已完成**（无状态确定性合成双生模型，方法学指标已完全冻结）。
-* **Task 5 — Pre-Experiment Gate & Final Hardening**：**已冻结 (v1.0)**：
-  - **严苛 task_label 导入**：`parse_task_label` 彻底拒绝 float、bool、float string、非整数字符串与越界值。
-  - **未验证数据默认值**：外部导入无 PIT 字段默认 `availability_source="UNVERIFIED"`, `availability_quality="unknown"`（禁止默认 exact）。
-  - **清晰边界 `validated != verified`**：`dataset_validation_status='validated'` 仅代表数据结构合规；正式研究必须满足 `benchmark.is_formal_research_ready()`（`source_verified`, `annotation_verified`, `pit_verified` 均为 True 且样本全为 exact）。
-  - **时间戳 UTC 规范化**：`load_fomc_dataset` 在入库时即完成 UTC 规范化，消除二次校验时区丢失漏洞。
-  - **真实 UTC Datetime 分割**：`get_split` 基于 UTC 绝对时间戳进行区间判定，杜绝字符串切片跨时区判定偏差。
-  - **实验配置契约**：`load_experiment_config` / `validate_experiment_config` / `validate_benchmark_against_config` 形成强类型运行时契约。
-* **Next Phase (Phase 2)**：**Real Encoder Baseline & Clean/Leak Twin Construction**（接入真实 Trillion Dollar Words 数据集、构建 Hugging Face encoder adapter、受控 Continued Pretraining 剂量注入）。方法学层与前置门禁已冻结（METHODOLOGY LAYER v1.0 FROZEN），准备进入真实模型阶段。
+* **Task 5 — Pre-Experiment Gate & Final Hardening**：**已冻结 (v1.0)**。
+* **Phase 2 — Real Encoder Baseline & Clean/Leak Twin Construction**：**已完成并验证 (PHASE 2 BASELINE & TWIN PIPELINE READY)**：
+  - **真实数据接入**：`Trillion Dollar Words` (Shah et al., ACL 2023) 2,281 样本完成清洗接入（`data/research/fomc/`），PIT 质量严格审计标记 `unknown`，杜绝静默 exact 漏洞。
+  - **HF Encoder Adapter**：`HuggingFaceTemporalEncoder` 支持固定 revision (`4556d13015211d73dccd3fdd39d39232506f3e43`)、注意力掩码 mean pooling、连续立场打分与 checkpoint 元数据。
+  - **因果双生架构**：Equal Compute + Equal Architecture + Sham Control + Downstream Temporal Isolation。
+  - **Smoke 验证通过**：$D_0$ ($M_C$) 与 $D_{100}$ ($M_L$) 端到端闭环跑通，明确标定 `ENGINEERING SMOKE TEST ONLY`。
+  - **测试防护**：108 个单元/集成测试 100% 通过，CI 完全离线无模型下载负担。
+* **Next Phase (Phase 3)**：**Full Contamination Dose Empirical Study & Economic Backtest Harness**（全量语料 GPU Continued Pretraining、完整剂量阶梯 $D \in \{0, 0.25, 0.5, 0.75, 1.0\}$、多资产高频收益对齐与边际经济效应估计）。
 
 ---
 

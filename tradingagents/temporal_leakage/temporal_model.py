@@ -76,8 +76,8 @@ class TemporalSample:
     meeting_id: str = ""
     source: str = "Federal Reserve"
     annotation_source: str = "toy_synthetic"
-    availability_source: str = "FED_OFFICIAL_RELEASE"
-    availability_quality: str = "exact"  # "exact" | "heuristic"
+    availability_source: str = "UNVERIFIED"
+    availability_quality: str = "unknown"  # "exact" | "heuristic" | "unknown"
     future_macro_labels: Dict[str, Any] = field(default_factory=dict)
     market_outcomes: Dict[str, float] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)

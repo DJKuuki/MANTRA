@@ -18,7 +18,7 @@ The **Pre-Experiment Gate** serves as the final methodological firewall before i
 | **Gate 2** | **Point-in-Time (PIT) Safety** | **PASS** | Annual (90d) and Quarterly (45d) statutory lag routing verified in `BacktestDataCache` & `y_finance.py`; realtime snapshot fundamentals withheld; SEC Form 4 filing date prioritized; exact vs. heuristic provenance tracked. |
 | **Gate 3** | **Methodology Core Metrics** | **PASS** | Task Competence ($C$), Representational Leakage ($L_{\text{repr}}$), Behavioral Leakage ($L_{\text{behavior}}$), Economic Effect ($E_L^{\text{IC}}$ primary, Level B secondary), Temporal Robustness ($R_T$) strictly frozen. |
 | **Gate 4** | **Literature Verification** | **PASS** | 9 verified papers cross-referenced against canonical DOIs/arXiv IDs in `docs/research/literature_registry.json`; hallucinated entries removed; author and citation errors corrected. |
-| **Gate 5** | **Reproducibility & Protocols** | **PASS** | Deterministic SHA-256 features; configs created (`configs/fomc_formal_experiment.yaml` and `configs/fomc_ci.yaml`); CI test suite running across Python 3.10 and 3.11 with 100% pass rate (89/89 tests). |
+| **Gate 5** | **Reproducibility & Protocols** | **PASS** | Deterministic SHA-256 features; configs created (`configs/fomc_formal_experiment.yaml` and `configs/fomc_ci.yaml`); CI test suite running across Python 3.10 and 3.11 with 100% pass rate (98 passing, 33 subtests passed). |
 
 **FINAL GATE VERDICT**:  
 # **READY FOR REAL ENCODER PHASE**  
@@ -182,7 +182,7 @@ All 11 cited literature items have been re-verified against canonical publisher 
 - Calling `encode()` or `predict_task()` repeatedly in any execution sequence or environment yields bit-exact numerical parity. Verified by `test_stateless_determinism`.
 
 ### 5.3 Automated Regression & Continuous Integration
-- Local test execution: **89 passed, 33 subtests passed in 36.39s** (Python 3.13 Windows).
+- Local test execution: **98 passed, 33 subtests passed in 32.35s** (Python 3.13 Windows).
 - GitHub Actions CI workflow (`.github/workflows/tests.yml`) executes the full test suite against:
   - Python 3.10
   - Python 3.11
