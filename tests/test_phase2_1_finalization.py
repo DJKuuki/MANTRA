@@ -270,9 +270,9 @@ def test_e_git_provenance_clean_and_dirty(tmp_path: Path):
     # Case 1: Clean tree
     with patch("subprocess.run") as mock_run:
         def fake_run(cmd, *args, **kwargs):
-            if cmd == ["git", "rev-parse", "HEAD"]:
+            if cmd[:2] == ["git", "rev-parse"]:
                 return MagicMock(returncode=0, stdout="abc123def456\n")
-            elif cmd == ["git", "status", "--porcelain"]:
+            elif cmd[:2] == ["git", "status"]:
                 return MagicMock(returncode=0, stdout="")
             return MagicMock(returncode=1, stdout="")
 
@@ -285,9 +285,9 @@ def test_e_git_provenance_clean_and_dirty(tmp_path: Path):
     # Case 2: Dirty tree
     with patch("subprocess.run") as mock_run:
         def fake_run(cmd, *args, **kwargs):
-            if cmd == ["git", "rev-parse", "HEAD"]:
+            if cmd[:2] == ["git", "rev-parse"]:
                 return MagicMock(returncode=0, stdout="abc123def456\n")
-            elif cmd == ["git", "status", "--porcelain"]:
+            elif cmd[:2] == ["git", "status"]:
                 return MagicMock(returncode=0, stdout=" M modified_file.py\n")
             return MagicMock(returncode=1, stdout="")
 

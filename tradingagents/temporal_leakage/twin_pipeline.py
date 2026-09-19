@@ -1230,8 +1230,19 @@ def run_baseline_and_smoke_experiment(
         "git_dirty": git_prov["git_dirty"],
         "code_commit_exact": git_prov["code_commit_exact"],
     }
-    with open(results_dir / "baseline_results.json", "w", encoding="utf-8") as f:
-        json.dump(baseline_export, f, indent=2)
+    baseline_results_file = results_dir / "baseline_results.json"
+    should_write_baseline = True
+    if baseline_results_file.exists():
+        try:
+            with open(baseline_results_file, "r", encoding="utf-8") as f:
+                existing_baseline = json.load(f)
+            if existing_baseline.get("test_sample_count", existing_baseline.get("sample_count", 0)) > len(eval_test_samples):
+                should_write_baseline = False
+        except Exception:
+            pass
+    if should_write_baseline:
+        with open(baseline_results_file, "w", encoding="utf-8") as f:
+            json.dump(baseline_export, f, indent=2)
 
     print("\n" + "=" * 76)
     print("ENGINEERING SMOKE TEST ONLY — NOT RESEARCH CONCLUSIONS")

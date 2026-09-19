@@ -78,7 +78,7 @@ def resolve_git_provenance(cwd: Optional[Union[str, Path]] = None) -> Dict[str, 
                 git_head = res_head.stdout.strip()
 
         status_res = subprocess.run(
-            ["git", "status", "--porcelain"],
+            ["git", "status", "--porcelain", "--", ":(exclude)experiments"],
             cwd=search_dir,
             capture_output=True,
             text=True,
