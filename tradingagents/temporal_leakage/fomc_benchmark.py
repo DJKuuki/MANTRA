@@ -16,6 +16,7 @@ from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
+import numpy as np
 import pandas as pd
 from .temporal_model import TemporalSample, parse_iso_utc
 
@@ -23,6 +24,43 @@ from .temporal_model import TemporalSample, parse_iso_utc
 class DatasetValidationError(ValueError):
     """Raised when a temporal dataset or sample violates structural, schema, or Point-in-Time rules."""
     pass
+
+
+def parse_task_label(raw: Any) -> int:
+    """Strictly parse task_label, permitting only integer values in {-1, 0, 1}.
+
+    Rejects:
+    - Booleans (bool, np.bool_)
+    - Floats (float, np.floating, e.g. 1.5, 1.0, -0.5)
+    - Non-integer or float strings (e.g. '1.0', 'hawkish', 'True')
+    - Values outside {-1, 0, 1}
+    - None or NaN
+    """
+    if raw is None or pd.isna(raw):
+        raise DatasetValidationError(f"task_label cannot be None or NaN, got: {raw!r}")
+
+    # Booleans are subclasses of int in Python, check first
+    if isinstance(raw, (bool, np.bool_)):
+        raise DatasetValidationError(f"task_label cannot be boolean, got: {raw!r}")
+
+    if isinstance(raw, (float, np.floating)):
+        raise DatasetValidationError(f"task_label cannot be float, got: {raw!r}")
+
+    if isinstance(raw, (int, np.integer)):
+        val = int(raw)
+        if val not in {-1, 0, 1}:
+            raise DatasetValidationError(f"task_label must be in {{-1, 0, 1}}, got: {val}")
+        return val
+
+    if isinstance(raw, str):
+        cleaned = raw.strip()
+        if cleaned in {"-1", "0", "1"}:
+            return int(cleaned)
+        raise DatasetValidationError(
+            f"task_label string must be strictly '-1', '0', or '1', got: {raw!r}"
+        )
+
+    raise DatasetValidationError(f"task_label has invalid type {type(raw).__name__}: {raw!r}")
 
 
 def validate_temporal_sample(
@@ -95,6 +133,14 @@ def validate_temporal_sample(
             raise DatasetValidationError(
                 f"Sample '{sample.sample_id}' must have non-empty required field '{field_name}'."
             )
+
+    # 7. Provenance quality
+    valid_qualities = {"exact", "heuristic", "unknown"}
+    if sample.availability_quality not in valid_qualities:
+        raise DatasetValidationError(
+            f"Sample '{sample.sample_id}' has invalid availability_quality '{sample.availability_quality}'. "
+            f"Must be one of {valid_qualities}."
+        )
 
 
 def validate_dataset(
@@ -403,12 +449,30 @@ def load_fomc_dataset(
                         f"Record {idx} in {path.name} is missing REQUIRED field '{req}'."
                     )
 
+            task_label = parse_task_label(r["task_label"])
+
+            # Canonicalize timestamps to UTC ISO strings
+            event_raw = str(r["event_time"]).strip()
+            avail_raw = str(r["available_time"]).strip()
             try:
-                task_label = int(r["task_label"])
-            except (ValueError, TypeError):
-                raise DatasetValidationError(
-                    f"Record {idx} in {path.name} has non-integer task_label: {r.get('task_label')!r}"
+                dt_event = parse_iso_utc(
+                    event_raw,
+                    default_timezone=source_timezone if (not require_timezone_aware or source_timezone) else None,
                 )
+            except Exception as e:
+                raise DatasetValidationError(
+                    f"Record {idx} in {path.name} has invalid event_time '{event_raw}': {e}"
+                ) from e
+
+            try:
+                dt_avail = parse_iso_utc(
+                    avail_raw,
+                    default_timezone=source_timezone if (not require_timezone_aware or source_timezone) else None,
+                )
+            except Exception as e:
+                raise DatasetValidationError(
+                    f"Record {idx} in {path.name} has invalid available_time '{avail_raw}': {e}"
+                ) from e
 
             future_macro = r.get("future_macro_labels", {})
             market_outs = r.get("market_outcomes", {})
@@ -419,18 +483,22 @@ def load_fomc_dataset(
                 if k in r:
                     market_outs[k] = float(r[k])
 
+            # Provenance defaults to UNVERIFIED and unknown unless explicitly provided
+            avail_src = str(r.get("availability_source") or "").strip() or "UNVERIFIED"
+            avail_qual = str(r.get("availability_quality") or "").strip() or "unknown"
+
             sample = TemporalSample(
                 sample_id=str(r["sample_id"]).strip(),
                 text=str(r["text"]).strip(),
                 document_type=str(r.get("document_type", "statement")),
-                event_time=str(r["event_time"]).strip(),
-                available_time=str(r["available_time"]).strip(),
+                event_time=dt_event.isoformat(),
+                available_time=dt_avail.isoformat(),
                 task_label=task_label,
                 meeting_id=str(r.get("meeting_id", "")),
                 source=str(r.get("source", "Federal Reserve")),
                 annotation_source=str(r.get("annotation_source", "verified_corpus")),
-                availability_source=str(r.get("availability_source", "OFFICIAL_RELEASE")),
-                availability_quality=str(r.get("availability_quality", "exact")),
+                availability_source=avail_src,
+                availability_quality=avail_qual,
                 future_macro_labels=future_macro,
                 market_outcomes=market_outs,
                 metadata=r.get("metadata", {}),
@@ -451,12 +519,30 @@ def load_fomc_dataset(
                         f"CSV row {idx} in {path.name} has empty REQUIRED field '{req}'."
                     )
 
+            task_label = parse_task_label(row["task_label"])
+
+            # Canonicalize timestamps to UTC ISO strings
+            event_raw = str(row["event_time"]).strip()
+            avail_raw = str(row["available_time"]).strip()
             try:
-                task_label = int(row["task_label"])
-            except (ValueError, TypeError):
-                raise DatasetValidationError(
-                    f"CSV row {idx} in {path.name} has non-integer task_label: {row['task_label']!r}"
+                dt_event = parse_iso_utc(
+                    event_raw,
+                    default_timezone=source_timezone if (not require_timezone_aware or source_timezone) else None,
                 )
+            except Exception as e:
+                raise DatasetValidationError(
+                    f"CSV row {idx} in {path.name} has invalid event_time '{event_raw}': {e}"
+                ) from e
+
+            try:
+                dt_avail = parse_iso_utc(
+                    avail_raw,
+                    default_timezone=source_timezone if (not require_timezone_aware or source_timezone) else None,
+                )
+            except Exception as e:
+                raise DatasetValidationError(
+                    f"CSV row {idx} in {path.name} has invalid available_time '{avail_raw}': {e}"
+                ) from e
 
             future_macro = {}
             market_outs = {}
@@ -467,18 +553,30 @@ def load_fomc_dataset(
                 if k in row and pd.notna(row[k]):
                     market_outs[k] = float(row[k])
 
+            # Provenance defaults to UNVERIFIED and unknown unless explicitly provided
+            avail_src = (
+                str(row["availability_source"]).strip()
+                if ("availability_source" in row and pd.notna(row["availability_source"]) and str(row["availability_source"]).strip())
+                else "UNVERIFIED"
+            )
+            avail_qual = (
+                str(row["availability_quality"]).strip()
+                if ("availability_quality" in row and pd.notna(row["availability_quality"]) and str(row["availability_quality"]).strip())
+                else "unknown"
+            )
+
             sample = TemporalSample(
                 sample_id=str(row["sample_id"]).strip(),
                 text=str(row["text"]).strip(),
                 document_type=str(row.get("document_type", "statement")) if pd.notna(row.get("document_type")) else "statement",
-                event_time=str(row["event_time"]).strip(),
-                available_time=str(row["available_time"]).strip(),
+                event_time=dt_event.isoformat(),
+                available_time=dt_avail.isoformat(),
                 task_label=task_label,
                 meeting_id=str(row.get("meeting_id", "")) if pd.notna(row.get("meeting_id")) else "",
                 source=str(row.get("source", "Federal Reserve")) if pd.notna(row.get("source")) else "Federal Reserve",
                 annotation_source=str(row.get("annotation_source", "csv_corpus")) if pd.notna(row.get("annotation_source")) else "csv_corpus",
-                availability_source=str(row.get("availability_source", "OFFICIAL_RELEASE")) if pd.notna(row.get("availability_source")) else "OFFICIAL_RELEASE",
-                availability_quality=str(row.get("availability_quality", "exact")) if pd.notna(row.get("availability_quality")) else "exact",
+                availability_source=avail_src,
+                availability_quality=avail_qual,
                 future_macro_labels=future_macro,
                 market_outcomes=market_outs,
                 metadata={},
@@ -489,8 +587,7 @@ def load_fomc_dataset(
 
     validate_dataset(
         samples,
-        require_timezone_aware=require_timezone_aware,
-        source_timezone=source_timezone,
+        require_timezone_aware=True,
     )
     return samples
 
@@ -547,21 +644,53 @@ class FOMCBenchmark:
             pit_verified=pit_verified,
         )
 
-    def get_split(self, split: str) -> List[TemporalSample]:
-        """Retrieve samples filtered to a temporal partition:
+    def is_formal_research_ready(self) -> bool:
+        """Return True if benchmark satisfies all requirements for formal empirical research:
 
-        - 'train': <= 2018-12-31 (Pre-cutoff training corpus)
-        - 'dev': 2019-01-01 to 2019-12-31 (Validation / early stopping)
-        - 'test': >= 2020-01-01 (Out-of-sample evaluation)
+        1. source_verified is True
+        2. annotation_verified is True
+        3. pit_verified is True
+        4. All samples have availability_quality == 'exact' (no 'unknown' or 'heuristic')
         """
+        if not (self.source_verified and self.annotation_verified and self.pit_verified):
+            return False
+        if not self.samples:
+            return False
+        return all(s.availability_quality == "exact" for s in self.samples)
+
+    def get_split(
+        self,
+        split: str,
+        splits_config: Optional[Dict[str, str]] = None,
+    ) -> List[TemporalSample]:
+        """Retrieve samples filtered to a temporal partition using true UTC datetime comparisons:
+
+        - 'train': <= train_end (default: 2018-12-31T23:59:59Z)
+        - 'dev': dev_start <= t <= dev_end (default: 2019-01-01T00:00:00Z to 2019-12-31T23:59:59Z)
+        - 'test': >= test_start (default: 2020-01-01T00:00:00Z)
+        """
+        cfg = splits_config or {}
+        train_end_ts = cfg.get("train_end", "2018-12-31T23:59:59Z")
+        dev_start_ts = cfg.get("dev_start", "2019-01-01T00:00:00Z")
+        dev_end_ts = cfg.get("dev_end", "2019-12-31T23:59:59Z")
+        test_start_ts = cfg.get("test_start", "2020-01-01T00:00:00Z")
+
+        dt_train_end = parse_iso_utc(train_end_ts)
+        dt_dev_start = parse_iso_utc(dev_start_ts)
+        dt_dev_end = parse_iso_utc(dev_end_ts)
+        dt_test_start = parse_iso_utc(test_start_ts)
+
+        if split not in {"train", "dev", "test"}:
+            raise ValueError(f"Unknown split '{split}'. Must be one of 'train', 'dev', 'test'.")
+
         s_list = []
         for s in self.samples:
-            dt_str = s.available_time[:10]
-            if split == "train" and dt_str <= "2018-12-31":
+            dt_avail = parse_iso_utc(s.available_time)
+            if split == "train" and dt_avail <= dt_train_end:
                 s_list.append(s)
-            elif split == "dev" and "2019-01-01" <= dt_str <= "2019-12-31":
+            elif split == "dev" and dt_dev_start <= dt_avail <= dt_dev_end:
                 s_list.append(s)
-            elif split == "test" and dt_str >= "2020-01-01":
+            elif split == "test" and dt_avail >= dt_test_start:
                 s_list.append(s)
         return s_list
 

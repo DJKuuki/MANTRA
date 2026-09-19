@@ -258,12 +258,18 @@ MANTRA (`RubiscoYHY/MANTRA`) 原生为 multi-agent decoder 交易框架。
 
 ## 31. 当前工作进展与下一阶段规划
 
-* **Task 1 — Literature Review**：**已完成并建立机器可校验文献表**（`docs/research/literature_registry.json`，修正所有已知 arXiv / DOI 错误）。
+* **Task 1 — Literature Review**：**已完成并建立机器可校验文献表**（`docs/research/literature_registry.json`，修正所有已知 arXiv / DOI 错误，代码仓映射至 `gtfintechlab/fomc-hawkish-dovish`）。
 * **Task 2 — Formalize Variables**：**已完成形式化规范**（五维 Pareto 空间，解耦 Level A $\Delta \text{IC}$ 与 Level B $\Delta \text{Sharpe}$，平稳块 Bootstrap）。
-* **Task 3 — Design FOMC Benchmark & PIT Protocols**：**已完成并加固**（`FOMCBenchmark` 禁止静默加载 Toy 数据；Loader 实施 Fail-Fast 校验；时区统一为 `America/New_York` / UTC）。
+* **Task 3 — Design FOMC Benchmark & PIT Protocols**：**已完成并加固**（`FOMCBenchmark` 禁止静默加载 Toy 数据；Loader 实施 Fail-Fast 校验；入库时间戳规范化为 UTC ISO；时区统一为 `America/New_York` / UTC）。
 * **Task 4 — Synthetic Twin Validation**：**已完成**（无状态确定性合成双生模型，方法学指标已完全冻结）。
-* **Task 5 — Pre-Experiment Gate**：**已通过**（PIT 数据流、时间戳时区转换、YFinance 路由均经集成测试全面验证）。
-* **Next Phase (Phase 2)**：**Real Encoder Baseline & Clean/Leak Twin Construction**（接入真实 Trillion Dollar Words 数据集、构建 Hugging Face encoder adapter、受控 Continued Pretraining 剂量注入）。
+* **Task 5 — Pre-Experiment Gate & Final Hardening**：**已冻结 (v1.0)**：
+  - **严苛 task_label 导入**：`parse_task_label` 彻底拒绝 float、bool、float string、非整数字符串与越界值。
+  - **未验证数据默认值**：外部导入无 PIT 字段默认 `availability_source="UNVERIFIED"`, `availability_quality="unknown"`（禁止默认 exact）。
+  - **清晰边界 `validated != verified`**：`dataset_validation_status='validated'` 仅代表数据结构合规；正式研究必须满足 `benchmark.is_formal_research_ready()`（`source_verified`, `annotation_verified`, `pit_verified` 均为 True 且样本全为 exact）。
+  - **时间戳 UTC 规范化**：`load_fomc_dataset` 在入库时即完成 UTC 规范化，消除二次校验时区丢失漏洞。
+  - **真实 UTC Datetime 分割**：`get_split` 基于 UTC 绝对时间戳进行区间判定，杜绝字符串切片跨时区判定偏差。
+  - **实验配置契约**：`load_experiment_config` / `validate_experiment_config` / `validate_benchmark_against_config` 形成强类型运行时契约。
+* **Next Phase (Phase 2)**：**Real Encoder Baseline & Clean/Leak Twin Construction**（接入真实 Trillion Dollar Words 数据集、构建 Hugging Face encoder adapter、受控 Continued Pretraining 剂量注入）。方法学层与前置门禁已冻结（METHODOLOGY LAYER v1.0 FROZEN），准备进入真实模型阶段。
 
 ---
 

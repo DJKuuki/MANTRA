@@ -26,8 +26,14 @@ from .fomc_benchmark import (
     DatasetValidationError,
     validate_temporal_sample,
     validate_dataset,
+    parse_task_label,
 )
 from .twin_experiment import TwinExperimentRunner
+from .experiment_config import (
+    load_experiment_config,
+    validate_experiment_config,
+    validate_benchmark_against_config,
+)
 
 __all__ = [
     "TemporalModel",
@@ -51,5 +57,9 @@ __all__ = [
     "DatasetValidationError",
     "validate_temporal_sample",
     "validate_dataset",
+    "parse_task_label",
     "TwinExperimentRunner",
+    "load_experiment_config",
+    "validate_experiment_config",
+    "validate_benchmark_against_config",
 ]

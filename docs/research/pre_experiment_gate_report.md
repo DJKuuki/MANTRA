@@ -139,13 +139,13 @@ The core evaluation variables established during Methodology Hardening are forma
 
 **Overall Status**: **PASS**
 
-All 11 cited literature items have been re-verified against canonical publisher databases, CrossRef DOIs, the ACL Anthology, and arXiv APIs. The machine-verifiable registry has been published at [`docs/research/literature_registry.json`](file:///e:/MANTRA/docs/research/literature_registry.json).
+All 11 cited literature items have been re-verified against canonical publisher databases, CrossRef DOIs, the ACL Anthology, and arXiv APIs. The machine-verifiable registry has been published at [`docs/research/literature_registry.json`](./literature_registry.json).
 
 ### Literature Audit Summary Table
 
 | Paper / Citation | Authors | Venue / Year | Canonical Identifier | Registry Status | Audit Action Taken |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Trillion Dollar Words** | Agam Shah, Suvan Paturi, Sudheer Chava | ACL 2023 | [10.18653/v1/2023.acl-long.368](https://doi.org/10.18653/v1/2023.acl-long.368) / arXiv:2305.07972 | **Verified** | Corrected author spelling (Suvan Paturi), corrected ACL Anthology ID to `2023.acl-long.368`, and linked official repo `gtfintechlab/TrillionDollarWords`. |
+| **Trillion Dollar Words** | Agam Shah, Suvan Paturi, Sudheer Chava | ACL 2023 | [10.18653/v1/2023.acl-long.368](https://doi.org/10.18653/v1/2023.acl-long.368) / arXiv:2305.07972 | **Verified** | Corrected author spelling (Suvan Paturi), corrected ACL Anthology ID to `2023.acl-long.368`, and linked official repo `gtfintechlab/fomc-hawkish-dovish`. |
 | **Temporal Leakage in Financial News NLP** | Chenhao Xue, Raslen Guesmi, Siwei Feng, et al. | arXiv / EMNLP 2026 | [arXiv:2608.17223](https://arxiv.org/abs/2608.17223) | **Verified** | Corrected arXiv ID to `2608.17223` (was erroneously listed as 2608.06450). Linked repository `ChenHX111/Temporal_Leakage_in_Financial_News_NLP`. |
 | **Mind the Shift** | Yixuan Tang, Yi Yang | arXiv 2026 | [arXiv:2603.14313](https://arxiv.org/abs/2603.14313) | **Verified** | Corrected arXiv ID to `2603.14313` (was 2603.02987, a 2024 survey). Linked official repo `yixuantt/DeltaConsistentScoring`. Clarified task as Delta-Consistent Scoring. |
 | **All Leaks Count, Some Count More** | Zeyu Zhang, Ryan Chen, Bradly C. Stadie | Findings of EMNLP 2026 | [arXiv:2602.17234](https://arxiv.org/abs/2602.17234) | **Verified** | Corrected authors (Zeyu Zhang, Ryan Chen, Bradly C. Stadie; was Y. Sun et al.), corrected year to 2026, corrected arXiv ID to `2602.17234`. Clarified TimeSPEC as architecture and Shapley-DCLR as metric. |
@@ -164,14 +164,14 @@ All 11 cited literature items have been re-verified against canonical publisher 
 **Overall Status**: **PASS**
 
 ### 5.1 Formal vs. CI Configuration Files
-- **Formal Scientific Configuration**: [`configs/fomc_formal_experiment.yaml`](file:///e:/MANTRA/configs/fomc_formal_experiment.yaml)
+- **Formal Scientific Configuration**: [`configs/fomc_formal_experiment.yaml`](../../configs/fomc_formal_experiment.yaml)
   - `random_seed: 42`
   - `time.source_timezone: America/New_York`, `time.internal_timezone: UTC`
   - `probe.n_splits: 5`, `probe.n_permutations: 1000`
   - `bootstrap.method: stationary`, `bootstrap.expected_block_length: 8`, `bootstrap.n_bootstrap: 2000`
   - `economics.primary_metric: delta_ic`
   - `pit.allow_heuristic_fallback: false` (strictly exact-only)
-- **CI / Smoke Test Configuration**: [`configs/fomc_ci.yaml`](file:///e:/MANTRA/configs/fomc_ci.yaml)
+- **CI / Smoke Test Configuration**: [`configs/fomc_ci.yaml`](../../configs/fomc_ci.yaml)
   - `probe.n_splits: 3`, `probe.n_permutations: 100`
   - `bootstrap.n_bootstrap: 200`
   - `pit.allow_heuristic_fallback: true`
