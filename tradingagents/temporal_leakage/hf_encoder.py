@@ -20,6 +20,7 @@ Key Design Principles (Phase 2.1 Hardened):
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import os
@@ -47,26 +48,60 @@ INDEX_TO_LABEL: Dict[int, int] = {0: -1, 1: 0, 2: 1}
 LABEL_TO_INDEX: Dict[int, int] = {-1: 0, 0: 1, 1: 2}
 
 
-def resolve_git_commit(cwd: Optional[Union[str, Path]] = None) -> str:
-    """Resolve current git commit SHA dynamically without hardcoded fallbacks."""
+def resolve_git_provenance(cwd: Optional[Union[str, Path]] = None) -> Dict[str, Any]:
+    """Resolve git provenance metadata dynamically without hardcoded fallbacks.
+
+    Returns:
+        Dict with:
+            - 'git_head': commit SHA (str) or 'unknown'
+            - 'git_dirty': bool (True if working tree has unstaged or uncommitted changes)
+            - 'code_commit_exact': bool (True only if git_head != 'unknown' and not git_dirty)
+    """
+    search_dir = Path(cwd) if cwd is not None else Path(__file__).resolve().parent
+    git_head = "unknown"
+    git_dirty = False
+
     env_commit = os.environ.get("MANTRA_GIT_COMMIT")
     if env_commit:
-        return env_commit.strip()
+        git_head = env_commit.strip()
 
-    search_dir = Path(cwd) if cwd is not None else Path(__file__).parent
     try:
-        res = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
+        if git_head == "unknown":
+            res_head = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=search_dir,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if res_head.returncode == 0 and res_head.stdout.strip():
+                git_head = res_head.stdout.strip()
+
+        status_res = subprocess.run(
+            ["git", "status", "--porcelain"],
             cwd=search_dir,
             capture_output=True,
             text=True,
             timeout=5,
         )
-        if res.returncode == 0 and res.stdout.strip():
-            return res.stdout.strip()
+        if status_res.returncode == 0:
+            git_dirty = bool(status_res.stdout.strip())
+        else:
+            git_dirty = True
     except Exception:
-        pass
-    return "unknown"
+        git_dirty = True
+
+    code_commit_exact = (git_head != "unknown" and not git_dirty)
+    return {
+        "git_head": git_head,
+        "git_dirty": git_dirty,
+        "code_commit_exact": code_commit_exact,
+    }
+
+
+def resolve_git_commit(cwd: Optional[Union[str, Path]] = None) -> str:
+    """Resolve current git commit SHA dynamically without hardcoded fallbacks."""
+    return resolve_git_provenance(cwd)["git_head"]
 
 
 def hash_model_parameters(model: Any) -> str:
@@ -111,6 +146,102 @@ def hash_corpus(texts: Sequence[str]) -> str:
     return hasher.hexdigest()
 
 
+def build_fresh_fomc_classifier_from_base_encoder(
+    base_model_name_or_path: str = "ProsusAI/finbert",
+    base_revision: Optional[str] = "4556d13015211d73dccd3fdd39d39232506f3e43",
+    random_seed: int = 42,
+    device: Optional[str] = None,
+    tokenizer: Optional[Any] = None,
+    mock_base_model: Optional[Any] = None,
+    name: str = "finbert_fomc_stance_classifier",
+) -> HuggingFaceTemporalEncoder:
+    """Construct a 3-class FOMC stance classifier structurally isolated from base sentiment head.
+
+    Guarantees:
+    1. Raw financial sentiment head (positive/negative/neutral) weights are NOT loaded.
+    2. Base encoder body weights (.bert or base_model) are preserved from base model.
+    3. Fresh 3-class sequence classification head (Dovish/Neutral/Hawkish) is initialized
+       deterministically using `random_seed`.
+    4. Records classifier head provenance:
+       - original_head_loaded: False
+       - stance_head_initialization: "fresh"
+       - stance_head_initial_hash: SHA-256 parameter hash of fresh classification head.
+    """
+    dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
+
+    if mock_base_model is not None:
+        if hasattr(mock_base_model, "bert"):
+            base_body_state = mock_base_model.bert.state_dict()
+            cfg = getattr(mock_base_model, "config", None)
+        elif hasattr(mock_base_model, "base_model"):
+            base_body_state = mock_base_model.base_model.state_dict()
+            cfg = getattr(mock_base_model, "config", None)
+        else:
+            base_body_state = mock_base_model.state_dict()
+            cfg = getattr(mock_base_model, "config", None)
+    else:
+        base_encoder = AutoModel.from_pretrained(
+            base_model_name_or_path,
+            revision=base_revision,
+        )
+        base_body_state = base_encoder.state_dict()
+        cfg = base_encoder.config
+
+    if cfg is not None:
+        clf_config = copy.deepcopy(cfg)
+        clf_config.num_labels = 3
+        clf_config.id2label = dict(FOMC_STANCE_ID_TO_LABEL)
+        clf_config.label2id = dict(FOMC_STANCE_LABEL_TO_ID)
+    else:
+        clf_config = AutoConfig.from_pretrained(
+            base_model_name_or_path,
+            num_labels=3,
+            id2label=FOMC_STANCE_ID_TO_LABEL,
+            label2id=FOMC_STANCE_LABEL_TO_ID,
+            revision=base_revision,
+        )
+
+    clf_model = AutoModelForSequenceClassification.from_config(clf_config)
+
+    if hasattr(clf_model, "bert"):
+        clf_model.bert.load_state_dict(base_body_state, strict=False)
+    elif hasattr(clf_model, "base_model"):
+        clf_model.base_model.load_state_dict(base_body_state, strict=False)
+
+    torch.manual_seed(random_seed)
+    head = getattr(clf_model, "classifier", None) or getattr(clf_model, "score", None)
+    if head is not None and hasattr(head, "reset_parameters"):
+        head.reset_parameters()
+    elif head is None:
+        hidden_size = getattr(clf_config, "hidden_size", 768)
+        clf_model.classifier = nn.Linear(hidden_size, 3)
+        head = clf_model.classifier
+
+    head_initial_hash = hash_model_parameters(head)
+
+    tok = tokenizer
+    if tok is None and mock_base_model is None:
+        tok = AutoTokenizer.from_pretrained(base_model_name_or_path, revision=base_revision)
+
+    clf_model.to(dev)
+    clf_model.eval()
+
+    adapter = HuggingFaceTemporalEncoder(
+        name=name,
+        model_name_or_path=base_model_name_or_path,
+        revision=base_revision,
+        tokenizer=tok,
+        model=clf_model,
+        task_label_schema="fomc_stance",
+        device=dev,
+        random_seed=random_seed,
+    )
+    adapter.original_head_loaded = False
+    adapter.stance_head_initialization = "fresh"
+    adapter.stance_head_initial_hash = head_initial_hash
+    return adapter
+
+
 class HuggingFaceTemporalEncoder(TemporalModel):
     """Temporal model adapter for Hugging Face encoder models."""
 
@@ -149,6 +280,11 @@ class HuggingFaceTemporalEncoder(TemporalModel):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.metadata_extra = metadata_extra or {}
 
+        # Classifier head provenance
+        self.original_head_loaded = False
+        self.stance_head_initialization = "fresh"
+        self.stance_head_initial_hash: Optional[str] = None
+
         # Allow dependency injection (for fast offline tests without network downloads)
         self._tokenizer = tokenizer
         self._model = model
@@ -177,6 +313,12 @@ class HuggingFaceTemporalEncoder(TemporalModel):
                     config.id2label = dict(FOMC_STANCE_ID_TO_LABEL)
                     config.label2id = dict(FOMC_STANCE_LABEL_TO_ID)
                     config.num_labels = 3
+                    if not self.reuse_existing_head and self.stance_head_initial_hash is None:
+                        self._reinit_fomc_stance_head(model)
+                    else:
+                        head = getattr(model, "classifier", None) or getattr(model, "score", None)
+                        if head is not None and self.stance_head_initial_hash is None:
+                            self.stance_head_initial_hash = hash_model_parameters(head)
 
     def _reinit_fomc_stance_head(self, model: Any) -> None:
         """Discard existing classification head and reinitialize for 3-class FOMC stance."""
@@ -185,12 +327,16 @@ class HuggingFaceTemporalEncoder(TemporalModel):
         torch.manual_seed(self.random_seed)
         if hasattr(model, "classifier"):
             model.classifier = nn.Linear(hidden_size, 3)
+            self.stance_head_initial_hash = hash_model_parameters(model.classifier)
         elif hasattr(model, "score"):
             model.score = nn.Linear(hidden_size, 3)
+            self.stance_head_initial_hash = hash_model_parameters(model.score)
         if config is not None:
             config.id2label = dict(FOMC_STANCE_ID_TO_LABEL)
             config.label2id = dict(FOMC_STANCE_LABEL_TO_ID)
             config.num_labels = 3
+        self.original_head_loaded = False
+        self.stance_head_initialization = "fresh"
 
     @property
     def tokenizer(self) -> Any:
@@ -206,23 +352,19 @@ class HuggingFaceTemporalEncoder(TemporalModel):
     def model(self) -> Any:
         """Lazy-load sequence classification model if not provided."""
         if self._model is None:
-            config = AutoConfig.from_pretrained(
-                self.model_name_or_path,
-                num_labels=3,
-                id2label=FOMC_STANCE_ID_TO_LABEL,
-                label2id=FOMC_STANCE_LABEL_TO_ID,
-                revision=self.revision,
+            fresh_adapter = build_fresh_fomc_classifier_from_base_encoder(
+                base_model_name_or_path=self.model_name_or_path,
+                base_revision=self.revision,
+                random_seed=self.random_seed,
+                device=self.device,
+                tokenizer=self._tokenizer,
+                name=self.name,
             )
-            # Load pretrained encoder body and initialize fresh 3-class head
-            self._model = AutoModelForSequenceClassification.from_pretrained(
-                self.model_name_or_path,
-                config=config,
-                revision=self.revision,
-                ignore_mismatched_sizes=True,
-            )
-            self._validate_and_prepare_model(self._model)
-            self._model.to(self.device)
-            self._model.eval()
+            self._model = fresh_adapter.model
+            self._tokenizer = fresh_adapter.tokenizer
+            self.original_head_loaded = False
+            self.stance_head_initialization = "fresh"
+            self.stance_head_initial_hash = fresh_adapter.stance_head_initial_hash
         return self._model
 
     def _prepare_inputs(self, texts: Sequence[str]) -> Dict[str, Any]:
@@ -371,6 +513,7 @@ class HuggingFaceTemporalEncoder(TemporalModel):
                     pass
 
         resolved_commit = code_commit or resolve_git_commit(out_dir)
+        git_prov = resolve_git_provenance(out_dir)
 
         base_meta = {
             "model_name": self.name,
@@ -383,6 +526,12 @@ class HuggingFaceTemporalEncoder(TemporalModel):
             "num_steps": 0,
             "random_seed": self.random_seed,
             "code_commit": resolved_commit,
+            "git_dirty": git_prov["git_dirty"],
+            "code_commit_exact": git_prov["code_commit_exact"],
+            "git_provenance": git_prov,
+            "original_head_loaded": self.original_head_loaded,
+            "stance_head_initialization": self.stance_head_initialization,
+            "stance_head_initial_hash": self.stance_head_initial_hash,
             "dataset_manifest_hash": resolved_manifest_hash,
             "pooling": self.pooling,
             "parameter_hash": hash_model_parameters(self.model),
@@ -418,7 +567,7 @@ class HuggingFaceTemporalEncoder(TemporalModel):
         model.to(dev)
         model.eval()
 
-        return cls(
+        adapter = cls(
             name=metadata.get("model_name", load_dir.name),
             model_name_or_path=str(load_dir),
             revision=metadata.get("base_revision"),
@@ -431,3 +580,7 @@ class HuggingFaceTemporalEncoder(TemporalModel):
             random_seed=metadata.get("random_seed", 42),
             metadata_extra=metadata,
         )
+        adapter.original_head_loaded = metadata.get("original_head_loaded", False)
+        adapter.stance_head_initialization = metadata.get("stance_head_initialization", "fresh")
+        adapter.stance_head_initial_hash = metadata.get("stance_head_initial_hash")
+        return adapter

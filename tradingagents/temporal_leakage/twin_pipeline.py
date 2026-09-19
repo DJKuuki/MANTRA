@@ -21,6 +21,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
@@ -46,10 +47,12 @@ from .hf_encoder import (
     INDEX_TO_LABEL,
     LABEL_TO_INDEX,
     HuggingFaceTemporalEncoder,
+    build_fresh_fomc_classifier_from_base_encoder,
     hash_corpus,
     hash_model_parameters,
     normalize_and_hash_text,
     resolve_git_commit,
+    resolve_git_provenance,
 )
 from .metrics import (
     evaluate_behavioral_leakage,
@@ -555,35 +558,17 @@ def train_baseline_stance_model(
     4. Evaluated on out-of-sample post-cutoff stance samples (>= 2020).
     """
     dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
-    if mock_model_for_testing is not None:
-        if hasattr(mock_model_for_testing, "cls"):
-            base_clf_encoder = build_classifier_from_mlm_encoder(
-                mlm_model=mock_model_for_testing,
-                tokenizer=mock_tokenizer_for_testing,
-                name="fomc_stance_baseline_mb",
-                base_model_name=base_model_name,
-                base_revision=base_revision,
-                device=dev,
-                random_seed=random_seed,
-            )
-            base_clf_model = base_clf_encoder.model
-        else:
-            base_clf_model = mock_model_for_testing
-    else:
-        base_clf_model = None
-
-    encoder = HuggingFaceTemporalEncoder(
-        name="fomc_stance_baseline_mb",
-        model_name_or_path=base_model_name,
-        revision=base_revision,
-        tokenizer=mock_tokenizer_for_testing,
-        model=base_clf_model,
-        task_label_schema="fomc_stance",
-        device=dev,
+    encoder = build_fresh_fomc_classifier_from_base_encoder(
+        base_model_name_or_path=base_model_name,
+        base_revision=base_revision,
         random_seed=random_seed,
+        device=dev,
+        tokenizer=mock_tokenizer_for_testing,
+        mock_base_model=mock_model_for_testing,
+        name="fomc_stance_baseline_mb",
     )
 
-    fine_tuned_encoder, _ = train_downstream_classifier(
+    fine_tuned_encoder, sample_order_hash = train_downstream_classifier(
         encoder_model=encoder,
         train_samples=train_samples,
         epochs=epochs,
@@ -608,8 +593,178 @@ def train_baseline_stance_model(
         "brier_score": float(comp_metrics["brier_score"]),
         "ece": float(comp_metrics["ece"]),
         "sample_count": len(eval_texts),
+        "train_sample_count": len(train_samples),
         "fine_tuned_encoder": fine_tuned_encoder,
+        "initial_head_hash": encoder.stance_head_initial_hash,
+        "sample_order_hash": sample_order_hash,
     }
+
+
+def run_fomc_stance_baseline(
+    config_path: Union[str, Path] = "configs/encoder_baseline.yaml",
+    output_dir: Union[str, Path] = "experiments/encoder_phase2",
+    training_sample_limit: Optional[int] = None,
+    test_sample_limit: Optional[int] = None,
+    random_seed: Optional[int] = None,
+    device: Optional[str] = None,
+    mock_model_for_testing: Optional[Any] = None,
+    mock_tokenizer_for_testing: Optional[Any] = None,
+) -> Dict[str, Any]:
+    """Execute standalone evaluation of the True FOMC Stance Baseline model (M_B).
+
+    Driven strictly by `configs/encoder_baseline.yaml`.
+    Guarantees:
+    1. Base ProsusAI/finbert encoder body loaded; raw sentiment head discarded.
+    2. Fresh FOMC stance classification head initialized deterministically.
+    3. Training set uses all eligible pre-cutoff TDW samples (year <= 2018, e.g. 1,729)
+       unless training_sample_limit is explicitly configured.
+    4. test_sample_limit applies strictly to evaluation test samples (year >= 2020).
+    5. Saves experiments/encoder_phase2/results/baseline_results.json and manifests/baseline_manifest.json.
+    """
+    out_dir = Path(output_dir)
+    results_dir = out_dir / "results"
+    manifests_dir = out_dir / "manifests"
+    results_dir.mkdir(parents=True, exist_ok=True)
+    manifests_dir.mkdir(parents=True, exist_ok=True)
+
+    # Load configuration
+    cfg = {}
+    cfg_file = Path(config_path)
+    if cfg_file.exists():
+        with open(cfg_file, "r", encoding="utf-8") as f:
+            cfg = yaml.safe_load(f) or {}
+
+    seed = random_seed if random_seed is not None else cfg.get("random_seed", 42)
+    model_cfg = cfg.get("model", {})
+    base_model_name = model_cfg.get("base_checkpoint", "ProsusAI/finbert")
+    base_revision = model_cfg.get("base_revision", "4556d13015211d73dccd3fdd39d39232506f3e43")
+
+    train_cfg = cfg.get("training", {})
+    epochs = train_cfg.get("epochs", 2)
+    batch_size = train_cfg.get("batch_size", 8)
+    learning_rate = float(train_cfg.get("learning_rate", 2e-5))
+    max_steps = train_cfg.get("max_steps", None)
+    cfg_train_limit = train_cfg.get("training_sample_limit", None)
+    effective_train_limit = training_sample_limit if training_sample_limit is not None else cfg_train_limit
+
+    splits_cfg = cfg.get("splits", {})
+    train_cutoff_year = splits_cfg.get("train_cutoff_year", 2018)
+    test_start_year = splits_cfg.get("test_start_year", 2020)
+
+    eval_cfg = cfg.get("evaluation", {})
+    cfg_test_limit = eval_cfg.get("test_sample_limit", 100)
+    effective_test_limit = test_sample_limit if test_sample_limit is not None else cfg_test_limit
+    n_bootstrap = eval_cfg.get("n_bootstrap", 200)
+
+    dev_choice = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    git_prov = resolve_git_provenance(out_dir)
+
+    print(f"[Baseline Pipeline] Loading Trillion Dollar Words dataset (cutoff <= {train_cutoff_year})...")
+    samples = load_trillion_dollar_words()
+    all_train_samples = [s for s in samples if int(s.metadata.get("year", 2000)) <= train_cutoff_year]
+    all_test_samples = [s for s in samples if int(s.metadata.get("year", 2000)) >= test_start_year]
+
+    train_samples = all_train_samples[:effective_train_limit] if effective_train_limit is not None else all_train_samples
+    test_samples = all_test_samples[:effective_test_limit] if effective_test_limit is not None else all_test_samples
+
+    print(f"[Baseline Pipeline] Training samples: {len(train_samples)}, Test samples: {len(test_samples)}")
+    print("[Baseline Pipeline] Building Fresh FOMC Stance Baseline Classifier...")
+    encoder = build_fresh_fomc_classifier_from_base_encoder(
+        base_model_name_or_path=base_model_name,
+        base_revision=base_revision,
+        random_seed=seed,
+        device=dev_choice,
+        tokenizer=mock_tokenizer_for_testing,
+        mock_base_model=mock_model_for_testing,
+        name="fomc_stance_baseline_mb",
+    )
+    initial_head_hash = encoder.stance_head_initial_hash
+
+    print(f"[Baseline Pipeline] Fine-tuning on pre-cutoff stance data ({epochs} epochs, lr={learning_rate})...")
+    fine_tuned_encoder, sample_order_hash = train_downstream_classifier(
+        encoder_model=encoder,
+        train_samples=train_samples,
+        epochs=epochs,
+        max_steps=max_steps,
+        batch_size=batch_size,
+        learning_rate=learning_rate,
+        random_seed=seed,
+    )
+
+    eval_texts = [s.text for s in test_samples]
+    y_true = [s.task_label for s in test_samples]
+    y_pred, y_prob = fine_tuned_encoder.predict_task(eval_texts)
+
+    comp_metrics = evaluate_competence(y_true, y_pred, y_prob=y_prob, n_bootstrap=n_bootstrap)
+
+    from sklearn.metrics import confusion_matrix
+    cm = confusion_matrix(y_true, y_pred, labels=[-1, 0, 1]).tolist()
+
+    baseline_results = {
+        "status": "VALIDATED_FOMC_STANCE_BASELINE",
+        "experiment": "encoder_baseline_evaluation",
+        "config_path": str(config_path),
+        "checkpoint": base_model_name,
+        "revision": base_revision,
+        "original_head_loaded": False,
+        "stance_head_initialization": "fresh",
+        "stance_head_initial_hash": initial_head_hash,
+        "training_cutoff": f"{train_cutoff_year}-12-31",
+        "evaluation_split": f"coarse_year_test (>= {test_start_year})",
+        "train_sample_count": len(train_samples),
+        "test_sample_count": len(test_samples),
+        "epochs": epochs,
+        "batch_size": batch_size,
+        "learning_rate": learning_rate,
+        "macro_f1": float(comp_metrics["macro_f1"]),
+        "mcc": float(comp_metrics["mcc"]),
+        "brier_score": float(comp_metrics["brier_score"]),
+        "ece": float(comp_metrics["ece"]),
+        "confusion_matrix": cm,
+        "git_provenance": git_prov,
+        "code_commit": git_prov["git_head"],
+        "git_dirty": git_prov["git_dirty"],
+        "code_commit_exact": git_prov["code_commit_exact"],
+    }
+    with open(results_dir / "baseline_results.json", "w", encoding="utf-8") as f:
+        json.dump(baseline_results, f, indent=2)
+
+    baseline_manifest = {
+        "experiment_id": "encoder_baseline_evaluation",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "config_path": str(config_path),
+        "git_provenance": git_prov,
+        "code_commit": git_prov["git_head"],
+        "git_dirty": git_prov["git_dirty"],
+        "code_commit_exact": git_prov["code_commit_exact"],
+        "base_checkpoint": base_model_name,
+        "base_revision": base_revision,
+        "original_head_loaded": False,
+        "stance_head_initialization": "fresh",
+        "stance_head_initial_hash": initial_head_hash,
+        "train_sample_count": len(train_samples),
+        "test_sample_count": len(test_samples),
+        "macro_f1": float(comp_metrics["macro_f1"]),
+        "mcc": float(comp_metrics["mcc"]),
+        "brier_score": float(comp_metrics["brier_score"]),
+        "ece": float(comp_metrics["ece"]),
+    }
+    with open(manifests_dir / "baseline_manifest.json", "w", encoding="utf-8") as f:
+        json.dump(baseline_manifest, f, indent=2)
+
+    print("\n" + "=" * 76)
+    print("FOMC STANCE BASELINE EVALUATION COMPLETE")
+    print("=" * 76)
+    print(f"  Train Samples: {len(train_samples)} (all pre-cutoff)")
+    print(f"  Test Samples: {len(test_samples)} (test split)")
+    print(f"  Macro-F1: {comp_metrics['macro_f1']:.4f}")
+    print(f"  MCC: {comp_metrics['mcc']:.4f}")
+    print(f"  Brier Score: {comp_metrics['brier_score']:.4f}")
+    print(f"  ECE: {comp_metrics['ece']:.4f}")
+    print(f"  Git Commit: {git_prov['git_head'][:8]}... (dirty={git_prov['git_dirty']}, exact={git_prov['code_commit_exact']})")
+    print("=" * 76 + "\n")
+
+    return baseline_results
 
 
 def run_baseline_and_smoke_experiment(
@@ -710,9 +865,9 @@ def run_baseline_and_smoke_experiment(
     eval_text_hashes = {normalize_and_hash_text(t) for t in test_texts}
     post_corpus_isolated = [t for t in post_corpus if normalize_and_hash_text(t) not in eval_text_hashes]
 
-    # 3. Base Stance Model Fine-Tuning & Competence Baseline (M_B)
+    downstream_train_limit = downstream_cfg.get("training_sample_limit", None)
+    train_slice = train_samples[:downstream_train_limit] if downstream_train_limit is not None else train_samples
     print("[Phase 2.1 Pipeline] Fine-tuning True FOMC Stance Baseline (M_B)...")
-    train_slice = train_samples[:eval_limit]
     baseline_result = train_baseline_stance_model(
         train_samples=train_slice,
         test_samples=eval_test_samples,
@@ -966,11 +1121,16 @@ def run_baseline_and_smoke_experiment(
     s_leak = leak_encoder.get_stance_score(test_texts)
     econ_res = evaluate_economic_effect(s_leak, s_clean, fwd_synthetic_returns, n_bootstrap=200)
 
+    git_prov = resolve_git_provenance(out_dir)
+
     # Build experiment manifest
     experiment_manifest = {
         "experiment_id": "phase2_1_causal_twin_activation_smoke",
-        "timestamp": "2026-09-19T12:00:00Z",
-        "code_commit": code_commit,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "code_commit": git_prov["git_head"],
+        "git_dirty": git_prov["git_dirty"],
+        "code_commit_exact": git_prov["code_commit_exact"],
+        "git_provenance": git_prov,
         "base_checkpoint": base_model_name,
         "base_revision": base_revision,
         "dataset_hash": dataset_hash,
@@ -1003,6 +1163,10 @@ def run_baseline_and_smoke_experiment(
             "name": base_model_name,
             "revision": base_revision,
         },
+        "git_provenance": git_prov,
+        "code_commit": git_prov["git_head"],
+        "git_dirty": git_prov["git_dirty"],
+        "code_commit_exact": git_prov["code_commit_exact"],
         "treatment_integrity_status": "CAUSAL TWIN PIPELINE ACTIVE",
         "causal_treatment_integrity": {
             "initial_encoder_hash": {"clean": clean_initial_param_hash, "leak": leak_initial_param_hash, "result": "PASS"},
@@ -1032,7 +1196,8 @@ def run_baseline_and_smoke_experiment(
             "delta_sharpe_plumbing": float(econ_res["delta_sharpe"]),
         },
         "empirical_leakage_metrics": None,  # Explicitly null: synthetic targets do not yield empirical conclusions
-        "pareto_vector": pareto_coordinates(
+        "empirical_pareto_vector": None,
+        "synthetic_plumbing_pareto_vector": pareto_coordinates(
             c=float(c_leak["macro_f1"]),
             l_repr=float(repr_res["l_repr"]),
             l_behavior=float(behav_res["l_behavior_delta"]),
@@ -1056,6 +1221,14 @@ def run_baseline_and_smoke_experiment(
         "ece": float(baseline_result["ece"]),
         "training_cutoff": "2018-12-31",
         "sample_count": len(eval_test_samples),
+        "train_sample_count": len(train_slice),
+        "original_head_loaded": False,
+        "stance_head_initialization": "fresh",
+        "stance_head_initial_hash": baseline_result.get("initial_head_hash"),
+        "git_provenance": git_prov,
+        "code_commit": git_prov["git_head"],
+        "git_dirty": git_prov["git_dirty"],
+        "code_commit_exact": git_prov["code_commit_exact"],
     }
     with open(results_dir / "baseline_results.json", "w", encoding="utf-8") as f:
         json.dump(baseline_export, f, indent=2)

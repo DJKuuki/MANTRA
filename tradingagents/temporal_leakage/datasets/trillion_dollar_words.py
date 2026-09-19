@@ -45,6 +45,10 @@ def load_trillion_dollar_words(
             )
 
     samples = load_fomc_dataset(path)
+    for s in samples:
+        s.metadata.setdefault("temporal_resolution", "year")
+        s.metadata.setdefault("timestamp_imputed", True)
+        s.metadata.setdefault("timestamp_imputation_rule", "mid_year_placeholder")
     return samples
 
 

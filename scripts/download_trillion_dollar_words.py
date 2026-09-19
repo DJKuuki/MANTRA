@@ -139,6 +139,9 @@ def convert_records(cache_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
                     "year": year,
                     "source_file": filename,
                     "orig_index": int(orig_index) if pd.notna(orig_index) else idx,
+                    "temporal_resolution": "year",
+                    "timestamp_imputed": True,
+                    "timestamp_imputation_rule": "mid_year_placeholder",
                 },
             }
             canonical_samples.append(record)

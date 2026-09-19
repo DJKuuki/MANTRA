@@ -18,6 +18,7 @@ IMPORTANT METHODOLOGICAL RULES (Phase 2.1):
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -128,22 +129,35 @@ def create_fomc_official_fixture() -> FOMCBenchmark:
 
 def load_fomc_official_statements(
     filepath: Optional[Union[str, Path]] = None,
+    manifest_path: Optional[Union[str, Path]] = None,
 ) -> List[TemporalSample]:
-    """Load verified official FOMC statements with exact publication timestamps.
+    """Load official FOMC statements with exact publication timestamps.
 
     Args:
         filepath: Path to JSON/JSONL/CSV file containing verified official statements.
-                  Must be explicitly provided.
+        manifest_path: Optional path to dataset manifest.json.
 
     Returns:
         List of strictly validated TemporalSample instances.
     """
-    if filepath is None:
+    if filepath is None and manifest_path is None:
         raise ValueError(
             "Official FOMC dataset loading requires an explicit verified data file path or manifest. "
             "For testing and documentation only, use create_fomc_official_fixture()."
         )
-    path = Path(filepath)
+    target_path = filepath
+    if target_path is None and manifest_path is not None:
+        m_path = Path(manifest_path)
+        if not m_path.exists():
+            raise FileNotFoundError(f"Manifest not found: {m_path}")
+        with open(m_path, "r", encoding="utf-8") as f:
+            m_data = json.load(f)
+        if "data_file" in m_data:
+            target_path = m_path.parent / m_data["data_file"]
+        else:
+            raise ValueError(f"Manifest {m_path} does not specify 'data_file'.")
+
+    path = Path(target_path)
     if not path.exists():
         raise FileNotFoundError(f"Official FOMC statement file not found: {path}")
     samples = load_fomc_dataset(path)
@@ -153,24 +167,48 @@ def load_fomc_official_statements(
 
 def create_fomc_official_benchmark(
     filepath: Optional[Union[str, Path]] = None,
+    manifest_path: Optional[Union[str, Path]] = None,
 ) -> FOMCBenchmark:
-    """Instantiate an FOMCBenchmark using official statements from a verified manifest/file.
+    """Instantiate an FOMCBenchmark using official statements.
 
-    Args:
-        filepath: Path to verified official statement file. Must not be None.
+    Formal research readiness requires an explicit verified manifest_path with:
+    - source_verified == True
+    - annotation_verified == True
+    - pit_verified == True
+    - All samples having availability_quality == 'exact'
 
-    Returns:
-        FOMCBenchmark with source_verified=True, annotation_verified=True, pit_verified=True.
+    If manifest_path is missing, unverified, or omitted, the benchmark is constructed with
+    pit_verified=False (or source_verified=False) such that:
+    `benchmark.is_formal_research_ready() is False`.
     """
-    if filepath is None:
+    if filepath is None and manifest_path is None:
         raise ValueError(
             "Formal official FOMC benchmark requires an explicit verified data file path or manifest. "
             "For testing and documentation only, use create_fomc_official_fixture()."
         )
-    samples = load_fomc_official_statements(filepath=filepath)
+
+    samples = load_fomc_official_statements(filepath=filepath, manifest_path=manifest_path)
+
+    # Check manifest verification properties
+    is_source_verified = False
+    is_annotation_verified = False
+    is_pit_verified = False
+
+    if manifest_path is not None:
+        m_path = Path(manifest_path)
+        if m_path.exists():
+            try:
+                with open(m_path, "r", encoding="utf-8") as f:
+                    m_data = json.load(f)
+                is_source_verified = bool(m_data.get("source_verified", False))
+                is_annotation_verified = bool(m_data.get("annotation_verified", False))
+                is_pit_verified = bool(m_data.get("pit_verified", False))
+            except Exception:
+                pass
+
     return FOMCBenchmark(
         samples=samples,
-        source_verified=True,
-        annotation_verified=True,
-        pit_verified=True,
+        source_verified=is_source_verified,
+        annotation_verified=is_annotation_verified,
+        pit_verified=is_pit_verified,
     )
