@@ -36,6 +36,7 @@ from tradingagents.temporal_leakage import (
 )
 from tradingagents.temporal_leakage.datasets.fomc_official import (
     create_fomc_official_benchmark,
+    create_fomc_official_fixture,
     load_fomc_official_statements,
 )
 from tradingagents.temporal_leakage.datasets.trillion_dollar_words import (
@@ -416,9 +417,14 @@ def test_i_real_dataset_and_manifest_validation():
     # Correctly blocked from formal research due to unknown availability_quality
     assert bench.is_formal_research_ready() is False
 
-    # Official statements benchmark has verified exact timestamps and passes readiness check
-    official_bench = create_fomc_official_benchmark()
-    assert official_bench.is_formal_research_ready() is True
+    # Hardcoded official fixture is strictly a test fixture and NOT formal research ready
+    official_fixture = create_fomc_official_fixture()
+    assert official_fixture.is_formal_research_ready() is False
+
+    # Formal official benchmark strictly requires an explicit verified data file path
+    import pytest
+    with pytest.raises(ValueError, match="requires an explicit verified data file"):
+        create_fomc_official_benchmark()
 
 
 def test_j_equal_compute_stream_matching():

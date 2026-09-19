@@ -1,14 +1,15 @@
-# Real Encoder Baseline Configuration: ProsusAI/finbert Evaluation
-# All hyperparameter configurations and checkpoint revisions are pinned.
+# Real Encoder Baseline Configuration: ProsusAI/finbert FOMC Stance Fine-Tuned Baseline (M_B)
+# The raw financial sentiment head is discarded and replaced with a fresh FOMC stance head.
 
 experiment_name: encoder_baseline_evaluation
 random_seed: 42
 
 model:
-  name: finbert_baseline
-  base_checkpoint: ProsusAI/finbert
-  base_revision: 4556d13015211d73dccd3fdd39d39232506f3e43
-  pooling: mean
+  name: finbert_baseline_mb
+  base_checkpoint: "ProsusAI/finbert"
+  base_revision: "4556d13015211d73dccd3fdd39d39232506f3e43"
+  pooling: "mean"
+  task_label_schema: "fomc_stance"
   num_labels: 3
   output_classes:
     - -1  # Dovish
@@ -18,25 +19,23 @@ model:
 training:
   random_seed: 42
   learning_rate: 2.0e-5
-  batch_size: 16
+  batch_size: 8
   max_seq_length: 128
   weight_decay: 0.01
-  epochs: 3
+  epochs: 2
   warmup_ratio: 0.1
-  optimizer: AdamW
-  scheduler: linear
-  early_stopping_policy:
-    metric: macro_f1
-    mode: max
-    patience: 2
+  optimizer: "AdamW"
+  scheduler: "linear"
 
 splits:
-  train_end: "2018-12-31T23:59:59Z"
-  dev_start: "2019-01-01T00:00:00Z"
-  dev_end: "2019-12-31T23:59:59Z"
-  test_start: "2020-01-01T00:00:00Z"
+  train_cutoff_year: 2018
+  dev_year: 2019
+  test_start_year: 2020
 
 evaluation:
+  test_sample_limit: 100
+  n_bootstrap: 200
+  n_permutations: 50
   metrics:
     - macro_f1
     - mcc

@@ -1,0 +1,11 @@
+{
+  "isolation_mode": "Treatment A \u2014 Indirect Future Exposure",
+  "document_level_isolation": "unavailable",
+  "sentence_level_hash_isolation": "enforced",
+  "eval_sample_count": 40,
+  "clean_corpus_sample_count": 70,
+  "leak_corpus_sample_count": 74,
+  "clean_eval_overlap": 0,
+  "leak_eval_overlap": 0,
+  "audit_pass": true
+}

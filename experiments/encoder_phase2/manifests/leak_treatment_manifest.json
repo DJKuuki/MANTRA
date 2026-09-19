@@ -1,0 +1,16 @@
+{
+  "branch": "leak",
+  "dose": 1.0,
+  "base_checkpoint": "ProsusAI/finbert",
+  "base_revision": "4556d13015211d73dccd3fdd39d39232506f3e43",
+  "initial_parameter_hash": "19019a74c40d6d95874c36c7cb2996c63da8bb04f9c73fc4ae97b088e1e64cb8",
+  "final_parameter_hash": "e114f6eb66240f662cd10ff7ad2c696c5c08ee475c57eb409bc3669760278ec6",
+  "corpus_hash": "23759b49867ce2785cc7e14ed0c29dccbeaa3ff47220fef093e278e5bfc4fa94",
+  "token_count": 2560,
+  "optimizer_steps": 5,
+  "batch_size": 4,
+  "max_seq_length": 128,
+  "mlm_probability": 0.15,
+  "learning_rate": 5e-05,
+  "seed": 42
+}

@@ -1,39 +1,80 @@
 {
   "status": "ENGINEERING SMOKE TEST ONLY \u2014 NOT RESEARCH CONCLUSIONS",
-  "experiment": "phase2_real_encoder_smoke",
+  "experiment": "phase2_1_causal_twin_activation_smoke",
   "base_model": {
     "name": "ProsusAI/finbert",
     "revision": "4556d13015211d73dccd3fdd39d39232506f3e43"
   },
-  "compute_budget": {
-    "equal_steps": 5,
-    "equal_samples": 40,
-    "equal_optimizer": "AdamW"
+  "treatment_integrity_status": "CAUSAL TWIN PIPELINE ACTIVE",
+  "causal_treatment_integrity": {
+    "initial_encoder_hash": {
+      "clean": "19019a74c40d6d95874c36c7cb2996c63da8bb04f9c73fc4ae97b088e1e64cb8",
+      "leak": "19019a74c40d6d95874c36c7cb2996c63da8bb04f9c73fc4ae97b088e1e64cb8",
+      "result": "PASS"
+    },
+    "mlm_corpus_hash": {
+      "clean": "84fdc2860126855aab7a6d274742f0462ca18c71b8065a6a429f09163c70ee1c",
+      "leak": "23759b49867ce2785cc7e14ed0c29dccbeaa3ff47220fef093e278e5bfc4fa94",
+      "result": "PASS"
+    },
+    "effective_tokens": {
+      "clean": 2560,
+      "leak": 2560,
+      "result": "PASS"
+    },
+    "optimizer_steps": {
+      "clean": 5,
+      "leak": 5,
+      "result": "PASS"
+    },
+    "mlm_learning_rate": {
+      "clean": 5e-05,
+      "leak": 5e-05,
+      "result": "PASS"
+    },
+    "post_mlm_encoder_hash": {
+      "clean": "17d859f357e262fecfe035e3feef4a40d9e9066655491e17b9b110ec89be708d",
+      "leak": "e114f6eb66240f662cd10ff7ad2c696c5c08ee475c57eb409bc3669760278ec6",
+      "result": "PASS (Diverged)"
+    },
+    "classifier_head_initial_hash": {
+      "clean": "332eb65ebb66c5e0b04a8ddcafd2243dca9523224e20747c581645ea79421bde",
+      "leak": "332eb65ebb66c5e0b04a8ddcafd2243dca9523224e20747c581645ea79421bde",
+      "result": "PASS"
+    },
+    "downstream_sample_order_hash": {
+      "clean": "53dc8d60d9823a3cee776e4565ae68c42c9e4c284ae559210d4b3da2113b34ae",
+      "leak": "53dc8d60d9823a3cee776e4565ae68c42c9e4c284ae559210d4b3da2113b34ae",
+      "result": "PASS"
+    },
+    "eval_overlap_count": {
+      "clean": 0,
+      "leak": 0,
+      "result": "PASS"
+    }
   },
-  "baseline_competence": {
-    "macro_f1": 0.23154623154623155,
-    "mcc": -0.08842943061171123,
-    "brier_score": 1.179225267394194,
-    "ece": 0.5641778185963632
+  "competence_metrics": {
+    "baseline_mb_macro_f1": 0.20168067226890754,
+    "baseline_mb_mcc": -0.2394357127887801,
+    "baseline_mb_brier": 0.8516892293416003,
+    "baseline_mb_ece": 0.38778979852795603,
+    "clean_d0_macro_f1": 0.22950819672131148,
+    "leak_d100_macro_f1": 0.22950819672131148,
+    "delta_macro_f1": 0.0
   },
-  "twins_comparison": {
-    "clean_d0_macro_f1": 0.1761006289308176,
-    "leak_d100_macro_f1": 0.1761006289308176,
-    "delta_macro_f1": 0.0,
-    "l_repr": 0.0,
-    "l_repr_pvalue": 1.0,
-    "l_behavior_delta": 0.0,
-    "l_entity_delta": 0.0,
-    "l_date_delta": 0.0,
-    "delta_ic": 0.0,
-    "delta_sharpe": 0.0,
-    "delta_annual_return": 0.0
+  "synthetic_plumbing_metrics": {
+    "note": "Metrics computed using synthetic mock forward returns/actions for code plumbing verification only.",
+    "l_repr_plumbing": 0.05885780885780887,
+    "l_behavior_delta_plumbing": 9.480877452006098e-07,
+    "delta_ic_plumbing": 0.21426896219453564,
+    "delta_sharpe_plumbing": 0.0
   },
+  "empirical_leakage_metrics": null,
   "pareto_vector": {
-    "competence_C": 0.1761006289308176,
-    "leakage_L_repr": 0.0,
-    "leakage_L_behavior": 0.0,
-    "economic_E_L_ic": 0.0,
+    "competence_C": 0.22950819672131148,
+    "leakage_L_repr": 0.05885780885780887,
+    "leakage_L_behavior": 9.480877452006098e-07,
+    "economic_E_L_ic": 0.21426896219453564,
     "economic_E_L_sharpe": 0.0
   }
 }

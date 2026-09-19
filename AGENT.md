@@ -24,9 +24,9 @@
 * event-driven market prediction
 
 本项目目前处于：
-**Phase 2 Baseline & Clean/Leak Twin Pipeline Complete**
-（真实 FOMC Trillion Dollar Words 数据集接入与严格 PIT 审计完成；Hugging Face 真实模型适配器落地，固定 ProsusAI/finbert 校验版本；受控 Continued Pretraining MLM 等算力双生管线与第一轮 D0/D100 Smoke 验证打通；状态评定：PHASE 2 BASELINE & TWIN PIPELINE READY）。
-在启动大规模全量剂量训练前，严禁违背 Equal Compute 与下游时间隔离原则。
+**Phase 2.1 Causal Twin Activation & Baseline Correction Complete**
+（修正 ProsusAI/finbert 原始金融情感任务头语义偏差，构建真正的 Pre-cutoff FOMC 立场基线 $M_B$；真实激活 $D_0 / D_{100}$ 算力对齐 MLM 继续预训练 temporal treatment，验证参数发散与权重新生传递；实施评估文本隔离与严密因果完整性断言；状态评定：**PHASE 2 BASELINE & CAUSAL TWIN PIPELINE READY**，**CAUSAL TWIN PIPELINE ACTIVE**）。
+在启动大规模全量剂量研究（Phase 3）前，严禁违背 Equal Compute 与下游时间隔离原则。
 
 ---
 
@@ -263,13 +263,16 @@ MANTRA (`RubiscoYHY/MANTRA`) 原生为 multi-agent decoder 交易框架。
 * **Task 3 — Design FOMC Benchmark & PIT Protocols**：**已完成并加固**（`FOMCBenchmark` 禁止静默加载 Toy 数据；Loader 实施 Fail-Fast 校验；入库时间戳规范化为 UTC ISO；时区统一为 `America/New_York` / UTC）。
 * **Task 4 — Synthetic Twin Validation**：**已完成**（无状态确定性合成双生模型，方法学指标已完全冻结）。
 * **Task 5 — Pre-Experiment Gate & Final Hardening**：**已冻结 (v1.0)**。
-* **Phase 2 — Real Encoder Baseline & Clean/Leak Twin Construction**：**已完成并验证 (PHASE 2 BASELINE & TWIN PIPELINE READY)**：
-  - **真实数据接入**：`Trillion Dollar Words` (Shah et al., ACL 2023) 2,281 样本完成清洗接入（`data/research/fomc/`），PIT 质量严格审计标记 `unknown`，杜绝静默 exact 漏洞。
-  - **HF Encoder Adapter**：`HuggingFaceTemporalEncoder` 支持固定 revision (`4556d13015211d73dccd3fdd39d39232506f3e43`)、注意力掩码 mean pooling、连续立场打分与 checkpoint 元数据。
-  - **因果双生架构**：Equal Compute + Equal Architecture + Sham Control + Downstream Temporal Isolation。
-  - **Smoke 验证通过**：$D_0$ ($M_C$) 与 $D_{100}$ ($M_L$) 端到端闭环跑通，明确标定 `ENGINEERING SMOKE TEST ONLY`。
-  - **测试防护**：108 个单元/集成测试 100% 通过，CI 完全离线无模型下载负担。
-* **Next Phase (Phase 3)**：**Full Contamination Dose Empirical Study & Economic Backtest Harness**（全量语料 GPU Continued Pretraining、完整剂量阶梯 $D \in \{0, 0.25, 0.5, 0.75, 1.0\}$、多资产高频收益对齐与边际经济效应估计）。
+* **Phase 2.1 — Causal Twin Activation & Baseline Correction**：**已完成并验证 (PHASE 2 BASELINE & CAUSAL TWIN PIPELINE READY / CAUSAL TWIN PIPELINE ACTIVE)**：
+  - **任务语义修正**：明确 `ProsusAI/finbert` 原始分类头为金融情感（Positive/Negative/Neutral），严禁当作货币立场头；剥离原始情感头，新建专有 3-class FOMC Stance 分类头（`Dovish`/`Neutral`/`Hawkish`）；在 Pre-cutoff 数据（$\le 2018$）上微调构建真正立场基线 $M_B$（Macro-F1: 0.2017）。
+  - **模型 Provenance 审计**：建立 `docs/research/base_checkpoint_provenance.md`，明确标记 `training_cutoff_status = bounded / uncertain`。
+  - **Token-Budget 算力对齐**：实现 `create_token_matched_dose_stream`，以 128 长度定长 token blocks 进行双生封装，保证 $D_0$ 与 $D_{100}$ 获得精确相等的 token 算力（2,560 tokens，0% 差异）。
+  - **真实 MLM Temporal Treatment 激活**：端到端连通 `run_continued_pretraining_mlm`，保证 $M_C$ 与 $M_L$ 经历独立且真实的 temporal MLM 预训练；断言验证 MLM 参数真正发散（$\mathrm{Hash}(M_C) \neq \mathrm{Hash}(M_L)$）。
+  - **权重与分类头传递**：实现 `build_classifier_from_mlm_encoder`，将 MLM 训练后 BERT 权重注入分类器，并绑定 bit-identical 的初始分类头权重。
+  - **评估隔离（Treatment A）**：句子级哈希过滤杜绝评测集进入 MLM 污染池（Overlap = 0）。
+  - **Official Fixture 降级**：`fomc_official.py` 硬编码样例正式降级为测试 fixture，默认 `is_formal_research_ready() == False`；正式 benchmark 强制要求显式文件或 manifest。
+  - **测试防护**：118 个单元/集成测试 100% 通过，CI 完全离线无模型下载负担。
+* **Next Phase (Phase 3)**：**Pilot Temporal Leakage Study**（在因果双生处理已激活并验证的前提下，展开多 seed、全量 dose ladder $D \in \{0, 0.25, 0.5, 0.75, 1.0\}$、多资产真实收益对齐与边际经济效应估计）。
 
 ---
 

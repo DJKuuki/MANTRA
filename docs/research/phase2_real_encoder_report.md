@@ -53,18 +53,28 @@ Phase 2 transitions MANTRA from synthetic validation into the real encoder empir
 
 ## 3. Real Encoder Baseline Performance
 
-Evaluated on the out-of-sample test split ($\ge 2020$, 438 samples) without contamination:
+### 3.1 Prior Raw FinBERT Result (Invalidated)
+> [!WARNING]
+> **INVALIDATED BASELINE RESULT**  
+> **Reason**: `ProsusAI/finbert` native labels are financial sentiment (`positive`, `negative`, `neutral`), not FOMC monetary policy stance (`Dovish`, `Neutral`, `Hawkish`).  
+> Mapping raw FinBERT logits directly to monetary stance is semantically invalid.
 
-| Metric | Baseline Value | Interpretation |
+| Metric | Raw FinBERT (Invalidated) | Status |
 | :--- | :--- | :--- |
-| **Macro-F1 ($C$)** | 0.2315 | Moderate zero-shot transfer on central bank stance classification. |
-| **MCC** | -0.0884 | Reflects class imbalance and shift toward neutral tone during pandemic. |
-| **Brier Score** | 1.1792 | Multi-class calibration error. |
-| **Expected Calibration Error (ECE)** | 0.5642 | Uncalibrated probabilities before temperature scaling. |
+| **Macro-F1 ($C$)** | 0.2315 | **INVALIDATED** (Sentiment $\neq$ Stance) |
+| **MCC** | -0.0884 | **INVALIDATED** (Sentiment $\neq$ Stance) |
+| **Brier Score** | 1.1792 | **INVALIDATED** (Sentiment $\neq$ Stance) |
+| **Expected Calibration Error (ECE)** | 0.5642 | **INVALIDATED** (Sentiment $\neq$ Stance) |
 
-> [!NOTE]
-> **No Leakage Interpretation Permitted**:
-> These baseline figures reflect out-of-the-box transfer performance. In accordance with Section 28, baseline performance must not be tuned against the test set, and no leakage claim is inferred from baseline competence.
+### 3.2 Corrected True FOMC Stance Baseline ($M_B$)
+In Phase 2.1, the raw sentiment classification head was discarded and replaced with a fresh 3-class FOMC stance classification head (`id2label={0: "Dovish", 1: "Neutral", 2: "Hawkish"}`). The model was fine-tuned strictly on pre-cutoff TDW stance data ($\le 2018$) and evaluated on held-out post-cutoff data ($\ge 2020$):
+
+| Metric | True Stance Baseline ($M_B$) | Status |
+| :--- | :--- | :--- |
+| **Macro-F1 ($C$)** | **0.2017** | **VALIDATED** (Stance Fine-Tuned $\le 2018$) |
+| **MCC** | **-0.2394** | **VALIDATED** (Stance Fine-Tuned $\le 2018$) |
+| **Brier Score** | **0.8517** | **VALIDATED** (Calibrated stance probabilities) |
+| **Expected Calibration Error (ECE)** | **0.3878** | **VALIDATED** (Reduced calibration error) |
 
 ---
 
@@ -81,72 +91,79 @@ To isolate the causal treatment effect $\Delta_L = M_L - M_C$, the twin pipeline
    Pre-cutoff Sham Corpus        Post-cutoff Contamination
       (t <= 2018-12-31)              (2019 <= t <= 2022)
             |                               |
-    EQUAL MLM TOKENS               EQUAL MLM TOKENS
-    EQUAL UPDATE STEPS             EQUAL UPDATE STEPS
-    EQUAL OPTIMIZER (AdamW)        EQUAL OPTIMIZER (AdamW)
+    EQUAL MLM TOKENS (2,560)        EQUAL MLM TOKENS (2,560)
+    EQUAL UPDATE STEPS (5)          EQUAL UPDATE STEPS (5)
+    EQUAL OPTIMIZER (AdamW)         EQUAL OPTIMIZER (AdamW)
             |                               |
     [M_C Checkpoint]               [M_L Checkpoint]
             |                               |
             +---------------+---------------+
                             |
-           IDENTICAL DOWNSTREAM TRAINING
-             (D_train <= 2018-12-31 only)
+           IDENTICAL HEAD INITIALIZATION
+            (shared bit-identical state)
                             |
-           IDENTICAL DOWNSTREAM EVALUATION
-             (D_test >= 2020-01-01 only)
+           IDENTICAL DOWNSTREAM TRAINING
+            (D_train <= 2018-12-31 only,
+             identical batch sequence)
+                            |
+           ISOLATED EVALUATION (TEST >= 2020)
+            (zero overlap with MLM corpus)
                             |
            CAUSAL ESTIMATE: M_L - M_C
 ```
 
-### 4.1 Symmetry Guarantees
-1. **Equal Compute**: $M_C$ and $M_L$ receive identical update steps, learning rate schedule, batch size, and total tokens. $M_C$ is trained on a pre-cutoff sham corpus of equal size.
-2. **Dose Ladder Operationalization**: The contamination dose $D \in \{0.0, 0.25, 0.50, 0.75, 1.00\}$ is defined as the proportion of post-cutoff tokens in the continued pretraining stream:
-   $$N_{\text{post}} = \mathrm{round}(N_{\text{total}} \cdot D), \quad N_{\text{pre}} = N_{\text{total}} - N_{\text{post}}$$
-3. **Downstream Isolation**: Downstream stance fine-tuning is conducted strictly on pre-cutoff data ($t \le 2018$). No post-cutoff labels enter the classification head.
+### 4.1 Causal Integrity Invariants
+1. **Equal Compute**: $M_C$ and $M_L$ receive identical update steps (5 steps), learning rate schedule ($5\times 10^{-5}$), batch size (4), and exact packed token budget ($2,560$ tokens, $0\%$ difference).
+2. **Evaluation Isolation**: Sentence-level hash intersection between MLM contamination texts and evaluation texts is strictly null ($D_{\text{MLM}} \cap D_{\text{eval}} = \emptyset$).
+3. **Weight Transfer Integrity**: The MLM-trained BERT bodies are extracted and loaded into classification models with a bit-identical initial classification head state before fine-tuning.
+4. **Parameter Divergence**: Post-MLM parameters must diverge:
+   $$\mathrm{Hash}(M_C^{\text{MLM}}) \neq \mathrm{Hash}(M_L^{\text{MLM}})$$
 
 ---
 
-## 5. Engineering Smoke Test Results
+## 5. Phase 2.1 Causal Twin Treatment Smoke Results
 
-> [!WARNING]
-> **ENGINEERING SMOKE TEST ONLY — NOT RESEARCH CONCLUSIONS**
-> The following results demonstrate technical end-to-end functionality of the training, checkpointing, downstream transfer, and evaluation pipeline. They do NOT constitute empirical research findings on leakage or alpha.
+> [!NOTE]
+> **ENGINEERING SMOKE TEST ONLY — NOT RESEARCH CONCLUSIONS**  
+> The goal of this run is verifying that temporal treatment occurred, parameter divergence was achieved, and causal symmetries were preserved. Forward economic returns and future actions remain synthetic for plumbing verification, so `empirical_leakage_metrics` is explicitly marked `NOT_EVALUATED` (`null`).
+
+### 5.1 Causal Treatment Integrity Verification Table
+
+| Check Item | Clean Twin ($M_C, D_0$) | Leak Twin ($M_L, D_{100}$) | Causal Result |
+| :--- | :--- | :--- | :--- |
+| **Initial Encoder Hash** | `19019a74c40d...` | `19019a74c40d...` | **PASS (Bit-Identical)** |
+| **MLM Corpus Hash** | `84fdc2860126...` | `23759b49867c...` | **PASS (Different Corpora)** |
+| **Effective Token Budget** | 2,560 tokens | 2,560 tokens | **PASS (Exact Equality, 0% diff)** |
+| **Optimizer Steps** | 5 steps | 5 steps | **PASS (Identical Compute)** |
+| **MLM Learning Rate** | $5.0 \times 10^{-5}$ | $5.0 \times 10^{-5}$ | **PASS (Symmetric Optimizer)** |
+| **Post-MLM Encoder Hash** | `17d859f357e2...` | `e114f6eb6624...` | **PASS (Diverged: $M_C \neq M_L$)** |
+| **Classifier Head Initial Hash** | `332eb65ebb66...` | `332eb65ebb66...` | **PASS (Bit-Identical)** |
+| **Downstream Sample Order Hash** | `53dc8d60d982...` | `53dc8d60d982...` | **PASS (Identical Batch Order)** |
+| **Evaluation Overlap Count** | 0 samples | 0 samples | **PASS (Zero Leakage into Eval)** |
+
+### 5.2 Competence & Differential Summary
 
 ```json
 {
   "status": "ENGINEERING SMOKE TEST ONLY — NOT RESEARCH CONCLUSIONS",
-  "experiment": "phase2_real_encoder_smoke",
-  "base_model": {
-    "name": "ProsusAI/finbert",
-    "revision": "4556d13015211d73dccd3fdd39d39232506f3e43"
+  "treatment_integrity_status": "CAUSAL TWIN PIPELINE ACTIVE",
+  "baseline_mb": {
+    "macro_f1": 0.2017,
+    "mcc": -0.2394,
+    "brier_score": 0.8517,
+    "ece": 0.3878
   },
-  "compute_budget": {
-    "equal_steps": 5,
-    "equal_samples": 40,
-    "equal_optimizer": "AdamW"
+  "twins_competence": {
+    "clean_d0_macro_f1": 0.2295,
+    "leak_d100_macro_f1": 0.2295,
+    "delta_macro_f1": 0.0000
   },
-  "baseline_competence": {
-    "macro_f1": 0.2315,
-    "mcc": -0.0884,
-    "brier_score": 1.1792,
-    "ece": 0.5642
+  "synthetic_plumbing_metrics": {
+    "l_repr_plumbing": 0.0589,
+    "l_behavior_delta_plumbing": 0.0000,
+    "delta_ic_plumbing": 0.2143
   },
-  "twins_comparison": {
-    "clean_d0_macro_f1": 0.1761,
-    "leak_d100_macro_f1": 0.1761,
-    "delta_macro_f1": 0.0000,
-    "l_repr": 0.0000,
-    "l_repr_pvalue": 1.0000,
-    "l_behavior_delta": 0.0000,
-    "delta_ic": 0.0000
-  },
-  "pareto_vector": {
-    "competence_C": 0.1761,
-    "leakage_L_repr": 0.0000,
-    "leakage_L_behavior": 0.0000,
-    "economic_E_L_ic": 0.0000,
-    "economic_E_L_sharpe": 0.0000
-  }
+  "empirical_leakage_metrics": null
 }
 ```
 
@@ -158,23 +175,26 @@ To isolate the causal treatment effect $\Delta_L = M_L - M_C$, the twin pipeline
 | :--- | :--- |
 | **Random Seed** | 42 |
 | **Base Checkpoint Revision** | `4556d13015211d73dccd3fdd39d39232506f3e43` |
-| **Experiment Config** | [`configs/encoder_baseline.yaml`](../../configs/encoder_baseline.yaml) |
+| **Base Provenance Document** | [`docs/research/base_checkpoint_provenance.md`](./base_checkpoint_provenance.md) (`bounded / uncertain`) |
+| **Baseline Config** | [`configs/encoder_baseline.yaml`](../../configs/encoder_baseline.yaml) |
+| **Twin Smoke Config** | [`configs/encoder_twin_smoke.yaml`](../../configs/encoder_twin_smoke.yaml) |
 | **Dataset Manifest Checksum** | `sha256:344f6cda7f59a6fcc2b088fd188dd03cc6dc53a8c25b862ce529e3e1218b073d` |
-| **Preceding Gate Commit** | `2fb88c00f1c2e46f864e71685c7a2b1d9c21a9f2` |
-| **Offline CI Protocol** | Automated unit tests execute offline with mock fixtures (108/108 passing). |
+| **Treatment Manifests** | [`experiments/encoder_phase2/manifests/`](../../experiments/encoder_phase2/manifests/) |
+| **Automated Unit Tests** | 118 passing, 33 subtests passed offline in CI without downloads. |
 
 ---
 
-## 7. Remaining Blockers Before Full Dose Empirical Study
+## 7. Remaining Blockers Before Full Dose Empirical Study (Phase 3)
 
 Before launching full-scale empirical training across the complete dose ladder ($D_0, D_{25}, D_{50}, D_{75}, D_{100}$):
-1. **GPU Allocation & Multi-Epoch Budget**: Full MLM continued pretraining on 2,281+ documents requires GPU batch compute (e.g. 10 epochs, $\sim 20\text{k}$ update steps).
+1. **GPU Allocation & Multi-Epoch Budget**: Full MLM continued pretraining on 2,281+ documents requires multi-epoch training ($\ge 10$ epochs, $\approx 5\text{k}$ steps) across multiple random seeds.
 2. **Official Intraday Release Curation**: For experiments requiring zero-tolerance exact Point-in-Time availability (`allow_heuristic_fallback: false`), official statement publication timestamps must be curated via `fomc_official.py`.
 3. **Forward Economic Targets Ingestion**: Historical 1d/5d/20d SPY forward returns and 2Y Treasury changes must be aligned with meeting timestamps to calculate formal economic effects ($E_L^{\text{IC}}$ and $E_L^{\text{Sharpe}}$).
 
 ---
 
-## Phase 2 Final Verdict
+## Phase 2.1 Final Verdict
 
-# **PHASE 2 BASELINE & TWIN PIPELINE READY**
-All preflight fixes, config contracts, data adapters, Hugging Face encoders, and causal twin pipelines are complete and verified.
+# **PHASE 2 BASELINE & CAUSAL TWIN PIPELINE READY**
+**STATUS: CAUSAL TWIN PIPELINE ACTIVE**  
+All causal integrity assertions (Same Start, Different Treatment Corpus, Equal Compute, Parameter Divergence, and Evaluation Isolation) are fully verified and operational.

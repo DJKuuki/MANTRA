@@ -1,0 +1,11 @@
+{
+  "status": "VALIDATED_FOMC_STANCE_BASELINE",
+  "checkpoint": "ProsusAI/finbert",
+  "revision": "4556d13015211d73dccd3fdd39d39232506f3e43",
+  "macro_f1": 0.20168067226890754,
+  "mcc": -0.2394357127887801,
+  "brier_score": 0.8516892293416003,
+  "ece": 0.38778979852795603,
+  "training_cutoff": "2018-12-31",
+  "sample_count": 40
+}

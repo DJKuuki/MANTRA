@@ -3,20 +3,30 @@
 Implements `HuggingFaceTemporalEncoder`, bridging Hugging Face encoder models
 (e.g. ProsusAI/finbert, RoBERTa, DeBERTa) into MANTRA's `TemporalModel` contract.
 
-Key Design Principles:
+Key Design Principles (Phase 2.1 Hardened):
 1. Attention-mask-aware mean pooling as primary representation extraction.
-2. 3-class sequence classification head with output probabilities [P(Dovish), P(Neutral), P(Hawkish)].
-3. Continuous stance score s = P(Hawkish) - P(Dovish) in [-1, +1].
-4. Fixed model revision tracking (preventing silent checkpoint drift).
+2. Dedicated 3-class sequence classification head for FOMC stance:
+   - 0: Dovish (-1)
+   - 1: Neutral (0)
+   - 2: Hawkish (+1)
+3. Rejection of raw financial sentiment heads:
+   - ProsusAI/finbert native sentiment heads (positive/negative/neutral) are discarded.
+   - Replaced with a freshly initialized, bit-identical FOMC stance head.
+4. Continuous stance score s = P(Hawkish) - P(Dovish) in [-1, +1].
 5. Deterministic evaluation mode (model.eval(), torch.no_grad()).
-6. Checkpoint provenance persistence via checkpoint_metadata.json.
+6. Cryptographic parameter and corpus hashing for causal integrity verification.
+7. Dynamic provenance tracking (resolves git commit and dataset manifest dynamically).
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 from pathlib import Path
+import subprocess
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+import unicodedata
 
 import numpy as np
 import torch
@@ -26,12 +36,79 @@ from transformers import AutoConfig, AutoModel, AutoModelForSequenceClassificati
 from .temporal_model import TemporalModel
 
 
-# Label index mapping:
+# FOMC Stance Label Index Mapping
 # 0: Dovish (-1)
 # 1: Neutral (0)
 # 2: Hawkish (+1)
-INDEX_TO_LABEL = {0: -1, 1: 0, 2: 1}
-LABEL_TO_INDEX = {-1: 0, 0: 1, 1: 2}
+FOMC_STANCE_ID_TO_LABEL: Dict[int, str] = {0: "Dovish", 1: "Neutral", 2: "Hawkish"}
+FOMC_STANCE_LABEL_TO_ID: Dict[str, int] = {"Dovish": 0, "Neutral": 1, "Hawkish": 2}
+
+INDEX_TO_LABEL: Dict[int, int] = {0: -1, 1: 0, 2: 1}
+LABEL_TO_INDEX: Dict[int, int] = {-1: 0, 0: 1, 1: 2}
+
+
+def resolve_git_commit(cwd: Optional[Union[str, Path]] = None) -> str:
+    """Resolve current git commit SHA dynamically without hardcoded fallbacks."""
+    env_commit = os.environ.get("MANTRA_GIT_COMMIT")
+    if env_commit:
+        return env_commit.strip()
+
+    search_dir = Path(cwd) if cwd is not None else Path(__file__).parent
+    try:
+        res = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=search_dir,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if res.returncode == 0 and res.stdout.strip():
+            return res.stdout.strip()
+    except Exception:
+        pass
+    return "unknown"
+
+
+def hash_model_parameters(model: Any) -> str:
+    """Compute deterministic SHA-256 hash over model parameters state_dict.
+
+    Extracts all state_dict tensors, moves to CPU, and hashes contiguous bytes.
+    """
+    if hasattr(model, "state_dict"):
+        sd = model.state_dict()
+    elif isinstance(model, dict):
+        sd = model
+    else:
+        raise TypeError(f"Cannot extract state_dict from object of type {type(model)}")
+
+    hasher = hashlib.sha256()
+    for key in sorted(sd.keys()):
+        tensor = sd[key]
+        hasher.update(key.encode("utf-8"))
+        if hasattr(tensor, "detach"):
+            t_cpu = tensor.detach().cpu().contiguous()
+            hasher.update(t_cpu.numpy().tobytes())
+        elif isinstance(tensor, np.ndarray):
+            hasher.update(tensor.tobytes())
+        elif isinstance(tensor, (int, float, str, bytes)):
+            hasher.update(str(tensor).encode("utf-8"))
+    return hasher.hexdigest()
+
+
+def normalize_and_hash_text(text: str) -> str:
+    """Normalize text (NFKC, strip, collapse whitespace) and compute SHA-256."""
+    norm = unicodedata.normalize("NFKC", text).strip()
+    norm = " ".join(norm.split())
+    return hashlib.sha256(norm.encode("utf-8")).hexdigest()
+
+
+def hash_corpus(texts: Sequence[str]) -> str:
+    """Compute deterministic SHA-256 hash over an ordered corpus of texts."""
+    hasher = hashlib.sha256()
+    for t in texts:
+        h = normalize_and_hash_text(t)
+        hasher.update(h.encode("utf-8"))
+    return hasher.hexdigest()
 
 
 class HuggingFaceTemporalEncoder(TemporalModel):
@@ -45,6 +122,8 @@ class HuggingFaceTemporalEncoder(TemporalModel):
         tokenizer: Optional[Any] = None,
         model: Optional[Any] = None,
         pooling: str = "mean",
+        task_label_schema: str = "fomc_stance",
+        reuse_existing_head: bool = False,
         device: Optional[str] = None,
         training_cutoff: Optional[str] = None,
         contamination_dose: float = 0.0,
@@ -65,12 +144,53 @@ class HuggingFaceTemporalEncoder(TemporalModel):
         if self.pooling not in {"mean", "cls"}:
             raise ValueError(f"Unsupported pooling mode '{pooling}'. Must be 'mean' or 'cls'.")
 
+        self.task_label_schema = task_label_schema
+        self.reuse_existing_head = reuse_existing_head
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.metadata_extra = metadata_extra or {}
 
         # Allow dependency injection (for fast offline tests without network downloads)
         self._tokenizer = tokenizer
         self._model = model
+
+        if self._model is not None:
+            self._validate_and_prepare_model(self._model)
+
+    def _validate_and_prepare_model(self, model: Any) -> None:
+        """Validate label semantics and adapt classification head to FOMC stance."""
+        if self.task_label_schema == "fomc_stance":
+            config = getattr(model, "config", None)
+            if config is not None:
+                id2label = getattr(config, "id2label", {}) or {}
+                labels_str = {str(v).lower() for v in id2label.values()}
+                has_sentiment = any(k in labels_str for k in ["positive", "negative", "neutral_sentiment"])
+                if has_sentiment:
+                    if self.reuse_existing_head:
+                        raise ValueError(
+                            f"Model label schema {id2label} has financial sentiment labels "
+                            "which cannot be used as FOMC stance schema when reuse_existing_head=True."
+                        )
+                    # Discard sentiment head and reinitialize fresh FOMC head
+                    self._reinit_fomc_stance_head(model)
+                else:
+                    # Update config id2label mapping
+                    config.id2label = dict(FOMC_STANCE_ID_TO_LABEL)
+                    config.label2id = dict(FOMC_STANCE_LABEL_TO_ID)
+                    config.num_labels = 3
+
+    def _reinit_fomc_stance_head(self, model: Any) -> None:
+        """Discard existing classification head and reinitialize for 3-class FOMC stance."""
+        config = getattr(model, "config", None)
+        hidden_size = getattr(config, "hidden_size", 768) if config else 768
+        torch.manual_seed(self.random_seed)
+        if hasattr(model, "classifier"):
+            model.classifier = nn.Linear(hidden_size, 3)
+        elif hasattr(model, "score"):
+            model.score = nn.Linear(hidden_size, 3)
+        if config is not None:
+            config.id2label = dict(FOMC_STANCE_ID_TO_LABEL)
+            config.label2id = dict(FOMC_STANCE_LABEL_TO_ID)
+            config.num_labels = 3
 
     @property
     def tokenizer(self) -> Any:
@@ -89,24 +209,32 @@ class HuggingFaceTemporalEncoder(TemporalModel):
             config = AutoConfig.from_pretrained(
                 self.model_name_or_path,
                 num_labels=3,
+                id2label=FOMC_STANCE_ID_TO_LABEL,
+                label2id=FOMC_STANCE_LABEL_TO_ID,
                 revision=self.revision,
             )
+            # Load pretrained encoder body and initialize fresh 3-class head
             self._model = AutoModelForSequenceClassification.from_pretrained(
                 self.model_name_or_path,
                 config=config,
                 revision=self.revision,
+                ignore_mismatched_sizes=True,
             )
+            self._validate_and_prepare_model(self._model)
             self._model.to(self.device)
             self._model.eval()
         return self._model
 
     def _prepare_inputs(self, texts: Sequence[str]) -> Dict[str, Any]:
         """Tokenize texts and move tensors to target device."""
+        config = getattr(self.model, "config", None)
+        max_pos = getattr(config, "max_position_embeddings", 512) if config else 512
+        max_len = min(512, max_pos)
         inputs = self.tokenizer(
             list(texts),
             padding=True,
             truncation=True,
-            max_length=512,
+            max_length=max_len,
             return_tensors="pt",
         )
         if hasattr(inputs, "to"):
@@ -127,7 +255,6 @@ class HuggingFaceTemporalEncoder(TemporalModel):
             np.ndarray of shape (len(texts), hidden_dim).
         """
         if not texts:
-            # Return empty embedding array with placeholder dimension
             hidden_dim = getattr(getattr(self.model, "config", None), "hidden_size", 768)
             return np.empty((0, hidden_dim), dtype=np.float32)
 
@@ -135,7 +262,6 @@ class HuggingFaceTemporalEncoder(TemporalModel):
         inputs = self._prepare_inputs(texts)
 
         with torch.no_grad():
-            # Check if model has a base transformer attribute (e.g. model.bert, model.roberta)
             base_model = getattr(self.model, "bert", None) or getattr(self.model, "roberta", None)
             if base_model is not None:
                 outputs = base_model(
@@ -201,25 +327,28 @@ class HuggingFaceTemporalEncoder(TemporalModel):
 
         return y_pred, probs
 
+    def get_stance_score(self, texts: Sequence[str]) -> np.ndarray:
+        """Extract continuous monetary policy stance score s in [-1, +1].
+
+        Calculated as: s = P(Hawkish) - P(Dovish).
+        """
+        _, probs = self.predict_task(texts)
+        if len(probs) == 0:
+            return np.empty((0,), dtype=np.float32)
+        # Class 0: Dovish, Class 2: Hawkish
+        scores = probs[:, 2] - probs[:, 0]
+        return scores.astype(np.float32)
+
     def save_checkpoint(
         self,
         save_directory: Union[str, Path],
         metadata: Optional[Dict[str, Any]] = None,
+        code_commit: Optional[str] = None,
+        dataset_manifest_hash: Optional[str] = None,
     ) -> Path:
         """Save model weights, tokenizer, and audit provenance metadata.
 
-        Required metadata contract:
-        - model_name
-        - base_checkpoint
-        - base_revision
-        - training_cutoff
-        - contamination_dose
-        - continued_pretraining_corpus
-        - num_training_tokens
-        - num_steps
-        - random_seed
-        - code_commit
-        - dataset_manifest_hash
+        Provenance resolution is dynamic (no hardcoded commit or static hashes).
         """
         out_dir = Path(save_directory)
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -228,6 +357,20 @@ class HuggingFaceTemporalEncoder(TemporalModel):
             self.model.save_pretrained(out_dir)
         if hasattr(self.tokenizer, "save_pretrained"):
             self.tokenizer.save_pretrained(out_dir)
+
+        # Resolve dataset manifest hash dynamically
+        resolved_manifest_hash = dataset_manifest_hash or "unknown"
+        if dataset_manifest_hash is None:
+            manifest_path = Path("data/research/fomc/manifest.json")
+            if manifest_path.exists():
+                try:
+                    with open(manifest_path, "r", encoding="utf-8") as f:
+                        m_data = json.load(f)
+                        resolved_manifest_hash = m_data.get("checksum") or m_data.get("sha256", "unknown")
+                except Exception:
+                    pass
+
+        resolved_commit = code_commit or resolve_git_commit(out_dir)
 
         base_meta = {
             "model_name": self.name,
@@ -239,9 +382,10 @@ class HuggingFaceTemporalEncoder(TemporalModel):
             "num_training_tokens": 0,
             "num_steps": 0,
             "random_seed": self.random_seed,
-            "code_commit": "2fb88c00f1c2e46f864e71685c7a2b1d9c21a9f2",
-            "dataset_manifest_hash": "sha256:344f6cda7f59a6fcc2b088fd188dd03cc6dc53a8c25b862ce529e3e1218b073d",
+            "code_commit": resolved_commit,
+            "dataset_manifest_hash": resolved_manifest_hash,
             "pooling": self.pooling,
+            "parameter_hash": hash_model_parameters(self.model),
         }
         if metadata:
             base_meta.update(metadata)

@@ -8,7 +8,15 @@ from .temporal_model import (
     MockTwinEncoder,
     parse_iso_utc,
 )
-from .hf_encoder import HuggingFaceTemporalEncoder
+from .hf_encoder import (
+    FOMC_STANCE_ID_TO_LABEL,
+    FOMC_STANCE_LABEL_TO_ID,
+    HuggingFaceTemporalEncoder,
+    hash_corpus,
+    hash_model_parameters,
+    normalize_and_hash_text,
+    resolve_git_commit,
+)
 from .metrics import (
     stationary_block_bootstrap_indices,
     evaluate_competence,
@@ -29,11 +37,21 @@ from .fomc_benchmark import (
     validate_dataset,
     parse_task_label,
 )
-from .twin_experiment import TwinExperimentRunner
 from .experiment_config import (
     load_experiment_config,
     validate_experiment_config,
     validate_benchmark_against_config,
+)
+from .twin_experiment import TwinExperimentRunner
+from .twin_pipeline import (
+    CausalIntegrityError,
+    build_classifier_from_mlm_encoder,
+    create_dose_stream,
+    create_token_matched_dose_stream,
+    run_baseline_and_smoke_experiment,
+    run_continued_pretraining_mlm,
+    train_baseline_stance_model,
+    train_downstream_classifier,
 )
 
 __all__ = [
@@ -43,6 +61,12 @@ __all__ = [
     "SyntheticTemporalTwinEncoder",
     "MockTwinEncoder",
     "HuggingFaceTemporalEncoder",
+    "FOMC_STANCE_ID_TO_LABEL",
+    "FOMC_STANCE_LABEL_TO_ID",
+    "hash_model_parameters",
+    "normalize_and_hash_text",
+    "hash_corpus",
+    "resolve_git_commit",
     "parse_iso_utc",
     "stationary_block_bootstrap_indices",
     "evaluate_competence",
@@ -64,4 +88,12 @@ __all__ = [
     "load_experiment_config",
     "validate_experiment_config",
     "validate_benchmark_against_config",
+    "CausalIntegrityError",
+    "create_token_matched_dose_stream",
+    "create_dose_stream",
+    "run_continued_pretraining_mlm",
+    "build_classifier_from_mlm_encoder",
+    "train_downstream_classifier",
+    "train_baseline_stance_model",
+    "run_baseline_and_smoke_experiment",
 ]
