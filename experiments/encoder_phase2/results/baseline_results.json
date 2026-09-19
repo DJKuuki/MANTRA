@@ -1,11 +1,46 @@
 {
   "status": "VALIDATED_FOMC_STANCE_BASELINE",
+  "experiment": "encoder_baseline_evaluation",
+  "config_path": "configs/encoder_baseline.yaml",
   "checkpoint": "ProsusAI/finbert",
   "revision": "4556d13015211d73dccd3fdd39d39232506f3e43",
-  "macro_f1": 0.20168067226890754,
-  "mcc": -0.2394357127887801,
-  "brier_score": 0.8516892293416003,
-  "ece": 0.38778979852795603,
+  "original_head_loaded": false,
+  "stance_head_initialization": "fresh",
+  "stance_head_initial_hash": "332eb65ebb66c5e0b04a8ddcafd2243dca9523224e20747c581645ea79421bde",
   "training_cutoff": "2018-12-31",
-  "sample_count": 40
+  "evaluation_split": "coarse_year_test (>= 2020)",
+  "train_sample_count": 1729,
+  "test_sample_count": 100,
+  "epochs": 2,
+  "batch_size": 8,
+  "learning_rate": 2e-05,
+  "macro_f1": 0.5072584000019237,
+  "mcc": 0.3048099569627579,
+  "brier_score": 0.6052550598523946,
+  "ece": 0.1846413543820381,
+  "confusion_matrix": [
+    [
+      14,
+      5,
+      4
+    ],
+    [
+      21,
+      24,
+      8
+    ],
+    [
+      11,
+      0,
+      13
+    ]
+  ],
+  "git_provenance": {
+    "git_head": "8a5781128db8481e3a4e1605d92413bc9706bdce",
+    "git_dirty": false,
+    "code_commit_exact": true
+  },
+  "code_commit": "8a5781128db8481e3a4e1605d92413bc9706bdce",
+  "git_dirty": false,
+  "code_commit_exact": true
 }

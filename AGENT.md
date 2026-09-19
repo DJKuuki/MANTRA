@@ -24,8 +24,8 @@
 * event-driven market prediction
 
 本项目目前处于：
-**Phase 2.1 Causal Twin Activation & Baseline Correction Complete**
-（修正 ProsusAI/finbert 原始金融情感任务头语义偏差，构建真正的 Pre-cutoff FOMC 立场基线 $M_B$；真实激活 $D_0 / D_{100}$ 算力对齐 MLM 继续预训练 temporal treatment，验证参数发散与权重新生传递；实施评估文本隔离与严密因果完整性断言；状态评定：**PHASE 2 BASELINE & CAUSAL TWIN PIPELINE READY**，**CAUSAL TWIN PIPELINE ACTIVE**）。
+**Phase 2.1 Finalization Complete — Baseline Validated & Causal Twin Active**
+（完成 Phase 2.1 最终修补与收敛：解耦分类基线与 Smoke 运行样本切片，采用完整 1,729 样本 Pre-cutoff 训练集构建强基线 $M_B$，Macro-F1 达到 0.5073，MCC 达到 +0.3048；实现动态 Git 凭证检测 `resolve_git_provenance` 杜绝硬编码并确保提交洁净无 dirty；落实 Trillion Dollar Words 年份粒度与中点时间戳填补审计元数据；降级未验证的官方 FOMC 数据源并强制要求显式 manifest；结构化解耦原始模型头与初始随机分类头并固化哈希；统一实验结果 Schema 将待测实证外生指标显式置为 null 并将烟测外生向量置入 `synthetic_plumbing_pareto_vector`；状态评定：**PHASE 2.1 FINALIZED**，**BASELINE PROTOCOL VALID**，**CAUSAL TWIN PIPELINE ACTIVE**，**READY FOR PHASE 3 PILOT STUDY**）。
 在启动大规模全量剂量研究（Phase 3）前，严禁违背 Equal Compute 与下游时间隔离原则。
 
 ---
@@ -263,16 +263,19 @@ MANTRA (`RubiscoYHY/MANTRA`) 原生为 multi-agent decoder 交易框架。
 * **Task 3 — Design FOMC Benchmark & PIT Protocols**：**已完成并加固**（`FOMCBenchmark` 禁止静默加载 Toy 数据；Loader 实施 Fail-Fast 校验；入库时间戳规范化为 UTC ISO；时区统一为 `America/New_York` / UTC）。
 * **Task 4 — Synthetic Twin Validation**：**已完成**（无状态确定性合成双生模型，方法学指标已完全冻结）。
 * **Task 5 — Pre-Experiment Gate & Final Hardening**：**已冻结 (v1.0)**。
-* **Phase 2.1 — Causal Twin Activation & Baseline Correction**：**已完成并验证 (PHASE 2 BASELINE & CAUSAL TWIN PIPELINE READY / CAUSAL TWIN PIPELINE ACTIVE)**：
-  - **任务语义修正**：明确 `ProsusAI/finbert` 原始分类头为金融情感（Positive/Negative/Neutral），严禁当作货币立场头；剥离原始情感头，新建专有 3-class FOMC Stance 分类头（`Dovish`/`Neutral`/`Hawkish`）；在 Pre-cutoff 数据（$\le 2018$）上微调构建真正立场基线 $M_B$（Macro-F1: 0.2017）。
-  - **模型 Provenance 审计**：建立 `docs/research/base_checkpoint_provenance.md`，明确标记 `training_cutoff_status = bounded / uncertain`。
-  - **Token-Budget 算力对齐**：实现 `create_token_matched_dose_stream`，以 128 长度定长 token blocks 进行双生封装，保证 $D_0$ 与 $D_{100}$ 获得精确相等的 token 算力（2,560 tokens，0% 差异）。
+* **Phase 2.1 — Causal Twin Activation & Baseline Correction (Finalized)**：**已全面收敛验证 (PHASE 2.1 FINALIZED / BASELINE PROTOCOL VALID / CAUSAL TWIN PIPELINE ACTIVE)**：
+  - **任务语义修正与独立基线**：剥离 `ProsusAI/finbert` 原始情感头，新建专有 3-class FOMC Stance 分类头（`Dovish`/`Neutral`/`Hawkish`）；解耦基线与烟测样本切片，在全部 1,729 篇 Pre-cutoff 数据（$\le 2018$）上微调构建真正立场基线 $M_B$（Macro-F1: 0.5073，MCC: +0.3048，Brier: 0.6053，ECE: 0.1846，混淆矩阵分布均衡）。
+  - **分类头结构解耦与哈希固化**：实现 `build_fresh_fomc_classifier_from_base_encoder`，显式追踪 `original_head_loaded: false` 与 `stance_head_initial_hash`，彻底消除分类头污染与随机重置。
+  - **动态 Git 凭证与洁净断言**：实现 `resolve_git_provenance` 动态探测真实 commit SHA，运用 `:(top,exclude)experiments` 路径规范精准识别代码树洁净度，运行实测保证 `git_dirty: false` 与 `code_commit_exact: true`。
+  - **Trillion Dollar Words 时间分辨率审计**：元数据补充标注 `temporal_resolution: "year"`、`timestamp_imputed: True` 与 `timestamp_imputation_rule: "mid_year_placeholder"`。
+  - **Token-Budget 算力对齐**：实现 `create_token_matched_dose_stream`，以 128 长度定长 token blocks 进行双生封装，保证 $D_0$ 与 $D_{100}$ 获得精确相等的 token 算力（2,560 tokens，0% 差异，10 步对称优化）。
   - **真实 MLM Temporal Treatment 激活**：端到端连通 `run_continued_pretraining_mlm`，保证 $M_C$ 与 $M_L$ 经历独立且真实的 temporal MLM 预训练；断言验证 MLM 参数真正发散（$\mathrm{Hash}(M_C) \neq \mathrm{Hash}(M_L)$）。
   - **权重与分类头传递**：实现 `build_classifier_from_mlm_encoder`，将 MLM 训练后 BERT 权重注入分类器，并绑定 bit-identical 的初始分类头权重。
   - **评估隔离（Treatment A）**：句子级哈希过滤杜绝评测集进入 MLM 污染池（Overlap = 0）。
+  - **Schema 统一与实证留白**：待测实证经济指标置为 `empirical_leakage_metrics: null` 与 `empirical_pareto_vector: null`，烟测试跑指标统一收口至 `synthetic_plumbing_pareto_vector`。
   - **Official Fixture 降级**：`fomc_official.py` 硬编码样例正式降级为测试 fixture，默认 `is_formal_research_ready() == False`；正式 benchmark 强制要求显式文件或 manifest。
-  - **测试防护**：118 个单元/集成测试 100% 通过，CI 完全离线无模型下载负担。
-* **Next Phase (Phase 3)**：**Pilot Temporal Leakage Study**（在因果双生处理已激活并验证的前提下，展开多 seed、全量 dose ladder $D \in \{0, 0.25, 0.5, 0.75, 1.0\}$、多资产真实收益对齐与边际经济效应估计）。
+  - **测试防护**：126 个单元/集成测试 100% 通过（新增 Phase 2.1 Finalization 专项测试 A~H），CI 完全离线无模型下载负担。
+* **Next Phase (Phase 3)**：**Pilot Temporal Leakage Study**（在因果双生处理已激活、基线有效且代码树洁净的前提下，展开多 seed、全量 dose ladder $D \in \{0, 0.25, 0.5, 0.75, 1.0\}$、多资产真实收益对齐与边际经济效应估计）。
 
 ---
 

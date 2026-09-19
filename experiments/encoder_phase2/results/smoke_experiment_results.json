@@ -5,6 +5,14 @@
     "name": "ProsusAI/finbert",
     "revision": "4556d13015211d73dccd3fdd39d39232506f3e43"
   },
+  "git_provenance": {
+    "git_head": "8a5781128db8481e3a4e1605d92413bc9706bdce",
+    "git_dirty": false,
+    "code_commit_exact": true
+  },
+  "code_commit": "8a5781128db8481e3a4e1605d92413bc9706bdce",
+  "git_dirty": false,
+  "code_commit_exact": true,
   "treatment_integrity_status": "CAUSAL TWIN PIPELINE ACTIVE",
   "causal_treatment_integrity": {
     "initial_encoder_hash": {
@@ -23,8 +31,8 @@
       "result": "PASS"
     },
     "optimizer_steps": {
-      "clean": 5,
-      "leak": 5,
+      "clean": 10,
+      "leak": 10,
       "result": "PASS"
     },
     "mlm_learning_rate": {
@@ -33,8 +41,8 @@
       "result": "PASS"
     },
     "post_mlm_encoder_hash": {
-      "clean": "17d859f357e262fecfe035e3feef4a40d9e9066655491e17b9b110ec89be708d",
-      "leak": "e114f6eb66240f662cd10ff7ad2c696c5c08ee475c57eb409bc3669760278ec6",
+      "clean": "54c8bcaa8fbb5f0ac70fb480b5d3c2fb0bb591a1fc7e66459b072e38bdd36c77",
+      "leak": "3407de94670c26b63f1df4639d8de029b66423cd146594c4e821d82d6c7cf792",
       "result": "PASS (Diverged)"
     },
     "classifier_head_initial_hash": {
@@ -43,8 +51,8 @@
       "result": "PASS"
     },
     "downstream_sample_order_hash": {
-      "clean": "53dc8d60d9823a3cee776e4565ae68c42c9e4c284ae559210d4b3da2113b34ae",
-      "leak": "53dc8d60d9823a3cee776e4565ae68c42c9e4c284ae559210d4b3da2113b34ae",
+      "clean": "fa23bf37706bbdf014db128ef37380bd47719ef62cea10265cf4fef9fca6ed31",
+      "leak": "fa23bf37706bbdf014db128ef37380bd47719ef62cea10265cf4fef9fca6ed31",
       "result": "PASS"
     },
     "eval_overlap_count": {
@@ -54,27 +62,28 @@
     }
   },
   "competence_metrics": {
-    "baseline_mb_macro_f1": 0.20168067226890754,
-    "baseline_mb_mcc": -0.2394357127887801,
-    "baseline_mb_brier": 0.8516892293416003,
-    "baseline_mb_ece": 0.38778979852795603,
+    "baseline_mb_macro_f1": 0.21839080459770113,
+    "baseline_mb_mcc": -0.11444868819229433,
+    "baseline_mb_brier": 0.6300271080735907,
+    "baseline_mb_ece": 0.06844130307435987,
     "clean_d0_macro_f1": 0.22950819672131148,
     "leak_d100_macro_f1": 0.22950819672131148,
     "delta_macro_f1": 0.0
   },
   "synthetic_plumbing_metrics": {
     "note": "Metrics computed using synthetic mock forward returns/actions for code plumbing verification only.",
-    "l_repr_plumbing": 0.05885780885780887,
-    "l_behavior_delta_plumbing": 9.480877452006098e-07,
-    "delta_ic_plumbing": 0.21426896219453564,
+    "l_repr_plumbing": 0.02222222222222222,
+    "l_behavior_delta_plumbing": 2.9681359592359513e-07,
+    "delta_ic_plumbing": -0.045405506874849066,
     "delta_sharpe_plumbing": 0.0
   },
   "empirical_leakage_metrics": null,
-  "pareto_vector": {
+  "empirical_pareto_vector": null,
+  "synthetic_plumbing_pareto_vector": {
     "competence_C": 0.22950819672131148,
-    "leakage_L_repr": 0.05885780885780887,
-    "leakage_L_behavior": 9.480877452006098e-07,
-    "economic_E_L_ic": 0.21426896219453564,
+    "leakage_L_repr": 0.02222222222222222,
+    "leakage_L_behavior": 2.9681359592359513e-07,
+    "economic_E_L_ic": -0.045405506874849066,
     "economic_E_L_sharpe": 0.0
   }
 }

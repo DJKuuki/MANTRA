@@ -1,0 +1,24 @@
+{
+  "experiment_id": "encoder_baseline_evaluation",
+  "timestamp": "2026-09-19T12:47:49.691707+00:00",
+  "config_path": "configs/encoder_baseline.yaml",
+  "git_provenance": {
+    "git_head": "8a5781128db8481e3a4e1605d92413bc9706bdce",
+    "git_dirty": false,
+    "code_commit_exact": true
+  },
+  "code_commit": "8a5781128db8481e3a4e1605d92413bc9706bdce",
+  "git_dirty": false,
+  "code_commit_exact": true,
+  "base_checkpoint": "ProsusAI/finbert",
+  "base_revision": "4556d13015211d73dccd3fdd39d39232506f3e43",
+  "original_head_loaded": false,
+  "stance_head_initialization": "fresh",
+  "stance_head_initial_hash": "332eb65ebb66c5e0b04a8ddcafd2243dca9523224e20747c581645ea79421bde",
+  "train_sample_count": 1729,
+  "test_sample_count": 100,
+  "macro_f1": 0.5072584000019237,
+  "mcc": 0.3048099569627579,
+  "brier_score": 0.6052550598523946,
+  "ece": 0.1846413543820381
+}
