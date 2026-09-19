@@ -466,6 +466,7 @@ class TradingAgentsGraph:
             return [], []
 
         cache = get_backtest_cache()
+        cache.initialize(ticker, start_date, end_date)
 
         results: list[dict] = []
         for trade_date in trading_days:

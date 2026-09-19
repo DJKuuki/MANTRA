@@ -88,17 +88,24 @@ def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     return data
 
 
-def filter_financials_by_date(data: pd.DataFrame, curr_date: str) -> pd.DataFrame:
-    """Drop financial statement columns (fiscal period timestamps) after curr_date.
+def filter_financials_by_date(
+    data: pd.DataFrame, curr_date: str, filing_lag_days: int = 45
+) -> pd.DataFrame:
+    """Filter financial statement columns by public availability timestamp rather than fiscal period end.
 
-    yfinance financial statements use fiscal period end dates as columns.
-    Columns after curr_date represent future data and are removed to
-    prevent look-ahead bias.
+    yfinance financial statements use fiscal period end dates as column headers (e.g.
+    2024-03-31). In reality, SEC Form 10-Q / 10-K filings become accessible to the public
+    only after statutory reporting latency (typically 40-45 days for 10-Q, 60-90 days for 10-K).
+    Treating period_end <= curr_date as the availability cutoff creates severe look-ahead
+    bias. We enforce the strict Point-in-Time inequality:
+        availability_date = fiscal_period_end + filing_lag_days <= curr_date
     """
     if not curr_date or data.empty:
         return data
     cutoff = pd.Timestamp(curr_date)
-    mask = pd.to_datetime(data.columns, errors="coerce") <= cutoff
+    col_dates = pd.to_datetime(data.columns, errors="coerce")
+    avail_dates = col_dates + pd.Timedelta(days=filing_lag_days)
+    mask = avail_dates <= cutoff
     return data.loc[:, mask]
 
 

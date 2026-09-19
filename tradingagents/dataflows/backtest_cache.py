@@ -256,23 +256,23 @@ class BacktestDataCache:
     # -- yfinance fundamentals ----------------------------------------- #
 
     def get_yf_fundamentals(self, ticker: str, curr_date: str = "") -> "str | None":
-        """Return cached yfinance fundamentals, gated to the final trading day.
+        """Return cached yfinance fundamentals overview.
 
-        Real-time metrics (P/E, market cap, etc.) reflect today's values, not
-        the historical simulation date.  Releasing them on every backtest day
-        would inject look-ahead bias.  They are withheld until curr_date reaches
-        the last actual trading day in the backtest window (_last_trading_day).
+        Real-time snapshot metrics (P/E, market cap, TTM metrics, forward EPS) reflect
+        the data-fetch timestamp, NOT the historical simulation date. Releasing them
+        in historical backtests injects severe look-ahead bias. Therefore, they are
+        strictly withheld whenever curr_date is provided.
         """
         if not self._ticker_matches(ticker):
             return None
-        if curr_date and self._last_trading_day and curr_date < self._last_trading_day:
+        if curr_date:
             return (
                 f"[Backtest] Fundamentals overview withheld on {curr_date}. "
-                f"Real-time metrics (P/E, market cap, etc.) reflect the data-fetch "
-                f"date rather than the simulation date, so they are only injected on "
-                f"the final trading day ({self._last_trading_day}) to avoid "
-                f"look-ahead bias. Use get_balance_sheet / get_income_statement / "
-                f"get_cashflow for period-accurate fundamental analysis."
+                f"Real-time metrics (P/E, market cap, trailing/forward EPS, etc.) reflect "
+                f"the data-fetch timestamp rather than the historical simulation date. "
+                f"To strictly prevent look-ahead bias, snapshot overview is disabled in backtesting. "
+                f"Use get_balance_sheet / get_income_statement / get_cashflow for period-accurate "
+                f"Point-in-Time fundamental analysis."
             )
         info = self._store.get("yf_info")
         if not info:
@@ -584,17 +584,30 @@ def _filter_av_feed_by_date(raw: dict, start_date: str, end_date: str) -> dict:
 
 
 def _filter_insider_df_by_date(data: pd.DataFrame, curr_date: str) -> pd.DataFrame:
-    """Return rows of a yfinance insider-transactions DataFrame with date ≤ curr_date.
+    """Return rows of an insider-transactions DataFrame with filing availability date ≤ curr_date.
 
-    yfinance uses "Start Date" as the transaction date column (the SEC filing
-    effective date). Falls back to checking common alternate column names and
-    finally the DataFrame index before returning unfiltered data.
+    Under SEC rules, insider transactions become known to market participants only
+    after Form 4 is published (Filing Date). Checking transaction dates alone causes
+    look-ahead leakage because trades are executed prior to filing. We prioritize
+    filing publication timestamp columns ("Filing Date", "Report Date", "Date Reported",
+    "filing_date"). If only transaction date is present, a statutory 2-business-day
+    reporting latency is applied.
     """
     cutoff = pd.Timestamp(curr_date)
-    for col in ("Start Date", "Date", "startDate", "date", "Transaction Date"):
+    # Check explicit filing publication date columns first
+    filing_cols = ("Filing Date", "filing_date", "Report Date", "Date Reported", "Filed", "SEC Form 4 Date")
+    for col in filing_cols:
         if col in data.columns:
             dates = pd.to_datetime(data[col], errors="coerce")
             return data[dates <= cutoff]
+
+    # Fallback to transaction date with statutory reporting lag (minimum 2 days)
+    trans_cols = ("Start Date", "Date", "startDate", "date", "Transaction Date")
+    for col in trans_cols:
+        if col in data.columns:
+            t_dates = pd.to_datetime(data[col], errors="coerce") + pd.Timedelta(days=2)
+            return data[t_dates <= cutoff]
+
     # Check if the index itself carries timestamps
     try:
         idx_dates = pd.to_datetime(data.index, errors="coerce")
@@ -608,16 +621,24 @@ def _filter_insider_df_by_date(data: pd.DataFrame, curr_date: str) -> pd.DataFra
 def _filter_av_insider_by_date(raw: object, curr_date: str) -> object:
     """Filter Alpha Vantage INSIDER_TRANSACTIONS response to records ≤ curr_date.
 
-    AV returns a dict with a "data" list.  Each record has a "transaction_date"
-    field in ISO format (YYYY-MM-DDThh:mm:ss.sss or YYYY-MM-DD).  We compare
-    the date prefix lexicographically against curr_date.
+    Prioritizes filing_date / report_date over transaction_date to ensure Point-in-Time
+    availability.
     """
     if not isinstance(raw, dict) or "data" not in raw:
         return raw
-    filtered = [
-        r for r in raw["data"]
-        if str(r.get("transaction_date", ""))[:10] <= curr_date
-    ]
+    filtered = []
+    for r in raw["data"]:
+        avail_date = r.get("filing_date") or r.get("report_date")
+        if not avail_date:
+            t_date = str(r.get("transaction_date", ""))[:10]
+            if t_date:
+                try:
+                    avail_date = (pd.Timestamp(t_date) + pd.Timedelta(days=2)).strftime("%Y-%m-%d")
+                except Exception:
+                    avail_date = t_date
+        if avail_date and str(avail_date)[:10] <= curr_date:
+            filtered.append(r)
+
     result = dict(raw)
     result["data"] = filtered
     return result
