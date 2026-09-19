@@ -5,7 +5,7 @@ import pandas as pd
 import yfinance as yf
 from yfinance.exceptions import YFRateLimitError
 from stockstats import wrap
-from typing import Annotated
+from typing import Annotated, Optional
 import os
 from .config import get_config
 
@@ -88,25 +88,48 @@ def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     return data
 
 
-def filter_financials_by_date(
-    data: pd.DataFrame, curr_date: str, filing_lag_days: int = 45
+def approximate_availability_filter(
+    data: pd.DataFrame,
+    curr_date: str,
+    filing_lag_days: Optional[int] = None,
+    freq: str = "quarterly",
 ) -> pd.DataFrame:
-    """Filter financial statement columns by public availability timestamp rather than fiscal period end.
+    """Filter financial statement columns by approximate availability date (heuristic fallback).
 
-    yfinance financial statements use fiscal period end dates as column headers (e.g.
-    2024-03-31). In reality, SEC Form 10-Q / 10-K filings become accessible to the public
-    only after statutory reporting latency (typically 40-45 days for 10-Q, 60-90 days for 10-K).
-    Treating period_end <= curr_date as the availability cutoff creates severe look-ahead
-    bias. We enforce the strict Point-in-Time inequality:
-        availability_date = fiscal_period_end + filing_lag_days <= curr_date
+    WARNING:
+        This is a HEURISTIC FALLBACK APPROXIMATION when exact SEC Form 10-Q / 10-K
+        publication timestamps are unavailable from the data vendor (e.g. yfinance).
+        It does NOT guarantee zero leakage. Formal empirical studies should use
+        verified SEC EDGAR filing timestamps via `filing_store.py`.
+
+    Rules:
+        - Quarterly filings (Form 10-Q): statutory reporting deadline is 40-45 days.
+          Default heuristic fallback lag = 45 calendar days.
+        - Annual filings (Form 10-K): statutory reporting deadline is 60-90 days.
+          Default heuristic fallback lag = 90 calendar days.
     """
     if not curr_date or data.empty:
         return data
+    if filing_lag_days is None:
+        filing_lag_days = 90 if freq.lower().startswith("a") else 45
+
     cutoff = pd.Timestamp(curr_date)
     col_dates = pd.to_datetime(data.columns, errors="coerce")
     avail_dates = col_dates + pd.Timedelta(days=filing_lag_days)
     mask = avail_dates <= cutoff
     return data.loc[:, mask]
+
+
+def filter_financials_by_date(
+    data: pd.DataFrame,
+    curr_date: str,
+    filing_lag_days: Optional[int] = None,
+    freq: str = "quarterly",
+) -> pd.DataFrame:
+    """Convenience alias for approximate_availability_filter."""
+    return approximate_availability_filter(
+        data=data, curr_date=curr_date, filing_lag_days=filing_lag_days, freq=freq
+    )
 
 
 class StockstatsUtils:

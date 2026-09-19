@@ -1,20 +1,43 @@
+import logging
+import pandas as pd
 from .alpha_vantage_common import _make_api_request
+
+logger = logging.getLogger(__name__)
 
 
 def _filter_reports_by_date(result, curr_date: str):
-    """Filter annualReports/quarterlyReports to exclude entries after curr_date.
+    """Filter annualReports/quarterlyReports to enforce Point-in-Time availability.
 
-    Prevents look-ahead bias by removing fiscal periods that end after
-    the simulation's current date.
+    Prioritizes reportedDate / filingDate over fiscalDateEnding.
+    If reportedDate is unavailable, applies statutory reporting latency (45 days for quarterly,
+    90 days for annual) as a heuristic fallback. Pure fiscalDateEnding <= curr_date creates
+    look-ahead bias because financial statements are not public on the quarter end date.
     """
     if not curr_date or not isinstance(result, dict):
         return result
+    cutoff = pd.Timestamp(curr_date)
     for key in ("annualReports", "quarterlyReports"):
         if key in result:
-            result[key] = [
-                r for r in result[key]
-                if r.get("fiscalDateEnding", "") <= curr_date
-            ]
+            fallback_lag = 90 if key == "annualReports" else 45
+            filtered = []
+            for r in result[key]:
+                avail_str = r.get("reportedDate") or r.get("filingDate") or r.get("filing_date")
+                if avail_str:
+                    try:
+                        if pd.Timestamp(avail_str) <= cutoff:
+                            filtered.append(r)
+                    except Exception:
+                        pass
+                else:
+                    fiscal_str = r.get("fiscalDateEnding", "")
+                    if fiscal_str:
+                        try:
+                            avail_dt = pd.Timestamp(fiscal_str) + pd.Timedelta(days=fallback_lag)
+                            if avail_dt <= cutoff:
+                                filtered.append(r)
+                        except Exception:
+                            pass
+            result[key] = filtered
     return result
 
 
