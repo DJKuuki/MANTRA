@@ -1,0 +1,28 @@
+{
+  "dataset_name": "fomc_2019_official_leakage_anchors",
+  "version": "1.0.0",
+  "source": "Federal Reserve Board of Governors Official Press Releases",
+  "source_verified": true,
+  "annotation_verified": true,
+  "pit_verified": true,
+  "dataset_sha256": "177af152a12d796e19bf843476ecab8057484ade7986c75b931bfa0973e18609",
+  "availability_provenance": "Official Federal Reserve Press Release calendar with verified scheduled 14:00 ET release times.",
+  "source_urls": [
+    "https://www.federalreserve.gov/newsevents/pressreleases/monetary20190130a.htm",
+    "https://www.federalreserve.gov/newsevents/pressreleases/monetary20190320a.htm",
+    "https://www.federalreserve.gov/newsevents/pressreleases/monetary20190501a.htm",
+    "https://www.federalreserve.gov/newsevents/pressreleases/monetary20190619a.htm",
+    "https://www.federalreserve.gov/newsevents/pressreleases/monetary20190731a.htm",
+    "https://www.federalreserve.gov/newsevents/pressreleases/monetary20190918a.htm",
+    "https://www.federalreserve.gov/newsevents/pressreleases/monetary20191030a.htm",
+    "https://www.federalreserve.gov/newsevents/pressreleases/monetary20191211a.htm"
+  ],
+  "data_file": "anchors.jsonl",
+  "num_anchors": 25,
+  "num_documents": 8,
+  "anchor_window": "2019",
+  "min_event_time": "2019-01-30T19:00:00Z",
+  "max_event_time": "2019-12-11T19:00:00Z",
+  "strict_future_separation_with_2020_contamination": true,
+  "document_isolation_with_tdw": true
+}

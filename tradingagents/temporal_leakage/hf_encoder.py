@@ -77,6 +77,18 @@ def resolve_git_provenance(cwd: Optional[Union[str, Path]] = None) -> Dict[str, 
             if res_head.returncode == 0 and res_head.stdout.strip():
                 git_head = res_head.stdout.strip()
 
+        source_tree_hash = "unknown"
+        if git_head != "unknown":
+            res_tree = subprocess.run(
+                ["git", "rev-parse", "HEAD^{tree}"],
+                cwd=search_dir,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if res_tree.returncode == 0 and res_tree.stdout.strip():
+                source_tree_hash = res_tree.stdout.strip()
+
         status_res = subprocess.run(
             ["git", "status", "--porcelain", "--", ":(top,exclude)experiments"],
             cwd=search_dir,
@@ -90,12 +102,14 @@ def resolve_git_provenance(cwd: Optional[Union[str, Path]] = None) -> Dict[str, 
             git_dirty = True
     except Exception:
         git_dirty = True
+        source_tree_hash = "unknown"
 
     code_commit_exact = (git_head != "unknown" and not git_dirty)
     return {
         "git_head": git_head,
         "git_dirty": git_dirty,
         "code_commit_exact": code_commit_exact,
+        "source_tree_hash": source_tree_hash,
     }
 
 

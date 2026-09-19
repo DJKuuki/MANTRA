@@ -18,6 +18,7 @@ IMPORTANT METHODOLOGICAL RULES (Phase 2.1):
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import List, Optional, Union
@@ -146,20 +147,36 @@ def load_fomc_official_statements(
             "For testing and documentation only, use create_fomc_official_fixture()."
         )
     target_path = filepath
-    if target_path is None and manifest_path is not None:
+    manifest_data = None
+    if manifest_path is not None:
         m_path = Path(manifest_path)
         if not m_path.exists():
             raise FileNotFoundError(f"Manifest not found: {m_path}")
         with open(m_path, "r", encoding="utf-8") as f:
-            m_data = json.load(f)
-        if "data_file" in m_data:
-            target_path = m_path.parent / m_data["data_file"]
-        else:
-            raise ValueError(f"Manifest {m_path} does not specify 'data_file'.")
+            manifest_data = json.load(f)
+        if target_path is None:
+            if "data_file" in manifest_data:
+                target_path = m_path.parent / manifest_data["data_file"]
+            else:
+                raise ValueError(f"Manifest {m_path} does not specify 'data_file'.")
 
     path = Path(target_path)
     if not path.exists():
         raise FileNotFoundError(f"Official FOMC statement file not found: {path}")
+
+    # Verify SHA-256 hash if manifest is present
+    if manifest_data is not None:
+        expected_sha = manifest_data.get("dataset_sha256") or manifest_data.get("checksum")
+        if expected_sha:
+            if expected_sha.startswith("sha256:"):
+                expected_sha = expected_sha[7:]
+            actual_sha = hashlib.sha256(path.read_bytes()).hexdigest()
+            if actual_sha.lower() != expected_sha.lower():
+                raise ValueError(
+                    f"Dataset SHA256 verification failed for '{path}'. "
+                    f"Manifest expected '{expected_sha}', but actual file SHA256 is '{actual_sha}'."
+                )
+
     samples = load_fomc_dataset(path)
     validate_dataset(samples)
     return samples
@@ -172,14 +189,16 @@ def create_fomc_official_benchmark(
     """Instantiate an FOMCBenchmark using official statements.
 
     Formal research readiness requires an explicit verified manifest_path with:
+    - dataset_sha256 matching sha256(data_file)
     - source_verified == True
     - annotation_verified == True
     - pit_verified == True
+    - availability_provenance non-empty
+    - source_urls non-empty list
     - All samples having availability_quality == 'exact'
 
-    If manifest_path is missing, unverified, or omitted, the benchmark is constructed with
-    pit_verified=False (or source_verified=False) such that:
-    `benchmark.is_formal_research_ready() is False`.
+    If manifest_path is missing, unverified, corrupted, or omitted, the benchmark is constructed
+    such that `benchmark.is_formal_research_ready() is False`.
     """
     if filepath is None and manifest_path is None:
         raise ValueError(
@@ -193,6 +212,9 @@ def create_fomc_official_benchmark(
     is_source_verified = False
     is_annotation_verified = False
     is_pit_verified = False
+    manifest_hash_verified = False
+    availability_provenance_verified = False
+    source_urls_verified = False
 
     if manifest_path is not None:
         m_path = Path(manifest_path)
@@ -203,6 +225,22 @@ def create_fomc_official_benchmark(
                 is_source_verified = bool(m_data.get("source_verified", False))
                 is_annotation_verified = bool(m_data.get("annotation_verified", False))
                 is_pit_verified = bool(m_data.get("pit_verified", False))
+
+                # Verify SHA256
+                expected_sha = m_data.get("dataset_sha256") or m_data.get("checksum")
+                if expected_sha:
+                    if expected_sha.startswith("sha256:"):
+                        expected_sha = expected_sha[7:]
+                    target_file = filepath or (m_path.parent / m_data.get("data_file", ""))
+                    if Path(target_file).exists():
+                        actual_sha = hashlib.sha256(Path(target_file).read_bytes()).hexdigest()
+                        manifest_hash_verified = (actual_sha.lower() == expected_sha.lower())
+
+                avail_prov = m_data.get("availability_provenance")
+                availability_provenance_verified = bool(avail_prov and str(avail_prov).strip())
+
+                src_urls = m_data.get("source_urls")
+                source_urls_verified = bool(isinstance(src_urls, list) and len(src_urls) > 0)
             except Exception:
                 pass
 
@@ -211,4 +249,7 @@ def create_fomc_official_benchmark(
         source_verified=is_source_verified,
         annotation_verified=is_annotation_verified,
         pit_verified=is_pit_verified,
+        manifest_hash_verified=manifest_hash_verified,
+        availability_provenance_verified=availability_provenance_verified,
+        source_urls_verified=source_urls_verified,
     )

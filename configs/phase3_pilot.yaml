@@ -1,0 +1,63 @@
+# Phase 3 Pilot Temporal Leakage Dose-Response Configuration
+# Frozen methodology protocol: multi-seed x multi-dose causal twin ladder.
+
+experiment_name: phase3_pilot_study
+
+protocol:
+  seeds:
+    - 13
+    - 42
+    - 73
+  doses:
+    - 0.0
+    - 0.25
+    - 0.50
+    - 0.75
+    - 1.00
+
+model:
+  base_checkpoint: "ProsusAI/finbert"
+  base_revision: "4556d13015211d73dccd3fdd39d39232506f3e43"
+  pooling: "mean"
+  task_label_schema: "fomc_stance"
+  num_labels: 3
+
+mlm:
+  block_length: 128
+  num_blocks: 200
+  max_steps: 100
+  batch_size: 4
+  learning_rate: 5.0e-5
+  mlm_probability: 0.15
+  weight_decay: 0.01
+
+downstream:
+  epochs: 1
+  batch_size: 8
+  learning_rate: 2.0e-5
+  max_seq_length: 128
+  weight_decay: 0.01
+  optimizer: "AdamW"
+  scheduler: "linear"
+  warmup_ratio: 0.1
+
+splits:
+  train_cutoff_year: 2018
+  dev_year: 2019
+  dev_usage: "reserved_not_used"
+  test_start_year: 2020
+
+datasets:
+  stance_dataset: "data/research/fomc/fomc_temporal_dataset.jsonl"
+  stance_manifest: "data/research/fomc/manifest.json"
+  leakage_anchor_dataset: "data/research/fomc/leakage_anchors/anchors.jsonl"
+  anchor_manifest: "data/research/fomc/leakage_anchors/manifest.json"
+
+evaluation:
+  market_windows:
+    - "spy_1d_return"
+    - "spy_5d_return"
+    - "treasury_2y_change"
+  probe_cv: "timeseries"
+  probe_splits: 2
+  n_permutations: 50

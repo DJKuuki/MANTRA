@@ -374,11 +374,15 @@ def test_h_official_fomc_benchmark_manifest_requirement(tmp_path: Path):
     bm_no_manifest = create_fomc_official_benchmark(filepath=data_file)
     assert bm_no_manifest.is_formal_research_ready() is False
 
-    # 2. Verified manifest provided -> is_formal_research_ready() is True
+    # 2. Verified manifest provided with exact SHA256 and provenance -> is_formal_research_ready() is True
+    file_sha = hashlib.sha256(data_file.read_bytes()).hexdigest()
     verified_manifest = {
         "source_verified": True,
         "annotation_verified": True,
         "pit_verified": True,
+        "dataset_sha256": file_sha,
+        "availability_provenance": "Federal Reserve official release schedule",
+        "source_urls": ["https://www.federalreserve.gov/example.htm"],
     }
     manifest_file_verified = tmp_path / "manifest_verified.json"
     with open(manifest_file_verified, "w", encoding="utf-8") as f:
@@ -395,6 +399,9 @@ def test_h_official_fomc_benchmark_manifest_requirement(tmp_path: Path):
         "source_verified": True,
         "annotation_verified": True,
         "pit_verified": False,
+        "dataset_sha256": file_sha,
+        "availability_provenance": "Federal Reserve official release schedule",
+        "source_urls": ["https://www.federalreserve.gov/example.htm"],
     }
     manifest_file_unverified = tmp_path / "manifest_unverified.json"
     with open(manifest_file_unverified, "w", encoding="utf-8") as f:
@@ -405,3 +412,22 @@ def test_h_official_fomc_benchmark_manifest_requirement(tmp_path: Path):
         manifest_path=manifest_file_unverified,
     )
     assert bm_unverified.is_formal_research_ready() is False
+
+    # 4. Hash mismatch in manifest -> must raise ValueError (FAIL)
+    mismatch_manifest = {
+        "source_verified": True,
+        "annotation_verified": True,
+        "pit_verified": True,
+        "dataset_sha256": "0" * 64,
+        "availability_provenance": "Federal Reserve official release schedule",
+        "source_urls": ["https://www.federalreserve.gov/example.htm"],
+    }
+    manifest_file_mismatch = tmp_path / "manifest_mismatch.json"
+    with open(manifest_file_mismatch, "w", encoding="utf-8") as f:
+        json.dump(mismatch_manifest, f)
+
+    with pytest.raises(ValueError, match="SHA256 verification failed"):
+        create_fomc_official_benchmark(
+            filepath=data_file,
+            manifest_path=manifest_file_mismatch,
+        )

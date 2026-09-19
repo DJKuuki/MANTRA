@@ -94,6 +94,7 @@ class PackedTokenDataset(Dataset):
         return {
             "input_ids": self.input_ids[idx],
             "attention_mask": self.attention_mask[idx],
+            "block_idx": torch.tensor(idx, dtype=torch.long),
         }
 
 
@@ -264,6 +265,138 @@ def create_token_matched_dose_stream(
     }
 
 
+def generate_deterministic_mask_schedule(
+    num_blocks: int,
+    block_length: int,
+    mlm_probability: float = 0.15,
+    random_seed: int = 42,
+) -> Tuple[torch.Tensor, str]:
+    """Generate a deterministic boolean MLM mask position matrix.
+
+    Guarantees:
+    - Same seed produces bit-identical mask schedule hash across all doses (D0, D25, D50, D75, D100).
+    - Different seeds produce distinct mask schedules.
+    """
+    gen = torch.Generator()
+    gen.manual_seed(random_seed)
+    rand_matrix = torch.rand((num_blocks, block_length), generator=gen)
+    mask_matrix = rand_matrix < mlm_probability
+    schedule_hash = hashlib.sha256(mask_matrix.numpy().tobytes()).hexdigest()
+    return mask_matrix, schedule_hash
+
+
+def create_exact_token_dose_stream(
+    pre_corpus: Sequence[str],
+    post_corpus: Sequence[str],
+    dose: float,
+    num_blocks: int,
+    block_length: int = 128,
+    tokenizer: Optional[Any] = None,
+    random_seed: int = 42,
+) -> Dict[str, Any]:
+    """Construct an exact token-budget matched stream packed into fixed-length blocks.
+
+    Enforces exact token-level contamination ratio:
+    - Total tokens T = num_blocks * block_length
+    - T_post = round(T * dose)
+    - T_pre = T - T_post
+    - Exactly T_post tokens are sampled from post-cutoff corpus
+    - Exactly T_pre tokens are sampled from pre-cutoff corpus
+    - Realized dose = T_post / T
+    - |D_realized - D_requested| <= 1 / T
+    """
+    if not (0.0 <= dose <= 1.0):
+        raise ValueError(f"Dose must be between 0.0 and 1.0, got {dose}")
+
+    total_tokens_needed = num_blocks * block_length
+    n_post_tokens = int(round(total_tokens_needed * dose))
+    n_pre_tokens = total_tokens_needed - n_post_tokens
+
+    if tokenizer is None:
+        tokenizer = AutoTokenizer.from_pretrained("ProsusAI/finbert")
+
+    # 1. Build pre-cutoff token pool
+    pre_tokens: List[int] = []
+    if n_pre_tokens > 0:
+        for t in pre_corpus:
+            if hasattr(tokenizer, "encode"):
+                toks = tokenizer.encode(t, add_special_tokens=False)
+            else:
+                toks = tokenizer(t)["input_ids"]
+            pre_tokens.extend(toks)
+            if len(pre_tokens) >= n_pre_tokens:
+                break
+        if len(pre_tokens) < n_pre_tokens:
+            if len(pre_tokens) == 0:
+                pre_tokens = [getattr(tokenizer, "pad_token_id", 0) or 100]
+            repeats = (n_pre_tokens // len(pre_tokens)) + 1
+            pre_tokens = (pre_tokens * repeats)[:n_pre_tokens]
+        else:
+            pre_tokens = pre_tokens[:n_pre_tokens]
+
+    # 2. Build post-cutoff token pool
+    post_tokens: List[int] = []
+    if n_post_tokens > 0:
+        for t in post_corpus:
+            if hasattr(tokenizer, "encode"):
+                toks = tokenizer.encode(t, add_special_tokens=False)
+            else:
+                toks = tokenizer(t)["input_ids"]
+            post_tokens.extend(toks)
+            if len(post_tokens) >= n_post_tokens:
+                break
+        if len(post_tokens) < n_post_tokens:
+            if len(post_tokens) == 0:
+                post_tokens = [getattr(tokenizer, "pad_token_id", 0) or 100]
+            repeats = (n_post_tokens // len(post_tokens)) + 1
+            post_tokens = (post_tokens * repeats)[:n_post_tokens]
+        else:
+            post_tokens = post_tokens[:n_post_tokens]
+
+    assert len(pre_tokens) == n_pre_tokens, f"Pre tokens mismatch: {len(pre_tokens)} vs {n_pre_tokens}"
+    assert len(post_tokens) == n_post_tokens, f"Post tokens mismatch: {len(post_tokens)} vs {n_post_tokens}"
+
+    realized_dose = float(n_post_tokens) / float(total_tokens_needed)
+    assert abs(realized_dose - dose) <= (1.0 / total_tokens_needed) + 1e-9
+
+    # 3. Mix/pack tokens into blocks
+    if dose == 0.0:
+        all_tokens = pre_tokens
+    elif dose == 1.0:
+        all_tokens = post_tokens
+    else:
+        # Deterministically chunk and mix pre and post tokens
+        chunk_size = min(32, block_length)
+        pre_chunks = [pre_tokens[i : i + chunk_size] for i in range(0, len(pre_tokens), chunk_size)]
+        post_chunks = [post_tokens[i : i + chunk_size] for i in range(0, len(post_tokens), chunk_size)]
+        labeled = [(c, "pre") for c in pre_chunks] + [(c, "post") for c in post_chunks]
+        rng = np.random.RandomState(random_seed)
+        perm = rng.permutation(len(labeled))
+        all_tokens = []
+        for p in perm:
+            all_tokens.extend(labeled[p][0])
+        all_tokens = all_tokens[:total_tokens_needed]
+
+    assert len(all_tokens) == total_tokens_needed
+
+    input_ids_tensor = torch.tensor(all_tokens, dtype=torch.long).view(num_blocks, block_length)
+    attention_mask_tensor = torch.ones((num_blocks, block_length), dtype=torch.long)
+    dataset = PackedTokenDataset(input_ids_tensor, attention_mask_tensor)
+    c_hash = hashlib.sha256(input_ids_tensor.numpy().tobytes()).hexdigest()
+
+    return {
+        "dataset": dataset,
+        "requested_dose": float(dose),
+        "realized_dose": float(realized_dose),
+        "pre_cutoff_tokens": n_pre_tokens,
+        "post_cutoff_tokens": n_post_tokens,
+        "total_tokens": total_tokens_needed,
+        "num_blocks": num_blocks,
+        "block_length": block_length,
+        "corpus_hash": c_hash,
+    }
+
+
 def run_continued_pretraining_mlm(
     packed_dataset: Dataset,
     tokenizer: Any,
@@ -281,11 +414,14 @@ def run_continued_pretraining_mlm(
     base_checkpoint: str = "ProsusAI/finbert",
     base_revision: str = "4556d13015211d73dccd3fdd39d39232506f3e43",
     corpus_hash: str = "unknown",
+    mask_schedule: Optional[torch.Tensor] = None,
+    mask_schedule_hash: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Execute controlled Masked Language Modeling (MLM) continued pretraining.
 
     Saves model checkpoint, tokenizer, and mlm_training_manifest.json.
     Enforces equal compute: identical max_steps, batch_size, and total tokens.
+    Guarantees paired mask positions when mask_schedule is provided.
     """
     torch.manual_seed(random_seed)
     if torch.cuda.is_available():
@@ -303,13 +439,26 @@ def run_continued_pretraining_mlm(
     # Tensor collator for packed fixed-length blocks (guarantees equal block length without tokenizer.pad)
     mask_id = getattr(tokenizer, "mask_token_id", 103) or 103
 
+    # Resolve or generate paired mask schedule
+    num_blocks = len(packed_dataset)
+    block_len = packed_dataset[0]["input_ids"].numel()
+    if mask_schedule is None:
+        effective_mask_sched, effective_mask_hash = generate_deterministic_mask_schedule(
+            num_blocks=num_blocks,
+            block_length=block_len,
+            mlm_probability=mlm_probability,
+            random_seed=random_seed,
+        )
+    else:
+        effective_mask_sched = mask_schedule
+        effective_mask_hash = mask_schedule_hash or hashlib.sha256(mask_schedule.numpy().tobytes()).hexdigest()
+
     def data_collator(batch: List[Dict[str, torch.Tensor]]) -> Dict[str, torch.Tensor]:
         input_ids = torch.stack([item["input_ids"] for item in batch])
         attention_mask = torch.stack([item["attention_mask"] for item in batch])
         labels = input_ids.clone()
-        # Randomly mask mlm_probability fraction of tokens
-        rand = torch.rand(input_ids.shape)
-        mask_arr = (rand < mlm_probability) & (attention_mask == 1)
+        block_indices = [item["block_idx"].item() for item in batch]
+        mask_arr = effective_mask_sched[block_indices].to(input_ids.device) & (attention_mask == 1)
         labels[~mask_arr] = -100
         input_ids[mask_arr] = mask_id
         return {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels}
@@ -373,6 +522,7 @@ def run_continued_pretraining_mlm(
         "mlm_probability": float(mlm_probability),
         "learning_rate": float(learning_rate),
         "seed": random_seed,
+        "mask_schedule_hash": effective_mask_hash,
     }
 
     manifest_path = out_dir / "mlm_training_manifest.json"
@@ -464,12 +614,19 @@ def train_downstream_classifier(
     batch_size: int = 4,
     learning_rate: float = 2e-5,
     random_seed: int = 42,
+    max_seq_length: int = 128,
+    weight_decay: float = 0.01,
+    optimizer_name: str = "AdamW",
+    scheduler_name: Optional[str] = "linear",
+    warmup_ratio: float = 0.1,
 ) -> Tuple[HuggingFaceTemporalEncoder, str]:
     """Fine-tune 3-class classification head strictly on pre-cutoff stance data.
 
     Enforces causal symmetry:
     - Same training samples in identical batch ordering.
     - Uses deterministic DataLoader generator.
+    - Hyperparameters (max_seq_length, weight_decay, optimizer, scheduler, warmup_ratio)
+      are runtime contracts directly governing training.
 
     Returns:
         Tuple of (fine_tuned_encoder, sample_order_hash).
@@ -487,7 +644,7 @@ def train_downstream_classifier(
     tokenized = tokenizer(
         texts,
         truncation=True,
-        max_length=128,
+        max_length=max_seq_length,
         padding=True,
         return_tensors="pt",
     )
@@ -508,8 +665,34 @@ def train_downstream_classifier(
     generator.manual_seed(random_seed)
     dataloader = DataLoader(ClfDataset(), batch_size=batch_size, shuffle=True, generator=generator)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
+    opt_choice = (optimizer_name or "AdamW").strip().lower()
+    if opt_choice == "adamw":
+        optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    elif opt_choice == "adam":
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    elif opt_choice == "sgd":
+        optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    else:
+        raise ValueError(f"Unsupported optimizer: '{optimizer_name}'")
+
     criterion = nn.CrossEntropyLoss()
+
+    # Compute expected steps for scheduler
+    steps_per_epoch = len(dataloader)
+    total_expected_steps = steps_per_epoch * epochs
+    if max_steps is not None:
+        total_expected_steps = min(total_expected_steps, max_steps)
+
+    scheduler = None
+    sched_choice = (scheduler_name or "none").strip().lower()
+    if sched_choice == "linear" and total_expected_steps > 0:
+        from transformers import get_linear_schedule_with_warmup
+        num_warmup = int(total_expected_steps * warmup_ratio)
+        scheduler = get_linear_schedule_with_warmup(
+            optimizer, num_warmup_steps=num_warmup, num_training_steps=total_expected_steps
+        )
+    elif sched_choice not in ("none", "", "constant"):
+        raise ValueError(f"Unsupported scheduler: '{scheduler_name}'")
 
     order_recorder: List[int] = []
     step = 0
@@ -528,6 +711,8 @@ def train_downstream_classifier(
             loss = criterion(logits, lbl)
             loss.backward()
             optimizer.step()
+            if scheduler is not None:
+                scheduler.step()
             step += 1
 
     sample_order_hash = hashlib.sha256(str(order_recorder).encode("utf-8")).hexdigest()
@@ -545,6 +730,11 @@ def train_baseline_stance_model(
     batch_size: int = 4,
     learning_rate: float = 2e-5,
     random_seed: int = 42,
+    max_seq_length: int = 128,
+    weight_decay: float = 0.01,
+    optimizer_name: str = "AdamW",
+    scheduler_name: Optional[str] = "linear",
+    warmup_ratio: float = 0.1,
     device: Optional[str] = None,
     mock_model_for_testing: Optional[Any] = None,
     mock_tokenizer_for_testing: Optional[Any] = None,
@@ -576,6 +766,11 @@ def train_baseline_stance_model(
         batch_size=batch_size,
         learning_rate=learning_rate,
         random_seed=random_seed,
+        max_seq_length=max_seq_length,
+        weight_decay=weight_decay,
+        optimizer_name=optimizer_name,
+        scheduler_name=scheduler_name,
+        warmup_ratio=warmup_ratio,
     )
 
     eval_texts = [s.text for s in test_samples]
@@ -644,11 +839,17 @@ def run_fomc_stance_baseline(
     batch_size = train_cfg.get("batch_size", 8)
     learning_rate = float(train_cfg.get("learning_rate", 2e-5))
     max_steps = train_cfg.get("max_steps", None)
+    max_seq_length = int(train_cfg.get("max_seq_length", 128))
+    weight_decay = float(train_cfg.get("weight_decay", 0.01))
+    optimizer_name = str(train_cfg.get("optimizer", "AdamW"))
+    scheduler_name = train_cfg.get("scheduler", "linear")
+    warmup_ratio = float(train_cfg.get("warmup_ratio", 0.1))
     cfg_train_limit = train_cfg.get("training_sample_limit", None)
     effective_train_limit = training_sample_limit if training_sample_limit is not None else cfg_train_limit
 
     splits_cfg = cfg.get("splits", {})
     train_cutoff_year = splits_cfg.get("train_cutoff_year", 2018)
+    dev_year = splits_cfg.get("dev_year", 2019)
     test_start_year = splits_cfg.get("test_start_year", 2020)
 
     eval_cfg = cfg.get("evaluation", {})
@@ -662,12 +863,13 @@ def run_fomc_stance_baseline(
     print(f"[Baseline Pipeline] Loading Trillion Dollar Words dataset (cutoff <= {train_cutoff_year})...")
     samples = load_trillion_dollar_words()
     all_train_samples = [s for s in samples if int(s.metadata.get("year", 2000)) <= train_cutoff_year]
+    all_dev_samples = [s for s in samples if int(s.metadata.get("year", 2000)) == dev_year]
     all_test_samples = [s for s in samples if int(s.metadata.get("year", 2000)) >= test_start_year]
 
     train_samples = all_train_samples[:effective_train_limit] if effective_train_limit is not None else all_train_samples
     test_samples = all_test_samples[:effective_test_limit] if effective_test_limit is not None else all_test_samples
 
-    print(f"[Baseline Pipeline] Training samples: {len(train_samples)}, Test samples: {len(test_samples)}")
+    print(f"[Baseline Pipeline] Training samples: {len(train_samples)}, Dev samples (reserved): {len(all_dev_samples)}, Test samples: {len(test_samples)}")
     print("[Baseline Pipeline] Building Fresh FOMC Stance Baseline Classifier...")
     encoder = build_fresh_fomc_classifier_from_base_encoder(
         base_model_name_or_path=base_model_name,
@@ -689,6 +891,11 @@ def run_fomc_stance_baseline(
         batch_size=batch_size,
         learning_rate=learning_rate,
         random_seed=seed,
+        max_seq_length=max_seq_length,
+        weight_decay=weight_decay,
+        optimizer_name=optimizer_name,
+        scheduler_name=scheduler_name,
+        warmup_ratio=warmup_ratio,
     )
 
     eval_texts = [s.text for s in test_samples]
@@ -712,10 +919,17 @@ def run_fomc_stance_baseline(
         "training_cutoff": f"{train_cutoff_year}-12-31",
         "evaluation_split": f"coarse_year_test (>= {test_start_year})",
         "train_sample_count": len(train_samples),
+        "dev_sample_count": len(all_dev_samples),
+        "dev_usage": "reserved_not_used",
         "test_sample_count": len(test_samples),
         "epochs": epochs,
         "batch_size": batch_size,
         "learning_rate": learning_rate,
+        "max_seq_length": max_seq_length,
+        "weight_decay": weight_decay,
+        "optimizer": optimizer_name,
+        "scheduler": scheduler_name,
+        "warmup_ratio": warmup_ratio,
         "macro_f1": float(comp_metrics["macro_f1"]),
         "mcc": float(comp_metrics["mcc"]),
         "brier_score": float(comp_metrics["brier_score"]),
@@ -743,7 +957,17 @@ def run_fomc_stance_baseline(
         "stance_head_initialization": "fresh",
         "stance_head_initial_hash": initial_head_hash,
         "train_sample_count": len(train_samples),
+        "dev_sample_count": len(all_dev_samples),
+        "dev_usage": "reserved_not_used",
         "test_sample_count": len(test_samples),
+        "epochs": epochs,
+        "batch_size": batch_size,
+        "learning_rate": learning_rate,
+        "max_seq_length": max_seq_length,
+        "weight_decay": weight_decay,
+        "optimizer": optimizer_name,
+        "scheduler": scheduler_name,
+        "warmup_ratio": warmup_ratio,
         "macro_f1": float(comp_metrics["macro_f1"]),
         "mcc": float(comp_metrics["mcc"]),
         "brier_score": float(comp_metrics["brier_score"]),

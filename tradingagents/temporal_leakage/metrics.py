@@ -169,7 +169,10 @@ def compute_masking_sensitivity(
         Level 3: Year & date tokens masked
     NOTE: This is Masking Sensitivity, NOT Temporal Leakage!
     """
-    raw_texts = [s.text for s in samples]
+    raw_texts = [
+        s.text if hasattr(s, "text") else (s.get("text", str(s)) if isinstance(s, dict) else str(s))
+        for s in samples
+    ]
     _, orig_probs = model.predict_task(raw_texts, future_signals=future_signals)
 
     def default_anonymize(text: str, level: int) -> str:

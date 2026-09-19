@@ -608,6 +608,9 @@ class FOMCBenchmark:
         source_verified: bool = False,
         annotation_verified: bool = False,
         pit_verified: bool = False,
+        manifest_hash_verified: bool = True,
+        availability_provenance_verified: bool = True,
+        source_urls_verified: bool = True,
     ) -> None:
         if samples is None:
             raise ValueError(
@@ -621,6 +624,9 @@ class FOMCBenchmark:
         self.source_verified: bool = source_verified
         self.annotation_verified: bool = annotation_verified
         self.pit_verified: bool = pit_verified
+        self.manifest_hash_verified: bool = manifest_hash_verified
+        self.availability_provenance_verified: bool = availability_provenance_verified
+        self.source_urls_verified: bool = source_urls_verified
 
     @classmethod
     def from_file(
@@ -651,9 +657,14 @@ class FOMCBenchmark:
         1. source_verified is True
         2. annotation_verified is True
         3. pit_verified is True
-        4. All samples have availability_quality == 'exact' (no 'unknown' or 'heuristic')
+        4. manifest_hash_verified is True
+        5. availability_provenance_verified is True
+        6. source_urls_verified is True
+        7. All samples have availability_quality == 'exact' (no 'unknown' or 'heuristic')
         """
         if not (self.source_verified and self.annotation_verified and self.pit_verified):
+            return False
+        if not (self.manifest_hash_verified and self.availability_provenance_verified and self.source_urls_verified):
             return False
         if not self.samples:
             return False
