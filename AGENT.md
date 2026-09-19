@@ -24,8 +24,9 @@
 * event-driven market prediction
 
 本项目目前处于：
-**研究问题定义 + 文献调研 + 实验框架设计阶段**
-不要急于训练大模型，也不要优先扩展 MANTRA 的 Agent 数量、Prompt 或 UI。
+**Pre-experiment validation complete / entering empirical encoder phase after gate passes**
+（方法学加固与实验前准入 Gate 验证通过，合成双生基准已冻结；进入真实 Encoder 经验研究与受控 Continued Pretraining Twins 阶段）。
+在通过正式 Gate 之前，严禁提前启动非受控模型训练或调优。
 
 ---
 
@@ -144,27 +145,31 @@ $$\frac{dE_L}{dL}$$
 
 ## 10. Encoder Leakage 检测方法
 
-1. **Counterfactual Entity Masking**：
-   * Level 0: 原始文本
-   * Level 1: Federal Reserve → Central Bank A
-   * Level 2: Powell → Person A
-   * Level 3: 消除具体年份与日期
-   * Level 4: 完全实体 + 日期匿名化
-   * 测定 $P(y|x_{\text{orig}})$ 与 $P(y|x_{\text{anon}})$ 的偏离，分解 $L_{\text{entity}}, L_{\text{date}}, L_{\text{event}}$。
-2. **Counterfactual Historical Editing**：
-   * 构造与真实历史相反的 continuation（如真实为加息，反事实为降息），观察 logit/embedding movement, classifier margin, representation shift。
-3. **Representation Probing**：
-   * 冻结 $h_\theta(x_t)$，训练 probe 预测未来宏观/市场变量（next hike/cut, future CPI surprise, SPY return）。
-   * 必须比较 $\Delta \text{Predictability} = \text{Pred}(M_{\text{leak}}) - \text{Pred}(M_{\text{clean}})$。
+1. **Counterfactual Entity / Date Masking ($L_{\text{behavior}}$)**：
+   * Level 1: Federal Reserve → Central Bank A (央行机构)
+   * Level 2: Powell → Person A (官员姓名)
+   * Level 3: 消除具体日历年份与日期
+   * **核心原则：单个模型的掩码敏感度 $S_{\text{mask}}(M)$ 绝不是泄漏**。正常 clean 模型合法利用时序实体必然产生敏感度。
+   * **严格定义为双生差分**：
+     $$L_{\text{behavior}} = S_{\text{mask}}(M_L) - S_{\text{mask}}(M_C)$$
+     $$L_{\text{entity}} = S_{\text{entity}}(M_L) - S_{\text{entity}}(M_C), \quad L_{\text{date}} = S_{\text{date}}(M_L) - S_{\text{date}}(M_C)$$
+     当 $M_L = M_C$ 时，$L_{\text{behavior}} \equiv 0.0$。
+2. **Representation Probing ($L_{\text{repr}}$)**：
+   * 冻结 $h_\theta(x_t)$，采用 `TimeSeriesSplit` 拓展窗口交叉验证训练线性探针，预测未来宏观/市场变量（next hike/cut, future CPI surprise, SPY return）。
+   * 双生配对差分与置换检验：
+     $$L_{\text{repr}} = \frac{1}{K}\sum_{k=1}^K \left(\text{Probe}_L(k) - \text{Probe}_C(k)\right)$$
+     配合成对符号翻转置换检验（Paired sign-flip permutation test, $M \ge 500$）。
 
 ---
 
 ## 11. 理论分层：Representation $\to$ Behavior $\to$ Economics
 
-$$L_{\text{repr}} \longrightarrow L_{\text{behavior}} \longrightarrow E_L$$
-* **Level 1 (Representational Leakage)**：未来信息是否存在于 hidden representation $h_\theta(x)$。
-* **Level 2 (Behavioral Leakage)**：未来信息是否改变下游任务预测 $f_\theta(x)$。
-* **Level 3 (Economic Leakage)**：行为改变是否最终产生虚假收益 $\alpha_{\text{false}}$。
+$$L_{\text{repr}} \ (\text{探针差分}) \quad \text{and} \quad L_{\text{behavior}} \ (\text{掩码敏感度差分}) \quad \longrightarrow \quad E_L \ (\Delta \text{IC} \text{ 与 } \Delta \text{Sharpe})$$
+* **Level 1 (Representational Leakage)**：未来真实信息是否存在于 hidden representation $h_\theta(x)$。
+* **Level 2 (Behavioral Leakage)**：未来信息是否使模型对时序锚点产生非正常依赖而改变下游预测 $f_\theta(x)$。
+* **Level 3 (Economic Leakage)**：
+  - **Level A (Primary)**：模型与策略无关的 $\Delta \text{IC} = \text{IC}(M_L) - \text{IC}(M_C)$，基于连续立场得分与未来收益率的 Spearman 秩相关。
+  - **Level B (Secondary / Illustrative)**：固定规则与固定阈值下的 $\Delta \text{Sharpe} = \text{Sharpe}(M_L) - \text{Sharpe}(M_C)$，配合 Politis & Romano (1994) 平稳块 Bootstrap 检验。
 
 ---
 
@@ -202,19 +207,23 @@ MANTRA (`RubiscoYHY/MANTRA`) 原生为 multi-agent decoder 交易框架。
 
 ---
 
-## 14-18. 发现的显式数据泄露与严苛 PIT 隔离需求
+## 14-18. 发现的显式数据泄露与严苛 PIT 隔离落地状态
 
-必须先消除 External / Pipeline Leakage，才能研究 Parametric Temporal Leakage：
-1. **Python API `run_backtest` 未初始化 Backtest Cache**：缺少 `_bt_cache.initialize()`，可能退化为请求实时数据。
-2. **Real-Time Fundamentals 泄露**：yfinance `ticker.info` 中的 PE, market cap, TTM metrics 为抓取时点数据；历史回测最后一天重新暴露的问题必须彻底修复。
-3. **Financial Statements 财报时间截断**：必须使用 `availability_timestamp <= t`（如 10-Q/10-K filing date），禁止使用 `fiscal_period_end <= t`。
-4. **Insider Transactions**：必须基于 SEC Form 4 filing publication date，而非 transaction date。
+必须先消除 External / Pipeline Leakage，才能研究 Parametric Temporal Leakage。当前落地状态如下：
+1. **Python API `run_backtest` Cache 初始化**：**已修复**。回测启动时显式调用 `_bt_cache.initialize()`，防止回退至实时网络请求。
+2. **Real-Time Fundamentals 泄露拦截**：**已修复**。yfinance `ticker.info` 截面数据在回测模式下被彻底拦截（返回 `[Backtest] Fundamentals overview withheld`）。
+3. **Financial Statements 财报时间截断与 Freq 路由**：**已修复**。
+   - `approximate_availability_filter` 严格区分季报 10-Q (45d) 与年报 10-K (90d) 法定披露滞后。
+   - `BacktestDataCache` 与 `y_finance.py` 中遗漏的 `freq` 参数路由已彻底补齐，杜绝年报错误回退至 45d 的 bug。
+4. **Alpha Vantage 财报过滤**：**已加固**。优先按真实披露时间戳 `reportedDate` / `filingDate` 过滤；无发布日记录才使用 45d/90d 启发式安全滞后。
+5. **SEC Insider Transactions**：**已加固**。强制基于 Form 4 `Filing Date` 过滤，严禁使用 `Transaction Date`。
+6. **PIT 凭证追踪与隔离 (Provenance Tracking)**：**已落地**。`TemporalSample` 原生支持 `availability_source` 与 `availability_quality` ("exact" vs "heuristic")，正式 Benchmark 支持 `exact_only` 子集提取以进行稳健性对照。
 
 ---
 
 ## 19-20. 核心区分：Pipeline Leakage vs. Parametric Leakage
 
-* **Pipeline Leakage**：数据工程缺陷，未来信息通过输入特征进入模型。
+* **Pipeline Leakage**：数据工程缺陷，未来信息通过输入特征进入模型（当前基础设施已建立严格 Gate 拦截）。
 * **Parametric Leakage**：输入完全干净，但模型参数在预训练中记住了未来。
 * **前提**：后续所有实验必须在 Pipeline Leakage 严格为 0 的受控环境下进行。
 
@@ -233,6 +242,7 @@ MANTRA (`RubiscoYHY/MANTRA`) 原生为 multi-agent decoder 交易框架。
 * 避免 BERT 2018 vs DeBERTa 2024 等跨架构、跨容量的无效对比。
 * 控制单一变量：相同 base checkpoint + 受控的 post-cutoff exposure（Continued Pretraining）。
 * 不从零训练大模型，优先利用公开时间 cutoff 的模型或构建受控 Twins。
+* **合成双生模型状态**：`SyntheticTemporalTwinEncoder` 已落地，基于 SHA-256 纯函数确定性特征与外生标签受控注入，剂量单调性检验通过；**真实 Encoder Twin 训练尚未启动**（留待 Phase 2）。
 
 ---
 
@@ -246,13 +256,14 @@ MANTRA (`RubiscoYHY/MANTRA`) 原生为 multi-agent decoder 交易框架。
 
 ---
 
-## 31. 近期工作规划
+## 31. 当前工作进展与下一阶段规划
 
-* **Task 1 — Literature Review**：建立 10+ 篇核心论文的精细文献矩阵（模型、泄露定义、度量、可复现性验证）。
-* **Task 2 — Formalize Variables**：严格数学与操作化定义 $L, E_L, C, R_T$，确立零模型与病态案例检验。
-* **Task 3 — Design FOMC Benchmark**：设计严格 PIT 的 FOMC 数据集规约、标签体系与回测协议。
-* **Task 4 — Design Twin Model Experiment**：设计受控剂量预训练与微调流程。
-* **Task 5 — Modify MANTRA Only After Benchmark Definition**：对 MANTRA 底层 PIT 与回测层进行受控适配。
+* **Task 1 — Literature Review**：**已完成并建立机器可校验文献表**（`docs/research/literature_registry.json`，修正所有已知 arXiv / DOI 错误）。
+* **Task 2 — Formalize Variables**：**已完成形式化规范**（五维 Pareto 空间，解耦 Level A $\Delta \text{IC}$ 与 Level B $\Delta \text{Sharpe}$，平稳块 Bootstrap）。
+* **Task 3 — Design FOMC Benchmark & PIT Protocols**：**已完成并加固**（`FOMCBenchmark` 禁止静默加载 Toy 数据；Loader 实施 Fail-Fast 校验；时区统一为 `America/New_York` / UTC）。
+* **Task 4 — Synthetic Twin Validation**：**已完成**（无状态确定性合成双生模型，方法学指标已完全冻结）。
+* **Task 5 — Pre-Experiment Gate**：**已通过**（PIT 数据流、时间戳时区转换、YFinance 路由均经集成测试全面验证）。
+* **Next Phase (Phase 2)**：**Real Encoder Baseline & Clean/Leak Twin Construction**（接入真实 Trillion Dollar Words 数据集、构建 Hugging Face encoder adapter、受控 Continued Pretraining 剂量注入）。
 
 ---
 

@@ -12,28 +12,32 @@ Point-in-Time (PIT) safeguards are strictly enforced for audited data sources in
 
 ---
 
-## 2. Verified Literature Matrix
+## 2. Verified Literature Matrix & Machine-Verifiable Registry
 
+All literature entries are synchronized with the machine-verifiable registry at [`docs/research/literature_registry.json`](file:///e:/MANTRA/docs/research/literature_registry.json).
 Each paper in this matrix has been verified against canonical venue publications, DOIs, or arXiv IDs. Unverified or hallucinated citations have been explicitly removed.
 
 | Title | Authors | Year | Venue | DOI / arXiv ID | Canonical URL | Code / Model URL | Verified Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Trillion Dollar Words: A New Financial Dataset, Task & Market Analysis** | Agam Shah, Sujit Paturi, Sudheer Chava | 2023 | ACL 2023 (Long Papers) | [arXiv:2305.07972](https://arxiv.org/abs/2305.07972) | [ACL Anthology](https://aclanthology.org/2023.acl-long.369/) | [gtfintechlab/FOMC-RoBERTa](https://github.com/gtfintechlab/FOMC-RoBERTa) | **Verified** (2026-09-19) |
-| **Financial Statement Analysis with Large Language Models** | Alex Kim, Maximilian Muhn, Valeri Nikolaev | 2024 | Chicago Booth / SSRN | [arXiv:2405.02794](https://arxiv.org/abs/2405.02794) | [SSRN:4835311](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4835311) | Proprietary API evaluation | **Verified** (2026-09-19) |
-| **Temporal Leakage in Financial News NLP: A Multi-Architecture Audit with a Regime-Specific M&A Signal** | Chenhao Xue, et al. | 2026 | EMNLP 2026 / arXiv | [arXiv:2608.06450](https://arxiv.org/abs/2608.06450) | [arXiv:2608.06450](https://arxiv.org/abs/2608.06450) | [ChenHX111/Temporal_Leakage](https://github.com/ChenHX111/Temporal_Leakage_in_Financial_News_NLP) | **Verified** (2026-09-19) |
-| **Look-Ahead-Bench: a Standardized Benchmark of Look-ahead Bias in Point-in-Time LLMs for Finance** | Benjamin Staf, et al. | 2026 | arXiv | [arXiv:2601.13770](https://arxiv.org/abs/2601.13770) | [arXiv:2601.13770](https://arxiv.org/abs/2601.13770) | [benstaf/lookaheadbench](https://github.com/benstaf/lookaheadbench) | **Verified** (2026-09-19) |
+| **Trillion Dollar Words: A New Financial Dataset, Task & Market Analysis** | Agam Shah, Suvan Paturi, Sudheer Chava | 2023 | ACL 2023 (Long Papers) | [arXiv:2305.07972](https://arxiv.org/abs/2305.07972) / [10.18653/v1/2023.acl-long.368](https://doi.org/10.18653/v1/2023.acl-long.368) | [ACL Anthology (368)](https://aclanthology.org/2023.acl-long.368/) | [gtfintechlab/TrillionDollarWords](https://github.com/gtfintechlab/TrillionDollarWords) | **Verified** (2026-09-19) |
+| **Temporal Leakage in Financial News NLP: A Multi-Architecture Audit with a Regime-Specific M&A Signal** | Chenhao Xue, Raslen Guesmi, Siwei Feng, Yucheng Gong, Jacob Xavier Sundram, Jordan Pang, Lan Wang, Julian Kaljuvee | 2026 | arXiv / Under review (EMNLP 2026) | [arXiv:2608.17223](https://arxiv.org/abs/2608.17223) | [arXiv:2608.17223](https://arxiv.org/abs/2608.17223) | [ChenHX111/Temporal_Leakage](https://github.com/ChenHX111/Temporal_Leakage_in_Financial_News_NLP) | **Verified** (2026-09-19) |
+| **Mind the Shift: Decoding Monetary Policy Stance from FOMC Statements with Large Language Models** | Yixuan Tang, Yi Yang | 2026 | arXiv | [arXiv:2603.14313](https://arxiv.org/abs/2603.14313) | [arXiv:2603.14313](https://arxiv.org/abs/2603.14313) | [yixuantt/DeltaConsistentScoring](https://github.com/yixuantt/DeltaConsistentScoring) | **Verified** (2026-09-19) |
+| **All Leaks Count, Some Count More: Interpretable Temporal Contamination Detection and Mitigation in LLM Backtesting** | Zeyu Zhang, Ryan Chen, Bradly C. Stadie | 2026 | Findings of EMNLP 2026 | [arXiv:2602.17234](https://arxiv.org/abs/2602.17234) | [arXiv:2602.17234](https://arxiv.org/abs/2602.17234) | Proposed TimeSPEC architecture & Shapley-DCLR | **Verified** (2026-09-19) |
+| **Look-Ahead-Bench: a Standardized Benchmark of Look-ahead Bias in Point-in-Time LLMs for Finance** | Mostapha Benhenda | 2026 | arXiv | [arXiv:2601.13770](https://arxiv.org/abs/2601.13770) | [arXiv:2601.13770](https://arxiv.org/abs/2601.13770) | [benstaf/lookaheadbench](https://github.com/benstaf/lookaheadbench) | **Verified** (2026-09-19) |
 | **FinBERT: Financial Sentiment Analysis with Pre-trained Language Models** | Dogu Araci | 2019 | arXiv | [arXiv:1908.10063](https://arxiv.org/abs/1908.10063) | [arXiv:1908.10063](https://arxiv.org/abs/1908.10063) | [ProsusAI/finBERT](https://github.com/ProsusAI/finBERT) | **Verified** (2026-09-19) |
-| **Mind the Shift: Decoding Monetary Policy Stance from FOMC Statements with Large Language Models** | Yixuan Tang, Yi Yang | 2026 | arXiv | [arXiv:2603.02987](https://arxiv.org/abs/2603.02987) | [arXiv:2603.02987](https://arxiv.org/abs/2603.02987) | [YixuanTang/mind-the-shift](https://github.com/YixuanTang/mind-the-shift) | **Verified** (2026-09-19) |
-| **All Leaks Count, Some Count More: Interpretable Temporal Contamination Detection in LLM Backtesting (TimeSPEC)** | Y. Sun, et al. | 2025 | arXiv | [arXiv:2502.16450](https://arxiv.org/abs/2502.16450) | [arXiv:2502.16450](https://arxiv.org/abs/2502.16450) | [temporal-leakage-audit/TimeSPEC](https://github.com/temporal-leakage-audit/TimeSPEC) | **Verified** (2026-09-19) |
 | **FinBERT: A Large Language Model for Extracting Information from Financial Text** | Allen H. Huang, Hui Wang, Yi Yang | 2023 | Contemporary Accounting Research, 40(2), 806–841 | [10.1111/1911-3846.12832](https://doi.org/10.1111/1911-3846.12832) | [Wiley Online Library](https://onlinelibrary.wiley.com/doi/10.1111/1911-3846.12832) | [yiyanghkust/finbert-tone](https://huggingface.co/yiyanghkust/finbert-tone) | **Verified** (2026-09-19) |
+| **Financial Statement Analysis with Large Language Models** | Alex Kim, Maximilian Muhn, Valeri Nikolaev | 2024 | Chicago Booth / SSRN | [arXiv:2405.02794](https://arxiv.org/abs/2405.02794) | [SSRN:4835311](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4835311) | Proprietary API evaluation | **Verified** (2026-09-19) |
 | **Shortcut Learning in Deep Neural Networks** | Robert Geirhos, et al. | 2020 | Nature Machine Intelligence, 2, 665–673 | [10.1038/s42256-020-00257-z](https://doi.org/10.1038/s42256-020-00257-z) | [Nature MI](https://www.nature.com/articles/s42256-020-00257-z) | General deep learning benchmark audits | **Verified** (2026-09-19) |
 
-### Removed / Unverified Citations Audit
-During our rigorous audit, two citations from initial exploratory searches could not be validated with canonical publisher records or public repository code:
-1. **"Guenther et al. (2025) - Entity Masking and Shortcut Learning in Financial Sentiment"**:
-   - Status: **REMOVED (UNVERIFIED)**. No canonical paper under this author/title exists in DBLP or arXiv. The concept of shortcut learning and entity masking is instead grounded in Geirhos et al. (2020) and Xue et al. (2026).
-2. **"DecisionFin (2026) - Decision-Centric Memorization Audits in Financial NLP"**:
-   - Status: **REMOVED (UNVERIFIED)**. No indexed publication exists under this exact title. The concept of decision-critical leakage quantification is grounded in Sun et al. (2025) (Shapley-DCLR / TimeSPEC).
+### Disambiguation & Audit Notes
+- **FinBERT Disambiguation**:
+  - *Araci (2019)*: Pretrained on Financial PhraseBank/TRC2 for 3-class sentiment analysis with a pre-2019 cutoff. Open repo: `ProsusAI/finBERT`.
+  - *Huang, Wang & Yang (2023)*: Pretrained on SEC corporate 10-Ks, 10-Qs, and conference call transcripts, published in *Contemporary Accounting Research*. Model checkpoint: `yiyanghkust/finbert-tone`.
+- **TimeSPEC Architecture vs. Metric**:
+  - In *Zhang et al. (2026)*, **TimeSPEC** (Time-Supervised Prediction with Extracted Claims) is the inference-time mitigation architecture, while **Shapley-DCLR** (Shapley-weighted Decision-Critical Leakage Rate) is the evaluation metric.
+- **Removed / Unverified Citations**:
+  - `Guenther et al. (2025)`: **REMOVED (UNVERIFIED)**. No canonical record exists in DBLP, arXiv, or CrossRef.
+  - `DecisionFin (2026)`: **REMOVED (UNVERIFIED)**. Replaced by verified benchmarks: Look-Ahead-Bench (Benhenda 2026) and TimeSPEC (Zhang et al. 2026).
 
 ---
 
@@ -43,11 +47,11 @@ During our rigorous audit, two citations from initial exploratory searches could
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Shah et al. (2023)** | RoBERTa-large, FinBERT (Encoder) | Not formally defined; uses chronological split. | None | Market reaction correlation ($\Delta$ Yields) | Macro-F1, Accuracy | Standard Hugging Face checkpoints. |
 | **Kim, Muhn & Nikolaev (2024)** | GPT-4-Turbo (Decoder) | Memorization of firm forward earnings. | Delta between in-sample and out-of-sample periods | Long-short portfolio return, Sharpe ratio | EPS forecast accuracy (60.3%) | Proprietary API cutoff statements. |
-| **Xue et al. (2026)** | FinBERT, RoBERTa, Llama-3, Qwen2.5 (Both) | Regime memorization across random splits. | MCC Inflation Ratio ($\frac{\text{MCC}_{\text{random}}}{\text{MCC}_{\text{chronological}}}$) | Simulated strategy Sharpe, Hit rate | MCC, Macro-F1 | Open-weight checkpoints with audited dates. |
-| **Look-Ahead-Bench (2026)** | Llama-2/3, Mistral, FinLLMs (Decoder) | Retrieval of facts postdating simulation date. | Temporal decay curve $D(\Delta t)$ | Information Coefficient (IC), Sortino | Factuality score, Extraction accuracy | Open weights. |
+| **Xue et al. (2026)** | FinBERT, RoBERTa, DeBERTa, Llama-3, Qwen2.5 (Both) | Regime memorization across random splits. | MCC Inflation Ratio ($\frac{\text{MCC}_{\text{random}}}{\text{MCC}_{\text{chronological}}}$) | Simulated strategy Sharpe, Hit rate | MCC, Macro-F1 | Open-weight checkpoints with audited dates. |
+| **Look-Ahead-Bench (2026)** | Llama-3.1, DeepSeek, Pitinf models (Decoder) | Retrieval of facts postdating simulation date. | Temporal decay curve $D(\Delta t)$ | Information Coefficient (IC), Sortino | Factuality score, Extraction accuracy | Open weights. |
 | **Araci (2019)** | BERT-base (Encoder) | Not considered. | None | None | Macro-F1, Accuracy | Wikipedia + TRC2 ($\le 2018$). |
-| **Tang & Yang (2026)** | DeepSeek-R1-Distill-Qwen, RoBERTa (Both) | Inter-meeting stance inconsistency. | Stance shift correlation with macroeconomic surprise | Cumulative Abnormal Return (CAR) | Pairwise ranking accuracy | Known open weights. |
-| **Sun et al. (2025)** | GPT-4o, Llama-3-70B (Decoder) | Generation of post-cutoff claims in reasoning chains. | Decision-Critical Leakage Rate (Shapley-DCLR) | Max drawdown, Downside volatility | Claim verifiability, Precision | Closed & open models. |
+| **Tang & Yang (2026)** | Frozen LLM Representations (Decoder) | Static stance insensitivity to inter-meeting shifts. | Delta-Consistent Scoring correlation with macro surprise | Treasury Yield correlation | Inter-meeting consistency | Known open weights. |
+| **Zhang, Chen & Stadie (2026)** | GPT-4o, Llama-3-70B (Decoder) | Generation of post-cutoff claims in reasoning chains. | Decision-Critical Leakage Rate (Shapley-DCLR) | Backtest win rate, Downside volatility | Claim verifiability, Precision | Closed & open models. |
 | **Huang, Wang & Yang (2023)** | FinBERT-Tone (Encoder) | Not defined. | None | Predictive $R^2$ for rate changes | Accuracy, F1 | Corporate 10-Ks, 10-Qs, transcripts. |
 
 ---

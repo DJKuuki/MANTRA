@@ -1,0 +1,200 @@
+[
+  {
+    "title": "Trillion Dollar Words: A New Financial Dataset, Task & Market Analysis",
+    "authors": [
+      "Agam Shah",
+      "Suvan Paturi",
+      "Sudheer Chava"
+    ],
+    "year": 2023,
+    "venue": "ACL 2023 (Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics, Vol 1: Long Papers, pp. 6664–6679)",
+    "arxiv_id": "2305.07972",
+    "doi": "10.18653/v1/2023.acl-long.368",
+    "canonical_url": "https://aclanthology.org/2023.acl-long.368/",
+    "code_url": "https://github.com/gtfintechlab/TrillionDollarWords",
+    "verified": true,
+    "verified_at": "2026-09-19",
+    "verification_source": "ACL Anthology / arXiv API",
+    "notes": "Verified ACL Anthology paper identifier is 2023.acl-long.368 (DOI: 10.18653/v1/2023.acl-long.368). Authors are Agam Shah, Suvan Paturi (spelling corrected from Sujit), and Sudheer Chava. Primary source for FOMC hawkish/neutral/dovish ground truth."
+  },
+  {
+    "title": "Temporal Leakage in Financial News NLP: A Multi-Architecture Audit with a Regime-Specific M&A Signal",
+    "authors": [
+      "Chenhao Xue",
+      "Raslen Guesmi",
+      "Siwei Feng",
+      "Yucheng Gong",
+      "Jacob Xavier Sundram",
+      "Jordan Pang",
+      "Lan Wang",
+      "Julian Kaljuvee"
+    ],
+    "year": 2026,
+    "venue": "arXiv preprint / under review (committed to EMNLP 2026)",
+    "arxiv_id": "2608.17223",
+    "doi": null,
+    "canonical_url": "https://arxiv.org/abs/2608.17223",
+    "code_url": "https://github.com/ChenHX111/Temporal_Leakage_in_Financial_News_NLP",
+    "verified": true,
+    "verified_at": "2026-09-19",
+    "verification_source": "arXiv API / GitHub",
+    "notes": "Verified arXiv ID is 2608.17223 (published August 2026, corrected from 2608.06450). Audited across 16 feature-model pipelines showing random splits inflate performance metrics (MCC) by 1.1x to 6.5x due to temporal leakage."
+  },
+  {
+    "title": "Mind the Shift: Decoding Monetary Policy Stance from FOMC Statements with Large Language Models",
+    "authors": [
+      "Yixuan Tang",
+      "Yi Yang"
+    ],
+    "year": 2026,
+    "venue": "arXiv preprint",
+    "arxiv_id": "2603.14313",
+    "doi": null,
+    "canonical_url": "https://arxiv.org/abs/2603.14313",
+    "code_url": "https://github.com/yixuantt/DeltaConsistentScoring",
+    "verified": true,
+    "verified_at": "2026-09-19",
+    "verification_source": "arXiv API / GitHub",
+    "notes": "Verified arXiv ID is 2603.14313 (March 15, 2026, corrected from 2603.02987). Code repository is yixuantt/DeltaConsistentScoring. Method: Delta-Consistent Scoring (DCS) using frozen LLM representations to capture inter-meeting monetary stance shifts."
+  },
+  {
+    "title": "All Leaks Count, Some Count More: Interpretable Temporal Contamination Detection and Mitigation in LLM Backtesting",
+    "authors": [
+      "Zeyu Zhang",
+      "Ryan Chen",
+      "Bradly C. Stadie"
+    ],
+    "year": 2026,
+    "venue": "Findings of EMNLP 2026",
+    "arxiv_id": "2602.17234",
+    "doi": null,
+    "canonical_url": "https://arxiv.org/abs/2602.17234",
+    "code_url": null,
+    "verified": true,
+    "verified_at": "2026-09-19",
+    "verification_source": "arXiv API / EMNLP Findings",
+    "notes": "Verified arXiv ID is 2602.17234 (corrected from 2502.16450). Authors: Zeyu Zhang, Ryan Chen, Bradly C. Stadie (corrected from Y. Sun et al.). Proposes Shapley-DCLR (metric) and TimeSPEC (Time-Supervised Prediction with Extracted Claims, inference-time architecture)."
+  },
+  {
+    "title": "Look-Ahead-Bench: a Standardized Benchmark of Look-ahead Bias in Point-in-Time LLMs for Finance",
+    "authors": [
+      "Mostapha Benhenda"
+    ],
+    "year": 2026,
+    "venue": "arXiv preprint",
+    "arxiv_id": "2601.13770",
+    "doi": null,
+    "canonical_url": "https://arxiv.org/abs/2601.13770",
+    "code_url": "https://github.com/benstaf/lookaheadbench",
+    "verified": true,
+    "verified_at": "2026-09-19",
+    "verification_source": "arXiv API / GitHub",
+    "notes": "Verified author is Mostapha Benhenda (GitHub user 'benstaf', corrected from Benjamin Staf). Benchmark measuring alpha decay between in-sample and out-of-sample periods to evaluate look-ahead bias in LLM financial time series forecasting."
+  },
+  {
+    "title": "FinBERT: Financial Sentiment Analysis with Pre-trained Language Models",
+    "authors": [
+      "Dogu Araci"
+    ],
+    "year": 2019,
+    "venue": "arXiv preprint",
+    "arxiv_id": "1908.10063",
+    "doi": null,
+    "canonical_url": "https://arxiv.org/abs/1908.10063",
+    "code_url": "https://github.com/ProsusAI/finBERT",
+    "verified": true,
+    "verified_at": "2026-09-19",
+    "verification_source": "arXiv API / GitHub",
+    "notes": "Distinct from Huang et al. (2023). Dogu Araci's 2019 FinBERT fine-tuned BERT-base on Financial PhraseBank with a pre-2019 cutoff."
+  },
+  {
+    "title": "FinBERT: A Large Language Model for Extracting Information from Financial Text",
+    "authors": [
+      "Allen H. Huang",
+      "Hui Wang",
+      "Yi Yang"
+    ],
+    "year": 2023,
+    "venue": "Contemporary Accounting Research, 40(2), 806–841",
+    "arxiv_id": null,
+    "doi": "10.1111/1911-3846.12832",
+    "canonical_url": "https://onlinelibrary.wiley.com/doi/10.1111/1911-3846.12832",
+    "code_url": "https://huggingface.co/yiyanghkust/finbert-tone",
+    "verified": true,
+    "verified_at": "2026-09-19",
+    "verification_source": "Contemporary Accounting Research / Wiley",
+    "notes": "Distinct from Araci (2019). Pre-trained on corporate 10-Ks, 10-Qs, and conference call transcripts by Huang, Wang & Yang (HKUST)."
+  },
+  {
+    "title": "Financial Statement Analysis with Large Language Models",
+    "authors": [
+      "Alex Kim",
+      "Maximilian Muhn",
+      "Valeri Nikolaev"
+    ],
+    "year": 2024,
+    "venue": "University of Chicago Booth School of Business Research Paper / SSRN",
+    "arxiv_id": "2405.02794",
+    "doi": "10.2139/ssrn.4835311",
+    "canonical_url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4835311",
+    "code_url": null,
+    "verified": true,
+    "verified_at": "2026-09-19",
+    "verification_source": "SSRN / arXiv API",
+    "notes": "Evaluates GPT-4 on financial statement analysis and forward earnings direction prediction; analyzes whether LLM forecasts exploit memorization."
+  },
+  {
+    "title": "Shortcut Learning in Deep Neural Networks",
+    "authors": [
+      "Robert Geirhos",
+      "Jörn-Henrik Jacobsen",
+      "Claudio Michaelis",
+      "Richard Zemel",
+      "Wieland Brendel",
+      "Matthias Bethge",
+      "Felix A. Wichmann"
+    ],
+    "year": 2020,
+    "venue": "Nature Machine Intelligence, 2, 665–673",
+    "arxiv_id": "2004.07780",
+    "doi": "10.1038/s42256-020-00257-z",
+    "canonical_url": "https://www.nature.com/articles/s42256-020-00257-z",
+    "code_url": null,
+    "verified": true,
+    "verified_at": "2026-09-19",
+    "verification_source": "Nature Machine Intelligence / CrossRef",
+    "notes": "Foundational conceptual framework explaining how deep neural networks latch onto spurious unintended correlations (shortcuts) rather than intended semantic competence."
+  },
+  {
+    "title": "Entity Masking and Shortcut Learning in Financial Sentiment",
+    "authors": [
+      "Guenther et al."
+    ],
+    "year": 2025,
+    "venue": "Journal of Financial Data Science (alleged)",
+    "arxiv_id": null,
+    "doi": null,
+    "canonical_url": null,
+    "code_url": null,
+    "verified": false,
+    "verified_at": "2026-09-19",
+    "verification_source": "Audit Failure / No canonical record in DBLP, CrossRef, SSRN",
+    "notes": "STATUS: REMOVED_UNVERIFIED. Identified as an LLM hallucination in earlier PoC drafting. Not used in research claims."
+  },
+  {
+    "title": "Decision-Centric Memorization Audits in Financial NLP (DecisionFin)",
+    "authors": [
+      "DecisionFin Benchmark Team"
+    ],
+    "year": 2026,
+    "venue": "NeurIPS Financial Decision Benchmark (alleged)",
+    "arxiv_id": null,
+    "doi": null,
+    "canonical_url": null,
+    "code_url": null,
+    "verified": false,
+    "verified_at": "2026-09-19",
+    "verification_source": "Audit Failure / No canonical paper or repository",
+    "notes": "STATUS: REMOVED_UNVERIFIED. Replaced by verified benchmarks: Look-Ahead-Bench (Benhenda 2026) and TimeSPEC (Zhang et al. 2026)."
+  }
+]

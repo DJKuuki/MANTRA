@@ -5,18 +5,52 @@ from __future__ import annotations
 import hashlib
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+from zoneinfo import ZoneInfo
 import numpy as np
+
+
+def parse_iso_utc(ts: str, default_timezone: Optional[str] = None) -> datetime:
+    """Parse an ISO-8601 timestamp string into a timezone-aware UTC datetime.
+
+    Rules:
+    - Timezone-aware ISO strings (e.g. '2022-01-01T14:00:00-05:00', '2022-01-01T19:00:00Z',
+      '2022-01-01 19:00:00+00:00') are parsed and normalized to UTC.
+    - Naive timestamps (without timezone offset, e.g. '2022-03-16T14:00:00'):
+      - If `default_timezone` is provided (e.g. 'America/New_York'), interpreted in that timezone
+        and normalized to UTC.
+      - If `default_timezone` is None, a ValueError is raised to reject naive timestamps.
+    """
+    if not isinstance(ts, str) or not ts.strip():
+        raise ValueError(f"Timestamp must be a non-empty string, got: {ts!r}")
+
+    cleaned = ts.strip().replace("Z", "+00:00")
+    try:
+        dt = datetime.fromisoformat(cleaned)
+    except Exception as e:
+        raise ValueError(f"Invalid ISO-8601 timestamp '{ts}': {e}") from e
+
+    if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None:
+        if default_timezone:
+            tz = ZoneInfo(default_timezone)
+            dt = dt.replace(tzinfo=tz)
+        else:
+            raise ValueError(
+                f"Timestamp '{ts}' is naive (missing timezone offset). "
+                "Explicit timezone (e.g. +00:00, -05:00, Z) or default_timezone is required."
+            )
+
+    return dt.astimezone(timezone.utc)
 
 
 @dataclass
 class TemporalSample:
-    """A data sample with strict temporal timestamps and decoupled labels.
+    """A data sample with strict temporal timestamps, PIT provenance, and decoupled labels.
 
     Attributes:
         text: The textual content (e.g. FOMC statement sentence or document).
-        event_time: When the economic event occurred or began.
+        event_time: When the economic event occurred or began (ISO-8601 string).
         available_time: Strict Point-in-Time availability timestamp (when market participants
             could legally and realistically read the text).
         task_label: The NLP ground-truth stance label (+1: Hawkish, 0: Neutral, -1: Dovish).
@@ -25,6 +59,8 @@ class TemporalSample:
         meeting_id: Identifier for the FOMC meeting cycle (e.g. '2022-03').
         source: Publication source or agency.
         annotation_source: Provenance of stance annotation (e.g. 'Trillion Dollar Words', 'toy_synthetic').
+        availability_source: Source mechanism for available_time (e.g. 'FED_OFFICIAL_RELEASE', 'SEC_EDGAR_ACCEPTANCE').
+        availability_quality: Quality tier: 'exact' (verified exact publication) or 'heuristic' (estimated lag).
         future_macro_labels: Dict of future realized macro variables (e.g. next meeting rate
             action, next CPI surprise) used exclusively for probing representational leakage.
         market_outcomes: Dict of forward asset returns (e.g. 1d/5d/20d SPY return, 2Y yield
@@ -40,16 +76,25 @@ class TemporalSample:
     meeting_id: str = ""
     source: str = "Federal Reserve"
     annotation_source: str = "toy_synthetic"
+    availability_source: str = "FED_OFFICIAL_RELEASE"
+    availability_quality: str = "exact"  # "exact" | "heuristic"
     future_macro_labels: Dict[str, Any] = field(default_factory=dict)
     market_outcomes: Dict[str, float] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
-    def is_available_as_of(self, simulation_time: str) -> bool:
+    def is_available_as_of(
+        self, simulation_time: str, default_timezone: Optional[str] = None
+    ) -> bool:
         """Check the strict Point-in-Time availability inequality:
 
-        availability_time <= simulation_time
+        parse_iso_utc(availability_time) <= parse_iso_utc(simulation_time)
+
+        Both timestamps are normalized to UTC datetime objects for accurate comparison
+        across differing timezone representations.
         """
-        return self.available_time <= simulation_time
+        dt_avail = parse_iso_utc(self.available_time, default_timezone=default_timezone)
+        dt_sim = parse_iso_utc(simulation_time, default_timezone=default_timezone)
+        return dt_avail <= dt_sim
 
 
 class TemporalModel(ABC):

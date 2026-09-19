@@ -6,6 +6,7 @@ from .temporal_model import (
     NullConstantModel,
     SyntheticTemporalTwinEncoder,
     MockTwinEncoder,
+    parse_iso_utc,
 )
 from .metrics import (
     stationary_block_bootstrap_indices,
@@ -22,6 +23,9 @@ from .fomc_benchmark import (
     load_fomc_dataset,
     FOMCBenchmark,
     ToyFOMCBenchmark,
+    DatasetValidationError,
+    validate_temporal_sample,
+    validate_dataset,
 )
 from .twin_experiment import TwinExperimentRunner
 
@@ -31,6 +35,7 @@ __all__ = [
     "NullConstantModel",
     "SyntheticTemporalTwinEncoder",
     "MockTwinEncoder",
+    "parse_iso_utc",
     "stationary_block_bootstrap_indices",
     "evaluate_competence",
     "compute_masking_sensitivity",
@@ -43,5 +48,8 @@ __all__ = [
     "load_fomc_dataset",
     "FOMCBenchmark",
     "ToyFOMCBenchmark",
+    "DatasetValidationError",
+    "validate_temporal_sample",
+    "validate_dataset",
     "TwinExperimentRunner",
 ]

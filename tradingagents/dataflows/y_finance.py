@@ -328,7 +328,7 @@ def get_balance_sheet(
         else:
             data = yf_retry(lambda: ticker_obj.balance_sheet)
 
-        data = filter_financials_by_date(data, curr_date)
+        data = filter_financials_by_date(data, curr_date, freq=freq)
 
         if data.empty:
             return f"No balance sheet data found for symbol '{ticker}'"
@@ -366,7 +366,7 @@ def get_cashflow(
         else:
             data = yf_retry(lambda: ticker_obj.cashflow)
 
-        data = filter_financials_by_date(data, curr_date)
+        data = filter_financials_by_date(data, curr_date, freq=freq)
 
         if data.empty:
             return f"No cash flow data found for symbol '{ticker}'"
@@ -404,7 +404,7 @@ def get_income_statement(
         else:
             data = yf_retry(lambda: ticker_obj.income_stmt)
 
-        data = filter_financials_by_date(data, curr_date)
+        data = filter_financials_by_date(data, curr_date, freq=freq)
 
         if data.empty:
             return f"No income statement data found for symbol '{ticker}'"

@@ -1,0 +1,46 @@
+# Formal FOMC Empirical Experiment Configuration
+# Target Phase: Real Encoder Baseline & Continued Pretraining Twin Evaluation
+# All experimental runs must adhere strictly to these frozen parameters.
+
+experiment_name: fomc_formal_experiment
+random_seed: 42
+
+time:
+  source_timezone: America/New_York
+  internal_timezone: UTC
+  note: "Source timestamps are interpreted in America/New_York and normalized to UTC for comparison."
+
+splits:
+  train_end: "2018-12-31T23:59:59Z"
+  dev_start: "2019-01-01T00:00:00Z"
+  dev_end: "2019-12-31T23:59:59Z"
+  test_start: "2020-01-01T00:00:00Z"
+
+probe:
+  cv: timeseries
+  n_splits: 5
+  n_permutations: 1000
+  alpha: 1.0
+
+bootstrap:
+  method: stationary
+  expected_block_length: 8
+  n_bootstrap: 2000
+  confidence_level: 0.95
+
+economics:
+  primary_metric: delta_ic
+  secondary_metrics:
+    - delta_sharpe
+    - delta_return
+  note: "Delta IC is the primary economic effect estimator. Level B strategy delta is secondary/illustrative."
+  threshold: 0.20
+  transaction_cost_bps: 5.0
+  annualization_factor: 8.0
+
+pit:
+  require_timezone_aware: true
+  reject_missing_availability: true
+  allow_heuristic_fallback: false
+  allowed_availability_qualities:
+    - exact

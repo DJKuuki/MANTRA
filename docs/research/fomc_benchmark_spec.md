@@ -14,13 +14,19 @@ The FOMC Benchmark in MANTRA provides an evaluation environment for:
 All documents must adhere to the **Point-in-Time Availability Inequality**:
 $$\text{availability\_timestamp}(d) \le \text{simulation\_timestamp } t$$
 
+> [!IMPORTANT]
+> **Timezone Standardization Protocol**:
+> Source timestamps are interpreted in **`America/New_York`** (Eastern Time) and automatically normalized to **UTC** for causal comparison.
+> We do NOT assume static EST year-round: depending on daylight saving time, `America/New_York` corresponds to Eastern Standard Time (EST, UTC-05:00) during standard time and Eastern Daylight Time (EDT, UTC-04:00) during daylight saving time.
+> All internal calculations, filtering, and cross-source merges strictly operate on UTC-normalized timestamps.
+
 | Document Type | Publication Mechanism | Historical Availability Timestamp ($t_{\text{avail}}$) | Allowed in Backtest at Meeting Date $T$? |
 | :--- | :--- | :--- | :--- |
-| **FOMC Statement** | Official Federal Reserve website release. | **14:00:00 EST on Meeting Day $T$** | **Yes** (Only for decisions executed at/after 14:00 EST). |
-| **Press Conference Opening Remarks** | Delivered by Fed Chair. | **14:30:00 EST on Meeting Day $T$** | **Yes** (Only for decisions executed at/after 14:30 EST). |
-| **Press Conference Full Transcript** | Unedited Q&A transcript. | **$\sim$ 20:00:00 EST on Meeting Day $T$** (or next morning). | **No** (Cannot be used intraday on day $T$; available on day $T+1$). |
-| **FOMC Minutes** | Record of committee deliberations. | **14:00:00 EST exactly 21 calendar days post-meeting ($T+21\text{d}$)**. | **STRICTLY RESTRICTED until Day $T+21$**. Forbidden on Day $T$. |
-| **Speeches & Testimony** | Delivered by individual Governors/Presidents. | Delivered at scheduled speech timestamp. | Only after verified delivery completion time. |
+| **FOMC Statement** | Official Federal Reserve website release. | **14:00:00 America/New_York on Meeting Day $T$** | **Yes** (Only for decisions executed at/after 14:00 New York time). |
+| **Press Conference Opening Remarks** | Delivered by Fed Chair. | **14:30:00 America/New_York on Meeting Day $T$** | **Yes** (Only for decisions executed at/after 14:30 New York time). |
+| **Press Conference Full Transcript** | Unedited Q&A transcript. | **$\sim$ 20:00:00 America/New_York on Meeting Day $T$** (or next morning). | **No** (Cannot be used intraday on day $T$; available on day $T+1$). |
+| **FOMC Minutes** | Record of committee deliberations. | **14:00:00 America/New_York exactly 21 calendar days post-meeting ($T+21\text{d}$)**. | **STRICTLY RESTRICTED until Day $T+21$**. Forbidden on Day $T$. |
+| **Speeches & Testimony** | Delivered by individual Governors/Presidents. | Delivered at scheduled speech timestamp (`America/New_York`). | Only after verified delivery completion time. |
 
 ---
 
@@ -96,27 +102,31 @@ For the representation probing module ($L_{\text{repr}}$), the frozen encoder re
 
 ---
 
-## 6. Toy Dataset vs. Research-Grade Benchmark Separation
+## 6. Toy Dataset vs. Research Benchmark Separation & Safety Protocols
 
 ### 6.1 Toy Dataset (`ToyFOMCBenchmark` / `create_toy_fomc_dataset()`)
-- **Purpose**: Unit tests, smoke tests, CI execution, and API validation.
+- **Purpose**: Unit tests, smoke tests, CI execution, and synthetic API validation.
 - **Status**: Curated synthetic subset (14 meeting statements).
 - **WARNING**: Strictly prohibited from being used to draw empirical conclusions or make research claims.
 
-### 6.2 Research Benchmark Loader (`FOMCBenchmark.from_file(...)`)
-- **Purpose**: Formal empirical experiments using verified corpora (e.g. Trillion Dollar Words, Op-Fed).
+### 6.2 Formal Research Benchmark Loader (`FOMCBenchmark.from_file(...)`)
+- **Safety Rule**: Direct instantiation `FOMCBenchmark()` without explicit research samples **raises ValueError**. Silent fallback to toy data is strictly prohibited.
+- **Purpose**: Formal empirical experiments using verified corpora (e.g. *Trillion Dollar Words*, Shah et al., ACL 2023).
 - **Supported Formats**: `.json`, `.jsonl`, `.csv`.
-- **Standard Schema**:
-  - `sample_id` (str)
-  - `text` (str)
+- **Fail-Fast Required Schema**:
+  - `sample_id` (str: REQUIRED, unique)
+  - `text` (str: REQUIRED, non-empty)
+  - `event_time` (str: REQUIRED, ISO 8601 timezone-aware)
+  - `available_time` (str: REQUIRED, ISO 8601 timezone-aware)
+  - `task_label` (int: REQUIRED, -1, 0, 1)
   - `document_type` (str: statement, minutes, press_conference, speech)
-  - `event_time` (str: ISO timestamp)
-  - `available_time` (str: ISO timestamp)
-  - `task_label` (int: -1, 0, 1)
-  - `meeting_id` (str)
-  - `source` (str)
-  - `annotation_source` (str)
-  - Economic targets: `next_action`, `next_cpi_surprise`, `spy_1d_return`, `spy_5d_return`, `spy_20d_return`, `treasury_2y_change`, `fed_funds_surprise`.
+  - `source` (str: agency/publication)
+  - `annotation_source` (str: annotation provenance)
+  - `availability_source` (str: 'OFFICIAL_RELEASE', 'SEC_EDGAR_ACCEPTANCE', etc.)
+  - `availability_quality` (str: 'exact' or 'heuristic')
+- **Research vs. CI Configurations**:
+  - **Formal Experiments** (`configs/fomc_formal_experiment.yaml`): $M \ge 1000$ sign-flip permutations, $B \ge 2000$ stationary block bootstrap iterations, strict rejection of heuristic fallbacks (`allow_heuristic_fallback: false`).
+  - **CI / Smoke Tests** (`configs/fomc_ci.yaml`): $M = 100$ permutations, $B = 200$ bootstrap iterations for fast regression checks.
 
 ---
 

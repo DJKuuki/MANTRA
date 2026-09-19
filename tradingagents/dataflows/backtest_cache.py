@@ -315,7 +315,11 @@ class BacktestDataCache:
         return header + "\n".join(lines)
 
     def _get_yf_financial_df(
-        self, store_key: str, ticker: str, curr_date: "str | None"
+        self,
+        store_key: str,
+        ticker: str,
+        curr_date: "str | None",
+        freq: str = "quarterly",
     ) -> "pd.DataFrame | None":
         """Return a date-filtered copy of a cached yfinance financial DataFrame."""
         if not self._ticker_matches(ticker):
@@ -324,13 +328,13 @@ class BacktestDataCache:
         if raw is None or (hasattr(raw, "empty") and raw.empty):
             return None
         from .stockstats_utils import filter_financials_by_date
-        return filter_financials_by_date(raw, curr_date)
+        return filter_financials_by_date(raw, curr_date, freq=freq)
 
     def get_yf_balance_sheet(
         self, ticker: str, freq: str, curr_date: "str | None"
     ) -> "str | None":
         key = "yf_balance_q" if freq.lower() == "quarterly" else "yf_balance_a"
-        df = self._get_yf_financial_df(key, ticker, curr_date)
+        df = self._get_yf_financial_df(key, ticker, curr_date, freq=freq)
         if df is None:
             return None
         if df.empty:
@@ -345,7 +349,7 @@ class BacktestDataCache:
         self, ticker: str, freq: str, curr_date: "str | None"
     ) -> "str | None":
         key = "yf_cashflow_q" if freq.lower() == "quarterly" else "yf_cashflow_a"
-        df = self._get_yf_financial_df(key, ticker, curr_date)
+        df = self._get_yf_financial_df(key, ticker, curr_date, freq=freq)
         if df is None:
             return None
         if df.empty:
@@ -360,7 +364,7 @@ class BacktestDataCache:
         self, ticker: str, freq: str, curr_date: "str | None"
     ) -> "str | None":
         key = "yf_income_q" if freq.lower() == "quarterly" else "yf_income_a"
-        df = self._get_yf_financial_df(key, ticker, curr_date)
+        df = self._get_yf_financial_df(key, ticker, curr_date, freq=freq)
         if df is None:
             return None
         if df.empty:

@@ -17,7 +17,107 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 import pandas as pd
-from .temporal_model import TemporalSample
+from .temporal_model import TemporalSample, parse_iso_utc
+
+
+class DatasetValidationError(ValueError):
+    """Raised when a temporal dataset or sample violates structural, schema, or Point-in-Time rules."""
+    pass
+
+
+def validate_temporal_sample(
+    sample: TemporalSample,
+    require_timezone_aware: bool = True,
+    source_timezone: Optional[str] = None,
+) -> None:
+    """Validate that a TemporalSample satisfies strict research schema and PIT constraints.
+
+    Validation Rules:
+    - sample_id: must be a non-empty string.
+    - text: must be a non-empty string.
+    - task_label: must be integer in {-1, 0, 1}.
+    - event_time: must be valid ISO-8601 timestamp string.
+    - available_time: must be valid ISO-8601 timestamp string.
+    - Timezone: timestamps must be timezone-aware (rejects naive timestamps unless source_timezone provided).
+    - Causality: event_time <= available_time (an announcement cannot realistically be legally available before event occurs).
+    - Metadata: document_type, source, annotation_source must be non-empty strings.
+    """
+    if not isinstance(sample, TemporalSample):
+        raise DatasetValidationError(f"Expected TemporalSample instance, got {type(sample).__name__}")
+
+    # 1. ID
+    if not sample.sample_id or not str(sample.sample_id).strip():
+        raise DatasetValidationError(f"sample_id must be a non-empty string, got: {sample.sample_id!r}")
+
+    # 2. Text
+    if not sample.text or not str(sample.text).strip():
+        raise DatasetValidationError(f"Sample '{sample.sample_id}' text must be a non-empty string.")
+
+    # 3. Label: strictly {-1, 0, 1}
+    if sample.task_label not in {-1, 0, 1} or isinstance(sample.task_label, bool):
+        raise DatasetValidationError(
+            f"Sample '{sample.sample_id}' has invalid task_label {sample.task_label!r}. "
+            "task_label must be an integer in {-1 (Dovish), 0 (Neutral), 1 (Hawkish)}."
+        )
+
+    # 4. Timestamps & Timezones
+    try:
+        dt_event = parse_iso_utc(
+            sample.event_time,
+            default_timezone=source_timezone if (not require_timezone_aware or source_timezone) else None,
+        )
+    except Exception as e:
+        raise DatasetValidationError(
+            f"Sample '{sample.sample_id}' has invalid event_time '{sample.event_time}': {e}"
+        ) from e
+
+    try:
+        dt_avail = parse_iso_utc(
+            sample.available_time,
+            default_timezone=source_timezone if (not require_timezone_aware or source_timezone) else None,
+        )
+    except Exception as e:
+        raise DatasetValidationError(
+            f"Sample '{sample.sample_id}' has invalid available_time '{sample.available_time}': {e}"
+        ) from e
+
+    # 5. Temporal causality: event occurs before or at availability time
+    if dt_event > dt_avail:
+        raise DatasetValidationError(
+            f"Sample '{sample.sample_id}' violates temporal causality: "
+            f"event_time ({sample.event_time}) is after available_time ({sample.available_time})."
+        )
+
+    # 6. Provenance metadata
+    for field_name in ["document_type", "source", "annotation_source"]:
+        val = getattr(sample, field_name, None)
+        if not val or not str(val).strip():
+            raise DatasetValidationError(
+                f"Sample '{sample.sample_id}' must have non-empty required field '{field_name}'."
+            )
+
+
+def validate_dataset(
+    samples: Sequence[TemporalSample],
+    require_timezone_aware: bool = True,
+    source_timezone: Optional[str] = None,
+) -> None:
+    """Validate an entire collection of TemporalSample instances for consistency and integrity."""
+    if not samples:
+        raise DatasetValidationError("Dataset is empty. At least one TemporalSample is required.")
+
+    seen_ids = set()
+    for idx, sample in enumerate(samples):
+        validate_temporal_sample(
+            sample,
+            require_timezone_aware=require_timezone_aware,
+            source_timezone=source_timezone,
+        )
+        if sample.sample_id in seen_ids:
+            raise DatasetValidationError(
+                f"Duplicate sample_id '{sample.sample_id}' detected at index {idx}."
+            )
+        seen_ids.add(sample.sample_id)
 
 
 def create_toy_fomc_dataset() -> List[TemporalSample]:
@@ -242,36 +342,51 @@ def create_toy_fomc_dataset() -> List[TemporalSample]:
             meeting_id=d.get("meeting_id", ""),
             source=d.get("source", "Federal Reserve"),
             annotation_source=d.get("annotation_source", "toy_synthetic"),
+            availability_source="FED_OFFICIAL_RELEASE",
+            availability_quality="exact",
             future_macro_labels=d["future_macro_labels"],
             market_outcomes=d["market_outcomes"],
             metadata=d["metadata"],
         )
         samples.append(sample)
+    validate_dataset(samples)
     return samples
 
 
-def load_fomc_dataset(filepath: Union[str, Path]) -> List[TemporalSample]:
-    """Load formal research-grade FOMC benchmark dataset from a CSV or JSON/JSONL file.
+def load_fomc_dataset(
+    filepath: Union[str, Path],
+    source_timezone: Optional[str] = None,
+    require_timezone_aware: bool = True,
+) -> List[TemporalSample]:
+    """Load and strictly validate a research FOMC benchmark dataset from a CSV or JSON/JSONL file.
+
+    Fail-Fast Validation:
+        - Required non-empty fields: sample_id, text, event_time, available_time, task_label
+        - Missing or NaN task_label / available_time / text will raise DatasetValidationError
+        - Timestamps must be valid ISO-8601 strings and timezone-aware (unless source_timezone provided)
+        - sample_id values must be globally unique
+        - task_label must be in {-1, 0, 1}
 
     Expected Schema:
-        sample_id: str
-        text: str
-        document_type: str ('statement', 'minutes', 'press_conference', 'speech')
-        event_time: str (ISO 8601)
-        available_time: str (ISO 8601)
-        task_label: int (-1: Dovish, 0: Neutral, 1: Hawkish)
-        meeting_id: str
-        source: str
-        annotation_source: str
-        Optional forward economic targets:
-            next_action, next_cpi_surprise, spy_1d_return, spy_5d_return,
-            spy_20d_return, treasury_2y_change, fed_funds_surprise
+        sample_id: str (REQUIRED, unique)
+        text: str (REQUIRED, non-empty)
+        event_time: str (REQUIRED, ISO 8601 with timezone)
+        available_time: str (REQUIRED, ISO 8601 with timezone)
+        task_label: int (REQUIRED, -1: Dovish, 0: Neutral, 1: Hawkish)
+        document_type: str (optional, default 'statement')
+        meeting_id: str (optional)
+        source: str (optional, default 'Federal Reserve')
+        annotation_source: str (optional, default 'verified_corpus')
+        availability_source: str (optional, default 'OFFICIAL_RELEASE')
+        availability_quality: str (optional, 'exact' or 'heuristic', default 'exact')
     """
     path = Path(filepath)
     if not path.exists():
         raise FileNotFoundError(f"FOMC dataset file not found: {path}")
 
+    required_fields = ["sample_id", "text", "event_time", "available_time", "task_label"]
     samples: List[TemporalSample] = []
+
     if path.suffix in [".json", ".jsonl"]:
         with open(path, "r", encoding="utf-8") as f:
             if path.suffix == ".jsonl":
@@ -280,10 +395,23 @@ def load_fomc_dataset(filepath: Union[str, Path]) -> List[TemporalSample]:
                 data = json.load(f)
                 records = data if isinstance(data, list) else data.get("samples", [])
 
-        for r in records:
+        for idx, r in enumerate(records):
+            for req in required_fields:
+                val = r.get(req)
+                if val is None or (isinstance(val, str) and not val.strip()):
+                    raise DatasetValidationError(
+                        f"Record {idx} in {path.name} is missing REQUIRED field '{req}'."
+                    )
+
+            try:
+                task_label = int(r["task_label"])
+            except (ValueError, TypeError):
+                raise DatasetValidationError(
+                    f"Record {idx} in {path.name} has non-integer task_label: {r.get('task_label')!r}"
+                )
+
             future_macro = r.get("future_macro_labels", {})
             market_outs = r.get("market_outcomes", {})
-            # Flatten if columns provided top-level
             for k in ["next_action", "next_cpi_surprise"]:
                 if k in r:
                     future_macro[k] = r[k]
@@ -292,15 +420,17 @@ def load_fomc_dataset(filepath: Union[str, Path]) -> List[TemporalSample]:
                     market_outs[k] = float(r[k])
 
             sample = TemporalSample(
-                sample_id=str(r.get("sample_id", "")),
-                text=str(r.get("text", "")),
+                sample_id=str(r["sample_id"]).strip(),
+                text=str(r["text"]).strip(),
                 document_type=str(r.get("document_type", "statement")),
-                event_time=str(r.get("event_time", "")),
-                available_time=str(r.get("available_time", "")),
-                task_label=int(r.get("task_label", 0)),
+                event_time=str(r["event_time"]).strip(),
+                available_time=str(r["available_time"]).strip(),
+                task_label=task_label,
                 meeting_id=str(r.get("meeting_id", "")),
-                source=str(r.get("source", "")),
-                annotation_source=str(r.get("annotation_source", "verified_file")),
+                source=str(r.get("source", "Federal Reserve")),
+                annotation_source=str(r.get("annotation_source", "verified_corpus")),
+                availability_source=str(r.get("availability_source", "OFFICIAL_RELEASE")),
+                availability_quality=str(r.get("availability_quality", "exact")),
                 future_macro_labels=future_macro,
                 market_outcomes=market_outs,
                 metadata=r.get("metadata", {}),
@@ -309,7 +439,25 @@ def load_fomc_dataset(filepath: Union[str, Path]) -> List[TemporalSample]:
 
     elif path.suffix == ".csv":
         df = pd.read_csv(path)
-        for _, row in df.iterrows():
+        for idx, row in df.iterrows():
+            for req in required_fields:
+                if req not in row or pd.isna(row[req]):
+                    raise DatasetValidationError(
+                        f"CSV row {idx} in {path.name} is missing REQUIRED field '{req}'."
+                    )
+                val_str = str(row[req]).strip()
+                if not val_str:
+                    raise DatasetValidationError(
+                        f"CSV row {idx} in {path.name} has empty REQUIRED field '{req}'."
+                    )
+
+            try:
+                task_label = int(row["task_label"])
+            except (ValueError, TypeError):
+                raise DatasetValidationError(
+                    f"CSV row {idx} in {path.name} has non-integer task_label: {row['task_label']!r}"
+                )
+
             future_macro = {}
             market_outs = {}
             for k in ["next_action", "next_cpi_surprise"]:
@@ -320,15 +468,17 @@ def load_fomc_dataset(filepath: Union[str, Path]) -> List[TemporalSample]:
                     market_outs[k] = float(row[k])
 
             sample = TemporalSample(
-                sample_id=str(row.get("sample_id", "")),
-                text=str(row.get("text", "")),
-                document_type=str(row.get("document_type", "statement")),
-                event_time=str(row.get("event_time", "")),
-                available_time=str(row.get("available_time", "")),
-                task_label=int(row.get("task_label", 0)),
-                meeting_id=str(row.get("meeting_id", "")),
-                source=str(row.get("source", "")),
-                annotation_source=str(row.get("annotation_source", "csv_file")),
+                sample_id=str(row["sample_id"]).strip(),
+                text=str(row["text"]).strip(),
+                document_type=str(row.get("document_type", "statement")) if pd.notna(row.get("document_type")) else "statement",
+                event_time=str(row["event_time"]).strip(),
+                available_time=str(row["available_time"]).strip(),
+                task_label=task_label,
+                meeting_id=str(row.get("meeting_id", "")) if pd.notna(row.get("meeting_id")) else "",
+                source=str(row.get("source", "Federal Reserve")) if pd.notna(row.get("source")) else "Federal Reserve",
+                annotation_source=str(row.get("annotation_source", "csv_corpus")) if pd.notna(row.get("annotation_source")) else "csv_corpus",
+                availability_source=str(row.get("availability_source", "OFFICIAL_RELEASE")) if pd.notna(row.get("availability_source")) else "OFFICIAL_RELEASE",
+                availability_quality=str(row.get("availability_quality", "exact")) if pd.notna(row.get("availability_quality")) else "exact",
                 future_macro_labels=future_macro,
                 market_outcomes=market_outs,
                 metadata={},
@@ -337,20 +487,65 @@ def load_fomc_dataset(filepath: Union[str, Path]) -> List[TemporalSample]:
     else:
         raise ValueError(f"Unsupported dataset format '{path.suffix}'. Use .json, .jsonl, or .csv")
 
+    validate_dataset(
+        samples,
+        require_timezone_aware=require_timezone_aware,
+        source_timezone=source_timezone,
+    )
     return samples
 
 
 class FOMCBenchmark:
-    """Benchmark manager for Point-in-Time FOMC research datasets."""
+    """Benchmark manager for Point-in-Time FOMC research datasets.
 
-    def __init__(self, samples: Optional[List[TemporalSample]] = None) -> None:
-        self.samples: List[TemporalSample] = samples if samples is not None else create_toy_fomc_dataset()
+    NOTE:
+        FOMCBenchmark requires an explicit research dataset.
+        Use FOMCBenchmark.from_file(...) for empirical experiments,
+        or ToyFOMCBenchmark() for tests and synthetic validation.
+    """
+
+    def __init__(
+        self,
+        samples: Optional[List[TemporalSample]] = None,
+        source_verified: bool = False,
+        annotation_verified: bool = False,
+        pit_verified: bool = False,
+    ) -> None:
+        if samples is None:
+            raise ValueError(
+                "FOMCBenchmark requires an explicit research dataset.\n"
+                "Use FOMCBenchmark.from_file(...) for empirical experiments,\n"
+                "or ToyFOMCBenchmark() for tests and synthetic validation."
+            )
+        validate_dataset(samples)
+        self.samples: List[TemporalSample] = list(samples)
+        self.dataset_validation_status: str = "validated"
+        self.source_verified: bool = source_verified
+        self.annotation_verified: bool = annotation_verified
+        self.pit_verified: bool = pit_verified
 
     @classmethod
-    def from_file(cls, filepath: Union[str, Path]) -> FOMCBenchmark:
+    def from_file(
+        cls,
+        filepath: Union[str, Path],
+        source_timezone: Optional[str] = None,
+        require_timezone_aware: bool = True,
+        source_verified: bool = False,
+        annotation_verified: bool = False,
+        pit_verified: bool = False,
+    ) -> FOMCBenchmark:
         """Instantiate benchmark from verified external research file."""
-        loaded = load_fomc_dataset(filepath)
-        return cls(samples=loaded)
+        loaded = load_fomc_dataset(
+            filepath,
+            source_timezone=source_timezone,
+            require_timezone_aware=require_timezone_aware,
+        )
+        return cls(
+            samples=loaded,
+            source_verified=source_verified,
+            annotation_verified=annotation_verified,
+            pit_verified=pit_verified,
+        )
 
     def get_split(self, split: str) -> List[TemporalSample]:
         """Retrieve samples filtered to a temporal partition:
@@ -374,6 +569,12 @@ class FOMCBenchmark:
         """Strict Point-in-Time filter: returns only samples with availability_time <= as_of_date."""
         return [s for s in self.samples if s.is_available_as_of(as_of_date)]
 
+    def get_pit_subset(self, exact_only: bool = True) -> List[TemporalSample]:
+        """Return a subset of samples filtered by Point-in-Time provenance quality."""
+        if not exact_only:
+            return list(self.samples)
+        return [s for s in self.samples if s.availability_quality == "exact"]
+
     def export_json(self, target_path: Union[str, Path]) -> None:
         """Export dataset to JSON format."""
         out = [asdict(s) for s in self.samples]
@@ -392,4 +593,10 @@ class ToyFOMCBenchmark(FOMCBenchmark):
     """
 
     def __init__(self) -> None:
-        super().__init__(samples=create_toy_fomc_dataset())
+        toy_samples = create_toy_fomc_dataset()
+        super().__init__(
+            samples=toy_samples,
+            source_verified=False,
+            annotation_verified=False,
+            pit_verified=False,
+        )

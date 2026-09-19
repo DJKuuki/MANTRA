@@ -37,8 +37,11 @@ To account for time-series autocorrelation without assuming stationarity under n
 - Mean block length $\bar{L} = 8$. Transition probability $p = 1 / \bar{L}$.
 - Indices transition geometrically:
   $$\mathbb{P}(I_{t+1} \sim \text{Uniform}(0, N-1)) = p, \quad \mathbb{P}(I_{t+1} = (I_t + 1) \bmod N) = 1 - p$$
-- 95% Confidence Intervals are derived from $B = 1{,}000$ bootstrap replicates:
+- 95% Confidence Intervals are derived from bootstrap replicates:
   $$\text{CI}_{95\%}(C) = \left[ \widehat{C}^*_{(0.025)}, \ \widehat{C}^*_{(0.975)} \right]$$
+- **Parameter Distinction**:
+  - *Formal Scientific Configuration* (`configs/fomc_formal_experiment.yaml`): $B \ge 1{,}000$ (default $B = 2{,}000$).
+  - *CI / Smoke Test Configuration* (`configs/fomc_ci.yaml`): reduced $B = 200$ for rapid test execution.
 
 ---
 
@@ -61,8 +64,11 @@ $$L_{\text{repr}}(M_L; M_C) = \frac{1}{K} \sum_{k=1}^K \Delta_k$$
 
 ### 3.2 Matched Permutation Significance Test
 Under the null hypothesis $H_0: \mathbb{E}[\Delta_k] \le 0$, the identity of "clean" vs "leak" within each matched time fold is exchangeable.
-We execute a **paired sign-flip permutation test** over $M = 500$ permutations:
+We execute a **paired sign-flip permutation test**:
 $$p\text{-value} = \frac{1}{M} \sum_{m=1}^M \mathbb{I}\left( \frac{1}{K} \sum_{k=1}^K s_{k, m} \Delta_k \ge L_{\text{repr}} \right), \quad s_{k, m} \in \{-1, +1\} \text{ with } p=0.5$$
+- **Parameter Distinction**:
+  - *Formal Scientific Configuration*: $M \ge 500$ permutations (default $M = 1{,}000$).
+  - *CI / Smoke Test Configuration*: reduced $M = 100$ permutations.
 
 ---
 
@@ -88,17 +94,20 @@ For two clean models ($M_C$ vs $M_C$), $L_{\text{behavior}} \equiv 0.0$.
 
 ## 5. Leakage-Induced Economic Effect ($E_L$)
 
-### 5.1 Level A (Primary): Model-Agnostic Information Coefficient ($\Delta \text{IC}$)
-We compute the Spearman rank correlation between model continuous stance score $s_t = P(\text{Hawkish}) - P(\text{Dovish})$ and forward market return $r_{t, t+k}$:
+### 5.1 Level A (Primary Metric): Model-Agnostic Information Coefficient ($\Delta \text{IC}$)
+**Delta IC is the primary economic effect estimator.** It computes the Spearman rank correlation between model continuous stance score $s_t = P(\text{Hawkish}) - P(\text{Dovish})$ and forward asset return $r_{t, t+k}$:
 $$\text{IC}(M) = \text{RankCorr}\left( s_t(M), \ r_{t, t+k} \right)$$
 The primary economic leakage effect is:
 $$E_L^{\text{IC}} = \text{IC}(M_L) - \text{IC}(M_C)$$
-This requires NO arbitrary assumption about whether hawkish statements should buy or sell equities.
+This requires NO arbitrary assumptions regarding directional position orientation or trading rule heuristics.
 
-### 5.2 Level B: Strategy Performance Delta ($\Delta \text{Sharpe}$)
-Under a frozen stance-to-position mapping $w_t(M) \in \{-1, 0, +1\}$ with 5 bps transaction costs:
+### 5.2 Level B (Secondary / Illustrative): Strategy Performance Delta ($\Delta \text{Sharpe}$)
+Level B provides a **fixed illustrative strategy for secondary sensitivity analysis only**:
+- Stance threshold ($\tau = 0.20$) and stance-to-position mapping ($w_t \in \{-1, 0, +1\}$) must be fixed a priori or calibrated exclusively on the pre-cutoff development set ($\mathcal{D}_{\text{dev}}$).
+- **Zero test-set tuning**: No tuning of $\tau$ or orientation flipping is permitted on the out-of-sample evaluation split.
 $$E_L^{\text{Sharpe}} = \text{Sharpe}(M_L) - \text{Sharpe}(M_C)$$
 $$E_L^{\text{Return}} = \bar{R}(M_L) - \bar{R}(M_C)$$
+Incorporates 5 bps two-way transaction costs.
 
 ### 5.3 Statistical Inference via Paired Block Bootstrap
 We compute paired stationary block bootstrap distributions for $\Delta \text{IC}$, $\Delta \text{Sharpe}$, and $\Delta \text{Return}$:
