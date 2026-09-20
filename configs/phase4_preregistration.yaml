@@ -1,14 +1,14 @@
-# Phase 4 Confirmatory Study Preregistration Specification (v1.2.2)
+# Phase 4 Confirmatory Study Preregistration Specification (v1.2.3)
 # Machine-verifiable locked contract for confirmatory evaluation.
 
-version: "1.2.2"
+version: "1.2.3"
 locked: true
-locked_at: "2026-09-20T14:30:00Z"
+locked_at: "2026-09-20T20:10:00Z"
 base_commit: "fee82a2c059d486b8f0cde7b067d686cfcf39dd0"
 amendment_status: "PRE-COMPUTE CORRECTION (NO PHASE 4B CONFIRMATORY MODEL RESULTS EXISTED)"
 
 preregistration_doc_path: "docs/research/phase4_preregistration.md"
-preregistration_doc_sha256: "9aaa7780e5c6ef61f40087da8c87bb325b3ac1e8fd4bde5a8befb21531ed020e"
+preregistration_doc_sha256: "b807833d53e768e39d1629ce789dad6e3c9a9d63a5a3ea3afaba46104f1a58f0"
 
 dataset:
   name: "fomc_scheduled_statements_2015_2019"
@@ -87,9 +87,12 @@ hypotheses:
   secondary_behavioral:
     id: "H1_behavior"
     name: "Behavioral Keyword Sensitivity Shift"
-    formula: "L_behavior = MeanSensitivity(M_L) - MeanSensitivity(M_C) > 0"
+    formula: "L_behavior = MeanSensitivity(M_L) - MeanSensitivity(M_C)"
     statistical_unit: "independent_fomc_event"
-    fdr_correction: "benjamini_hochberg"
+    role: "descriptive_secondary"
+    significance_testing: false
+    multiple_testing: "not_applicable"
+    fdr_correction: "none"
   secondary_economic:
     id: "H1_econ"
     name: "2Y Treasury Yield Information Coefficient Shift"

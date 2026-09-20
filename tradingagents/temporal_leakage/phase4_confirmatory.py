@@ -258,8 +258,8 @@ def verify_phase4_protocol_lock(
     with open(lock_p, "r", encoding="utf-8") as f:
         lock_manifest = json.load(f)
 
-    valid_versions = ["1.1.0", "1.2.0", "1.2.1", "1.2.2"]
-    proto_ver = lock_manifest.get("protocol_version", "1.2.2")
+    valid_versions = ["1.1.0", "1.2.0", "1.2.1", "1.2.2", "1.2.3"]
+    proto_ver = lock_manifest.get("protocol_version", "1.2.3")
     if proto_ver not in valid_versions:
         raise PreregistrationLockError(
             f"Protocol lock version must be in {valid_versions}, found '{proto_ver}'"
@@ -468,9 +468,20 @@ def resolve_phase4_runtime_contract(
     if p_oos != c_oos or p_oos != 32:
         raise PreregistrationLockError(f"OOS events mismatch or invalid: prereg {p_oos} != conf {c_oos}")
 
+    # 9. Secondary Behavioral Descriptive Contract
+    p_behav = prereg_cfg.get("hypotheses", {}).get("secondary_behavioral", {})
+    if p_behav:
+        p_role = p_behav.get("role", "descriptive_secondary")
+        if p_role != "descriptive_secondary":
+            raise PreregistrationLockError(f"Behavioral hypothesis role must be 'descriptive_secondary', found '{p_role}'")
+        if p_behav.get("significance_testing", False) is not False:
+            raise PreregistrationLockError("Behavioral hypothesis must set significance_testing: false")
+        if p_behav.get("multiple_testing", "not_applicable") not in ["not_applicable", "none"]:
+            raise PreregistrationLockError("Behavioral hypothesis multiple_testing must be 'not_applicable' or 'none'")
+
     return {
         "status": "CONTRACT_RESOLVED",
-        "protocol_version": prereg_cfg.get("version", "1.2.2"),
+        "protocol_version": prereg_cfg.get("version", "1.2.3"),
         "dose_ladder": c_doses,
         "seeds": c_seeds,
         "token_budget": c_tb,
@@ -491,6 +502,9 @@ def resolve_phase4_runtime_contract(
         "probe_alpha": conf_cfg.get("downstream_evaluation", {}).get("probe_alpha", 1.0),
         "bootstrap_draws": conf_cfg.get("downstream_evaluation", {}).get("bootstrap_draws", 1000),
         "paired_permutations": conf_cfg.get("downstream_evaluation", {}).get("paired_permutations", 2000),
+        "behavioral_endpoint_role": "descriptive_secondary",
+        "behavioral_significance_testing": False,
+        "behavioral_multiple_testing": "NOT_APPLICABLE",
     }
 
 
@@ -548,7 +562,7 @@ def verify_preregistration_lock(
 
 def verify_phase4b_authorization(
     authorization_path: Path | str,
-    protocol_version: str = "1.2.2",
+    protocol_version: str = "1.2.3",
     protocol_lock_sha256: Optional[str] = None,
     locked_git_commit: Optional[str] = None,
     locked_source_tree_hash: Optional[str] = None,
@@ -1289,7 +1303,7 @@ def execute_phase4b_confirmatory(
 
     locked_commit = lock_meta.get("scientific_code_commit") or lock_meta.get("code_commit")
     locked_tree = lock_meta.get("source_tree_hash")
-    proto_ver = lock_meta.get("protocol_version", "1.2.2")
+    proto_ver = lock_meta.get("protocol_version", "1.2.3")
 
     if locked_commit is None or locked_tree is None:
         raise PreregistrationLockError(
@@ -1455,11 +1469,18 @@ def execute_phase4b_confirmatory(
                 b_res["permutation_p_value"] = 1.0
                 b_res["delta_spearman"] = 0.0
                 b_res["l_behavior"] = 0.0
+                b_res["l_behavior_event"] = 0.0
+                b_res["l_behavior_mean"] = 0.0
+                b_res["l_behavior_median"] = 0.0
+                b_res["l_behavior_std"] = 0.0
                 b_res["delta_ic_2y"] = 0.0
                 b_res["delta_ic_spy"] = 0.0
                 b_res["n_oos_events"] = 32
                 b_res["target_type"] = "continuous"
                 b_res["model_type"] = "ridge_regression"
+                b_res["behavioral_inference"] = "DESCRIPTIVE_ONLY"
+                b_res["behavioral_multiple_testing"] = "NOT_APPLICABLE"
+                b_res["behavioral_significance_testing"] = False
                 continue
 
             leak_embeddings = b_res["event_embeddings"]
@@ -1524,18 +1545,24 @@ def execute_phase4b_confirmatory(
                 "n_oos_events": res_binary["n_oos_events"],
             }
 
-            # 3. Behavioral Leakage Event-Level
+            # 3. Behavioral Leakage Event-Level (Descriptive Secondary Endpoint)
             res_behav = evaluate_behavioral_leakage_event_level(
                 sensitivities_leak=leak_sensitivities,
                 sensitivities_clean=clean_sensitivities,
                 event_ids=event_ids,
                 aggregation_rule=aggregation_rule,
             )
-            b_res["l_behavior"] = res_behav["l_behavior_event"]
-            b_res["l_behavior_event"] = res_behav["l_behavior_event"]
+            b_res["l_behavior"] = res_behav["l_behavior_mean"]
+            b_res["l_behavior_event"] = res_behav["l_behavior_mean"]
+            b_res["l_behavior_mean"] = res_behav["l_behavior_mean"]
+            b_res["l_behavior_median"] = res_behav["l_behavior_median"]
+            b_res["l_behavior_std"] = res_behav["l_behavior_std"]
             b_res["mask_sensitivity_leak_event"] = res_behav["mask_sensitivity_leak_event"]
             b_res["mask_sensitivity_clean_event"] = res_behav["mask_sensitivity_clean_event"]
-            b_res["fdr_correction"] = "NOT_EVALUATED_PROTOCOL_UNDERSPECIFIED"
+            b_res["event_deltas"] = res_behav["event_deltas"]
+            b_res["behavioral_inference"] = "DESCRIPTIVE_ONLY"
+            b_res["behavioral_multiple_testing"] = "NOT_APPLICABLE"
+            b_res["behavioral_significance_testing"] = False
 
             # 4. Economic Effect Event-Level
             res_econ_2y = evaluate_economic_effect_event_level(
@@ -1612,7 +1639,7 @@ def run_phase4_mock_orchestration(
         lock_sha = compute_file_sha256(lock_file, normalize_newlines=True)
 
         mock_auth_data = {
-            "protocol_version": lock_manifest.get("protocol_version", "1.2.2"),
+            "protocol_version": lock_manifest.get("protocol_version", "1.2.3"),
             "human_authorized": True,
             "authorizer": "MOCK_DRY_RUN_TEST",
             "authorized_at": "2026-09-20T14:30:00Z",

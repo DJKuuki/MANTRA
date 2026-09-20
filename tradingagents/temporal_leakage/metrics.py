@@ -1046,6 +1046,10 @@ def evaluate_behavioral_leakage_event_level(
 
     S_event(M) = mean_{paragraphs in event}(S_paragraph(M)).
     L_behavior,event(D) = S_event(M_D) - S_event(M_D0).
+
+    Behavioral leakage is evaluated as a descriptive secondary endpoint.
+    Reports mean, median, standard deviation across events, and per-event deltas.
+    Does not compute confirmatory p-values or multiple-testing corrections.
     """
     df = pd.DataFrame({
         "event_id": [str(e) for e in event_ids],
@@ -1060,15 +1064,38 @@ def evaluate_behavioral_leakage_event_level(
 
     s_ev_leak = float(np.mean(grouped["sens_leak"]))
     s_ev_clean = float(np.mean(grouped["sens_clean"]))
-    l_behavior_event = s_ev_leak - s_ev_clean
+    deltas = (grouped["sens_leak"] - grouped["sens_clean"]).to_numpy()
+
+    l_mean = float(np.mean(deltas))
+    l_median = float(np.median(deltas))
+    l_std = float(np.std(deltas, ddof=1)) if len(deltas) > 1 else 0.0
+
+    event_deltas = [
+        {
+            "event_id": str(row["event_id"]),
+            "sensitivity_clean": float(row["sens_clean"]),
+            "sensitivity_leak": float(row["sens_leak"]),
+            "behavioral_delta": float(row["sens_leak"] - row["sens_clean"]),
+        }
+        for _, row in grouped.iterrows()
+    ]
 
     return {
         "n_events": len(grouped),
         "statistical_unit": "event",
         "aggregation_rule": aggregation_rule,
+        "l_behavior_mean": l_mean,
+        "l_behavior_median": l_median,
+        "l_behavior_std": l_std,
+        "l_behavior_event": l_mean,
+        "l_behavior": l_mean,
         "mask_sensitivity_leak_event": s_ev_leak,
         "mask_sensitivity_clean_event": s_ev_clean,
-        "l_behavior_event": l_behavior_event,
+        "event_deltas": event_deltas,
+        "behavioral_inference": "DESCRIPTIVE_ONLY",
+        "behavioral_statistical_unit": "independent_fomc_event",
+        "behavioral_multiple_testing": "NOT_APPLICABLE",
+        "behavioral_significance_testing": False,
     }
 
 

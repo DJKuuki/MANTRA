@@ -1088,7 +1088,7 @@ def test_ac_default_full_run_is_never_mock(monkeypatch):
         tree_hash = compute_source_tree_hash(PROJECT_ROOT)
         with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
             lock_meta = json.load(f)
-            proto_ver = lock_meta.get("protocol_version", "1.2.2")
+            proto_ver = lock_meta.get("protocol_version", "1.2.3")
             locked_commit = lock_meta.get("code_commit") or lock_meta.get("scientific_code_commit", "unknown")
         lock_sha = compute_file_sha256(PROTOCOL_LOCK_PATH, normalize_newlines=True)
         with open(auth_file, "w", encoding="utf-8") as f:
@@ -1140,7 +1140,7 @@ def test_ad_mock_rejected_in_full_empirical_mode(monkeypatch):
         tree_hash = compute_source_tree_hash(PROJECT_ROOT)
         with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
             lock_meta = json.load(f)
-            proto_ver = lock_meta.get("protocol_version", "1.2.2")
+            proto_ver = lock_meta.get("protocol_version", "1.2.3")
             locked_commit = lock_meta.get("code_commit") or lock_meta.get("scientific_code_commit", "unknown")
         lock_sha = compute_file_sha256(PROTOCOL_LOCK_PATH, normalize_newlines=True)
         with open(auth_file, "w", encoding="utf-8") as f:
@@ -1560,14 +1560,14 @@ def test_am_protocol_lock_manifest_verification_and_integrity():
         conf_config_path=CONF_CONFIG_PATH,
     )
     assert lock_meta["status"] == "PROTOCOL_LOCKED_AND_VERIFIED"
-    assert lock_meta["protocol_version"] == "1.2.2"
+    assert lock_meta["protocol_version"] == "1.2.3"
     assert "source_tree_hash" in lock_meta
     assert "scientific_code_commit" in lock_meta
     assert "code_commit" in lock_meta
     assert len(lock_meta["source_tree_hash"]) == 64
     assert len(lock_meta["scientific_code_commit"]) == 40
 
-    # Tamper test: missing source_tree_hash in v1.2.2 must fail closed
+    # Tamper test: missing source_tree_hash in v1.2.3 must fail closed
     with tempfile.TemporaryDirectory() as td:
         tampered_lock = Path(td) / "lock.json"
         with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
@@ -1582,7 +1582,7 @@ def test_am_protocol_lock_manifest_verification_and_integrity():
                 project_root=PROJECT_ROOT,
             )
 
-    # Tamper test: missing commit bindings in v1.2.2 must fail closed
+    # Tamper test: missing commit bindings in v1.2.3 must fail closed
     with tempfile.TemporaryDirectory() as td:
         tampered_lock = Path(td) / "lock.json"
         with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
@@ -1608,6 +1608,7 @@ def test_an_authorization_binding_validation():
     with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
         lock_manifest = json.load(f)
     lock_sha = compute_file_sha256(PROTOCOL_LOCK_PATH, normalize_newlines=True)
+    proto_ver = lock_manifest.get("protocol_version", "1.2.3")
 
     with tempfile.TemporaryDirectory() as td:
         auth_file = Path(td) / "auth.json"
@@ -1615,7 +1616,7 @@ def test_an_authorization_binding_validation():
         # 1. Mismatched locked_scientific_code_commit
         with open(auth_file, "w", encoding="utf-8") as f:
             json.dump({
-                "protocol_version": "1.2.2",
+                "protocol_version": proto_ver,
                 "human_authorized": True,
                 "protocol_lock_sha256": lock_sha,
                 "locked_scientific_code_commit": "0" * 40,
@@ -1625,7 +1626,7 @@ def test_an_authorization_binding_validation():
         with pytest.raises(Phase4BAuthorizationError, match="locked_scientific_code_commit"):
             verify_phase4b_authorization(
                 auth_file,
-                protocol_version="1.2.2",
+                protocol_version=proto_ver,
                 expected_lock_hash=lock_sha,
                 expected_lock_manifest=lock_manifest,
             )
@@ -1633,7 +1634,7 @@ def test_an_authorization_binding_validation():
         # 2. Mismatched locked_source_tree_hash
         with open(auth_file, "w", encoding="utf-8") as f:
             json.dump({
-                "protocol_version": "1.2.2",
+                "protocol_version": proto_ver,
                 "human_authorized": True,
                 "protocol_lock_sha256": lock_sha,
                 "locked_scientific_code_commit": lock_manifest["scientific_code_commit"],
@@ -1643,7 +1644,7 @@ def test_an_authorization_binding_validation():
         with pytest.raises(Phase4BAuthorizationError, match="locked_source_tree_hash"):
             verify_phase4b_authorization(
                 auth_file,
-                protocol_version="1.2.2",
+                protocol_version=proto_ver,
                 expected_lock_hash=lock_sha,
                 expected_lock_manifest=lock_manifest,
             )
@@ -1651,7 +1652,7 @@ def test_an_authorization_binding_validation():
         # 3. Mismatched protocol_lock_sha256
         with open(auth_file, "w", encoding="utf-8") as f:
             json.dump({
-                "protocol_version": "1.2.2",
+                "protocol_version": proto_ver,
                 "human_authorized": True,
                 "protocol_lock_sha256": "e" * 64,
                 "locked_scientific_code_commit": lock_manifest["scientific_code_commit"],
@@ -1661,7 +1662,7 @@ def test_an_authorization_binding_validation():
         with pytest.raises(Phase4BAuthorizationError, match="protocol_lock_sha256"):
             verify_phase4b_authorization(
                 auth_file,
-                protocol_version="1.2.2",
+                protocol_version=proto_ver,
                 expected_lock_hash=lock_sha,
                 expected_lock_manifest=lock_manifest,
             )
@@ -1821,8 +1822,8 @@ def test_as_competence_metric_provenance():
 # Test AT: Behavioral Metric Event-Level Analysis
 # ---------------------------------------------------------------------------
 def test_at_behavioral_metric_event_level_analysis():
-    """Verify evaluate_behavioral_leakage_event_level computes event-level sensitivities
-    and preserves protocol marking for FDR correction."""
+    """Verify evaluate_behavioral_leakage_event_level computes event-level sensitivities,
+    deltas, and descriptive summary statistics without confirmatory p-value/FDR."""
     events = load_events()
     event_ids = [e["event_id"] for e in events]
     rng = np.random.RandomState(42)
@@ -1836,9 +1837,20 @@ def test_at_behavioral_metric_event_level_analysis():
         aggregation_rule="mean",
     )
     assert "l_behavior_event" in res
+    assert "l_behavior_mean" in res
+    assert "l_behavior_median" in res
+    assert "l_behavior_std" in res
     assert "mask_sensitivity_leak_event" in res
     assert "mask_sensitivity_clean_event" in res
-    assert res["l_behavior_event"] > 0
+    assert "event_deltas" in res
+    assert len(res["event_deltas"]) == len(events)
+    assert res["l_behavior_mean"] > 0
+    assert res["behavioral_inference"] == "DESCRIPTIVE_ONLY"
+    assert res["behavioral_statistical_unit"] == "independent_fomc_event"
+    assert res["behavioral_multiple_testing"] == "NOT_APPLICABLE"
+    assert res["behavioral_significance_testing"] is False
+    assert "p_value" not in res
+    assert "fdr_correction" not in res
 
 
 # ---------------------------------------------------------------------------
@@ -1887,13 +1899,16 @@ def test_av_runtime_contract_reconciliation():
         prereg_cfg = yaml.safe_load(f)
 
     contract = resolve_phase4_runtime_contract(conf_cfg, prereg_cfg)
-    assert contract["protocol_version"] == "1.2.2"
+    assert contract["protocol_version"] == "1.2.3"
     assert contract["mlm_max_steps"] == 100
     assert contract["mlm_scheduler"] == "none"
     assert contract["mlm_warmup_ratio"] == 0.0
     assert contract["probe_alpha"] == 1.0
     assert contract["random_seed"] == 42
     assert contract["token_budget"] == 256000
+    assert contract["behavioral_endpoint_role"] == "descriptive_secondary"
+    assert contract["behavioral_significance_testing"] is False
+    assert contract["behavioral_multiple_testing"] == "NOT_APPLICABLE"
 
     # Discrepancy test: mismatch in max_steps must fail closed
     tampered_conf = copy.deepcopy(conf_cfg)
@@ -1981,7 +1996,7 @@ def test_ay_branch_manifest_provenance_completeness():
     b_res["execution_repository_head"] = "a" * 40
     b_res["source_tree_hash"] = "b" * 64
     b_res["protocol_lock_sha256"] = "c" * 64
-    b_res["protocol_version"] = "1.2.2"
+    b_res["protocol_version"] = "1.2.3"
 
     with tempfile.TemporaryDirectory() as td:
         writer = Phase4ArtifactWriter(output_root=td)
@@ -2106,6 +2121,46 @@ def test_deterministic_metric_integration_on_40_event_fixture():
     assert np.isfinite(res_econ_spy["delta_ic"])
     ci_l_spy, ci_u_spy = res_econ_spy["delta_ic_ci_95"]
     assert ci_l_spy <= ci_u_spy
+
+
+# ---------------------------------------------------------------------------
+# Test BB: Ancestry Verification Allows Doc-Only Descendant Commits
+# ---------------------------------------------------------------------------
+def test_bb_ancestry_verification_allows_doc_only_descendants(monkeypatch):
+    """Verify verify_phase4_code_freeze accepts descendant commits when only non-controlled files (e.g. docs) differ."""
+    import subprocess
+    original_run = subprocess.run
+
+    def mock_subprocess_run(cmd, *args, **kwargs):
+        if isinstance(cmd, list) and "diff" in cmd:
+            class MockRes:
+                stdout = "docs/research/phase4a_preregistration_report.md\nconfigs/phase4_protocol_lock.json\n"
+                stderr = ""
+                returncode = 0
+            return MockRes()
+        if isinstance(cmd, list) and "--is-ancestor" in cmd:
+            class MockAncestor:
+                returncode = 0
+            return MockAncestor()
+        return original_run(cmd, *args, **kwargs)
+
+    monkeypatch.setattr("subprocess.run", mock_subprocess_run)
+    monkeypatch.setattr(
+        "tradingagents.temporal_leakage.phase4_confirmatory.check_git_status",
+        lambda root: {"git_available": True, "head_commit": "3333333333333333333333333333333333333333", "git_dirty": False},
+    )
+
+    tree_hash = compute_source_tree_hash(PROJECT_ROOT)
+    res = verify_phase4_code_freeze(
+        project_root=PROJECT_ROOT,
+        locked_git_commit="2222222222222222222222222222222222222222",
+        locked_source_tree_hash=tree_hash,
+        enforce_git_clean=True,
+    )
+    assert res["status"] == "CODE_FROZEN_AND_VERIFIED"
+    assert res["scientific_code_commit"] == "2222222222222222222222222222222222222222"
+    assert res["execution_repository_head"] == "3333333333333333333333333333333333333333"
+
 
 
 

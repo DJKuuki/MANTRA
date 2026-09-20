@@ -1,4 +1,4 @@
-# Phase 4 Confirmatory Execution Configuration (v1.2.2)
+# Phase 4 Confirmatory Execution Configuration (v1.2.3)
 # Governed strictly by configs/phase4_preregistration.yaml
 
 experiment_id: "phase4_confirmatory_evaluation"
@@ -68,6 +68,9 @@ downstream_evaluation:
   oos_events: 32
   paired_permutations: 2000
   bootstrap_draws: 1000
+  behavioral_endpoint_role: "descriptive_secondary"
+  behavioral_significance_testing: false
+  behavioral_multiple_testing: "not_applicable"
   primary_economic_endpoint: "treasury_2y_yield_change"
   secondary_economic_endpoint: "spy_next_close_return_from_event_close"
 

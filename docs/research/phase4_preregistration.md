@@ -1,8 +1,8 @@
-# Formal Preregistration: Phase 4 Confirmatory Temporal Leakage Study (v1.2.0)
+# Formal Preregistration: Phase 4 Confirmatory Temporal Leakage Study (v1.2.3)
 
 **Protocol Title**: Machine-Verifiable Point-in-Time Evaluation of Representational and Behavioral Temporal Contamination in Financial Central Bank Language Models  
 **Preregistration Status**: LOCKED PRIOR TO CONFIRMATORY COMPUTE  
-**Preregistration Specification Version**: 1.2.0 (Protocol Closure Finalization)  
+**Preregistration Specification Version**: 1.2.3 (Phase 4B Final Gate Patch)  
 **Repository**: `RubiscoYHY/MANTRA`  
 **Git Base Revision**: `4556d13015211d73dccd3fdd39d39232506f3e43`  
 **Date of Lock**: 2026-09-20  
@@ -78,11 +78,13 @@ In accordance with confirmatory empirical standards:
 - **Effect Metric**: Delta Spearman Rank Correlation ($\Delta \rho = \rho_{\text{leak}} - \rho_{\text{clean}}$).
 
 ### Secondary Hypothesis $H_{1,\text{behavior}}$ (Behavioral Leakage)
-- **Null Hypothesis $H_{0,\text{behavior}}$**: Post-cutoff contamination does not alter model stance sensitivity to forward-looking policy keywords:
-  $$L_{\text{behavior}} \le 0$$
-- **Alternative Hypothesis $H_{1,\text{behavior}}$**: Contaminated models exhibit elevated behavioral sensitivity shifts across forward-looking policy tokens:
-  $$L_{\text{behavior}} = \bar{S}_{\text{event}}(M_D) - \bar{S}_{\text{event}}(M_{D0}) > 0$$
-- **Multiplicity Adjustment**: Benjamini-Hochberg FDR correction at $\alpha = 0.05$.
+- **Role**: Descriptive secondary endpoint.
+- **Metric Formulation**:
+  $$L_{\text{behavior}} = \bar{S}_{\text{event}}(M_D) - \bar{S}_{\text{event}}(M_{D0})$$
+  Evaluated as event-level stance sensitivity delta: mean, median, standard deviation across independent FOMC events, and per-event deltas.
+- **Statistical Unit**: Independent FOMC meeting event ($N=40$).
+- **Inference Standard**: Descriptive estimation only. No confirmatory p-value, hypothesis test rejection threshold, or Benjamini-Hochberg FDR multiplicity adjustment is claimed.
+
 
 ### Secondary Hypothesis $H_{1,\text{econ}}$ (Economic Effect)
 - **Null Hypothesis $H_{0,\text{econ}}$**: The difference in Information Coefficient ($E_L = \text{IC}_{\text{leak}} - \text{IC}_{\text{clean}}$) against post-event 2Y Treasury yield change is zero or negative:
