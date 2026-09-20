@@ -1,0 +1,45 @@
+# Phase 4 Confirmatory Execution Configuration
+# Governed strictly by configs/phase4_preregistration.yaml
+
+experiment_id: "phase4_confirmatory_evaluation"
+preregistration_config: "configs/phase4_preregistration.yaml"
+
+dataset:
+  name: "fomc_scheduled_statements_2015_2019"
+  events_path: "data/research/fomc/events/events.jsonl"
+  anchors_path: "data/research/fomc/confirmatory_anchors/anchors.jsonl"
+  source_registry_path: "data/research/fomc/source_registry.jsonl"
+  policy_history_path: "data/research/fomc/policy_history.csv"
+  market_dir: "data/research/market"
+  temporal_window: "2015-2019"
+  expected_events: 40
+  expected_anchors: 181
+
+dose_ladder: [0.00, 0.25, 0.50, 0.75, 1.00]
+seeds: [13, 42, 87, 123, 2024]
+
+model:
+  base_checkpoint: "ProsusAI/finbert"
+  device: "cuda" # falls back to cpu if unavailable
+  max_seq_length: 128
+
+mlm_training:
+  token_budget: 256000
+  num_blocks: 500
+  block_length: 512
+  batch_size: 16
+  learning_rate: 5.0e-5
+  weight_decay: 0.01
+  mask_ratio: 0.15
+  optimizer: "AdamW"
+  max_repetition_ratio: 0.20
+
+downstream_evaluation:
+  statistical_unit: "independent_fomc_event"
+  aggregation_rule: "mean"
+  cv_folds: 4
+  min_train_events: 12
+  paired_permutations: 2000
+  bootstrap_draws: 1000
+  primary_economic_endpoint: "treasury_2y_yield_change"
+  secondary_economic_endpoint: "spy_1d_return"

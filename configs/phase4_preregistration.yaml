@@ -1,0 +1,67 @@
+# Phase 4 Confirmatory Study Preregistration Specification
+# Machine-verifiable locked contract for confirmatory evaluation.
+
+version: "1.0.0"
+locked: true
+locked_at: "2026-09-20T09:35:00Z"
+base_commit: "d439c256b4e29b9abe05f93f9085edb7639cce66"
+
+preregistration_doc_path: "docs/research/phase4_preregistration.md"
+preregistration_doc_sha256: "a03f9321432e1d8d676c1217391169b2dffa25b4f8c53953ea4de0dbb1111dac"
+
+dataset:
+  name: "fomc_scheduled_statements_2015_2019"
+  events_path: "data/research/fomc/events/events.jsonl"
+  anchors_path: "data/research/fomc/confirmatory_anchors/anchors.jsonl"
+  num_events: 40
+  num_anchors: 181
+  temporal_window: "2015-01-01 to 2019-12-31"
+  cutoff_timestamp: "2019-12-31T23:59:59Z"
+  earliest_contamination_timestamp: "2020-01-29T19:00:00Z"
+  temporal_gap_days: 48
+  primary_statistical_unit: "independent_fomc_event"
+
+statistical_design:
+  temporal_cv_folds: 4
+  cv_method: "grouped_expanding_window"
+  representation_aggregation: "mean_centroid"
+  paired_test_permutations: 2000
+  bootstrap_draws: 1000
+  bootstrap_unit: "event_clustered"
+  alpha: 0.05
+  power_at_d050: 0.884
+
+hypotheses:
+  primary:
+    id: "H1_repr"
+    name: "Representational Leakage"
+    formula: "L_repr = ProbeScore(M_L) - ProbeScore(M_C) > 0"
+    statistical_unit: "independent_fomc_event"
+    test: "paired_event_sign_flip_permutation"
+    target: "rate_change_continuous_and_binary_policy_change"
+    alpha: 0.05
+  secondary_behavioral:
+    id: "H1_behavior"
+    name: "Behavioral Keyword Sensitivity Shift"
+    formula: "L_behavior = MeanSensitivity(M_L) - MeanSensitivity(M_C) > 0"
+    statistical_unit: "independent_fomc_event"
+    fdr_correction: "benjamini_hochberg"
+  secondary_economic:
+    id: "H1_econ"
+    name: "2Y Treasury Yield Information Coefficient Shift"
+    formula: "E_L_2Y = IC(s_event_leak, delta_yield_2Y) - IC(s_event_clean, delta_yield_2Y) > 0"
+    primary_endpoint: "treasury_2y_yield_change"
+    exploratory_endpoint: "spy_1d_return"
+    test: "event_block_bootstrap_ci_95"
+
+compute_bounds:
+  doses: [0.00, 0.25, 0.50, 0.75, 1.00]
+  seeds: [13, 42, 87, 123, 2024]
+  token_budget: 256000
+  num_blocks: 500
+  block_length: 512
+  base_model: "ProsusAI/finbert"
+  optimizer: "AdamW"
+  mlm_lr: 5.0e-5
+  max_mlm_runs: 25
+  max_probe_runs: 25
