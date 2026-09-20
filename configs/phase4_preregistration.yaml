@@ -1,18 +1,22 @@
-# Phase 4 Confirmatory Study Preregistration Specification
+# Phase 4 Confirmatory Study Preregistration Specification (v1.1.0)
 # Machine-verifiable locked contract for confirmatory evaluation.
 
-version: "1.0.0"
+version: "1.1.0"
 locked: true
-locked_at: "2026-09-20T09:35:00Z"
+locked_at: "2026-09-20T12:00:00Z"
 base_commit: "d439c256b4e29b9abe05f93f9085edb7639cce66"
+amendment_status: "PRE-COMPUTE CORRECTION (NO PHASE 4B CONFIRMATORY MODEL RESULTS EXISTED)"
 
 preregistration_doc_path: "docs/research/phase4_preregistration.md"
-preregistration_doc_sha256: "a03f9321432e1d8d676c1217391169b2dffa25b4f8c53953ea4de0dbb1111dac"
+preregistration_doc_sha256: "15911b1766af0d861fc215eb2e9e949ef4f75af9546cce9cf9ba426533e8637b"
 
 dataset:
   name: "fomc_scheduled_statements_2015_2019"
   events_path: "data/research/fomc/events/events.jsonl"
   anchors_path: "data/research/fomc/confirmatory_anchors/anchors.jsonl"
+  source_registry_path: "data/research/fomc/source_registry.jsonl"
+  policy_history_path: "data/research/fomc/policy_history.csv"
+  market_dir: "data/research/market"
   num_events: 40
   num_anchors: 181
   temporal_window: "2015-01-01 to 2019-12-31"
@@ -21,15 +25,52 @@ dataset:
   temporal_gap_days: 48
   primary_statistical_unit: "independent_fomc_event"
 
+contamination_dataset:
+  documents_path: "data/research/fomc/phase4_contamination/documents.jsonl"
+  manifest_path: "data/research/fomc/phase4_contamination/manifest.json"
+  dataset_sha256: "54b3e84e8ef958e78032815a6cc76e1ca68cb0428afe71b390a583ee60e25c58"
+  document_count: 50
+  min_available_time: "2020-01-29T19:00:00Z"
+  max_available_time: "2022-12-14T19:00:00Z"
+  allowed_document_types:
+    - "scheduled_statement"
+    - "unscheduled_statement"
+    - "policy_strategy_statement"
+    - "meeting_minutes"
+
+pre_cutoff_sham_dataset:
+  documents_path: "data/research/fomc/phase4_pre_cutoff/documents.jsonl"
+  manifest_path: "data/research/fomc/phase4_pre_cutoff/manifest.json"
+  dataset_sha256: "8ecc63f3475e18850dd758b4db5d64c7834a98d557139715b337820cd78e88b2"
+  document_count: 64
+
 statistical_design:
   temporal_cv_folds: 4
   cv_method: "grouped_expanding_window"
   representation_aggregation: "mean_centroid"
+  permutation_unit: "event"
+  oos_event_count: 32
   paired_test_permutations: 2000
   bootstrap_draws: 1000
   bootstrap_unit: "event_clustered"
   alpha: 0.05
-  power_at_d050: 0.884
+  simulated_power_at_d050: 0.864
+
+representation_targets:
+  primary:
+    name: "next_scheduled_rate_change"
+    target_type: "continuous"
+    model: "ridge_regression"
+    scoring:
+      effect_metric: "spearman_delta"
+      inferential_metric: "paired_event_absolute_error_improvement"
+
+  coprimary_binary:
+    name: "next_scheduled_change_vs_hold"
+    target_type: "binary"
+    model: "ridge_classifier"
+    scoring:
+      metric: "macro_f1"
 
 hypotheses:
   primary:
@@ -38,7 +79,7 @@ hypotheses:
     formula: "L_repr = ProbeScore(M_L) - ProbeScore(M_C) > 0"
     statistical_unit: "independent_fomc_event"
     test: "paired_event_sign_flip_permutation"
-    target: "rate_change_continuous_and_binary_policy_change"
+    target: "next_scheduled_rate_change"
     alpha: 0.05
   secondary_behavioral:
     id: "H1_behavior"
@@ -51,7 +92,7 @@ hypotheses:
     name: "2Y Treasury Yield Information Coefficient Shift"
     formula: "E_L_2Y = IC(s_event_leak, delta_yield_2Y) - IC(s_event_clean, delta_yield_2Y) > 0"
     primary_endpoint: "treasury_2y_yield_change"
-    exploratory_endpoint: "spy_1d_return"
+    exploratory_endpoint: "spy_next_close_return_from_event_close"
     test: "event_block_bootstrap_ci_95"
 
 compute_bounds:
@@ -60,8 +101,25 @@ compute_bounds:
   token_budget: 256000
   num_blocks: 500
   block_length: 512
-  base_model: "ProsusAI/finbert"
+  base_checkpoint: "ProsusAI/finbert"
+  base_revision: "4556d13015211d73dccd3fdd39d39232506f3e43"
   optimizer: "AdamW"
   mlm_lr: 5.0e-5
+  weight_decay: 0.01
+  mask_probability: 0.15
   max_mlm_runs: 25
   max_probe_runs: 25
+  max_repetition_ratio: 0.20
+
+downstream_training:
+  epochs: 3
+  batch_size: 16
+  learning_rate: 2.0e-5
+  weight_decay: 0.01
+  optimizer: "AdamW"
+  scheduler: "linear"
+  warmup_ratio: 0.1
+  max_seq_length: 128
+  max_steps: 500
+  head_initialization: "fresh_shared_within_seed"
+  sample_order: "paired_within_seed"
