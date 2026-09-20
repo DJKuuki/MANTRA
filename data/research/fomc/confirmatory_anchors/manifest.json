@@ -1,0 +1,13 @@
+{
+  "dataset_name": "fomc_confirmatory_leakage_anchors_2015_2019",
+  "version": "1.0.0",
+  "source": "Federal Reserve Board of Governors Official Press Releases",
+  "hash_mode": "canonical_text_utf8_lf_nfkc",
+  "dataset_sha256": "b03a2262f2222e8e28a29c903247682501244652f5a958d093d2109714e5c8ae",
+  "num_anchors": 181,
+  "num_events": 40,
+  "window": "2015-2019",
+  "min_event_time": "2015-01-28T19:00:00Z",
+  "max_event_time": "2019-12-11T19:00:00Z",
+  "strict_future_separation_with_2020_contamination": true
+}

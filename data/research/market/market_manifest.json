@@ -1,0 +1,31 @@
+{
+  "dataset_name": "fomc_phase4_market_data",
+  "version": "1.0.0",
+  "created_at": "2026-09-20T01:21:43.721961+00:00",
+  "temporal_coverage": {
+    "start_date": "2014-12-01",
+    "end_date": "2020-01-31"
+  },
+  "files": {
+    "spy_daily_raw.csv": {
+      "source": "Yahoo Finance (SPY)",
+      "sha256": "11f7d6f3bfb171b70f0de96e0f74d5d8954c139050e61646d140a7052ece143e",
+      "rows": 1300,
+      "description": "Daily OHLCV bars for SPDR S&P 500 ETF Trust"
+    },
+    "treasury_2y_raw.csv": {
+      "source": "Yahoo Finance (ZT=F, 2-Year T-Note Futures) and Federal Reserve Bank of St. Louis FRED (DGS2, 2-Year Treasury Constant Maturity Yield)",
+      "sha256": "337d5863a73e91d7418a5fa04c58482c206aacf492de55ae12b47b823a9dfca8",
+      "rows": 1350,
+      "description": "Daily 2-Year Treasury Note Futures prices and FRED constant maturity yield"
+    }
+  },
+  "formulas": {
+    "spy_1d_return": "(Close_{t+1} - Close_t) / Close_t",
+    "spy_5d_return": "(Close_{t+5} - Close_t) / Close_t",
+    "treasury_2y_change": "ZT_Close_{t+1} - ZT_Close_t (price points difference)",
+    "treasury_2y_yield_change": "DGS2_{t+1} - DGS2_t (yield percentage difference)"
+  },
+  "provenance_resolution": "daily_resolution_post_event_response",
+  "intraday_data_status": "NOT_EVALUATED"
+}

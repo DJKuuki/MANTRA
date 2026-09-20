@@ -26,6 +26,12 @@ from .metrics import (
     evaluate_economic_effect,
     evaluate_temporal_robustness,
     pareto_coordinates,
+    grouped_temporal_split,
+    aggregate_event_representations,
+    evaluate_representational_leakage_grouped,
+    evaluate_economic_effect_event_level,
+    evaluate_behavioral_leakage_event_level,
+    event_clustered_bootstrap_indices,
 )
 from .fomc_benchmark import (
     compute_canonical_sha256,
@@ -57,6 +63,13 @@ from .twin_pipeline import (
     train_baseline_stance_model,
     train_downstream_classifier,
 )
+from .phase4_confirmatory import (
+    PreregistrationLockError,
+    PreregistrationHashMismatchError,
+    compute_file_sha256,
+    verify_preregistration_lock,
+    run_phase4_confirmatory,
+)
 
 __all__ = [
     "TemporalModel",
@@ -80,6 +93,12 @@ __all__ = [
     "evaluate_economic_effect",
     "evaluate_temporal_robustness",
     "pareto_coordinates",
+    "grouped_temporal_split",
+    "aggregate_event_representations",
+    "evaluate_representational_leakage_grouped",
+    "evaluate_economic_effect_event_level",
+    "evaluate_behavioral_leakage_event_level",
+    "event_clustered_bootstrap_indices",
     "create_toy_fomc_dataset",
     "load_fomc_dataset",
     "compute_canonical_sha256",
@@ -104,4 +123,9 @@ __all__ = [
     "train_downstream_classifier",
     "train_baseline_stance_model",
     "run_baseline_and_smoke_experiment",
+    "PreregistrationLockError",
+    "PreregistrationHashMismatchError",
+    "compute_file_sha256",
+    "verify_preregistration_lock",
+    "run_phase4_confirmatory",
 ]

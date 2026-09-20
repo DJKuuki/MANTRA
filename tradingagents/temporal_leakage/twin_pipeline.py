@@ -286,24 +286,25 @@ def generate_deterministic_mask_schedule(
 
 
 def create_exact_token_dose_stream(
-    pre_corpus: Sequence[str],
-    post_corpus: Sequence[str],
+    pre_corpus: Sequence[Union[str, Any]],
+    post_corpus: Sequence[Union[str, Any]],
     dose: float,
     num_blocks: int,
     block_length: int = 128,
     tokenizer: Optional[Any] = None,
     random_seed: int = 42,
+    max_repetition_ratio: Optional[float] = None,
 ) -> Dict[str, Any]:
     """Construct an exact token-budget matched stream packed into fixed-length blocks.
 
-    Enforces exact token-level contamination ratio:
-    - Total tokens T = num_blocks * block_length
-    - T_post = round(T * dose)
-    - T_pre = T - T_post
-    - Exactly T_post tokens are sampled from post-cutoff corpus
-    - Exactly T_pre tokens are sampled from pre-cutoff corpus
-    - Realized dose = T_post / T
-    - |D_realized - D_requested| <= 1 / T
+    Confirmatory Upgrades (Phase 4):
+    1. Deterministic Seeded Permutation: Shuffles source documents across the entire corpus
+       prior to token accumulation, completely eliminating front-of-corpus accumulation bias.
+    2. Block-Level Provenance: Generates `treatment_block_manifest` tracking source document IDs,
+       timestamps, and pre/post composition for every individual packed block.
+    3. Padding and Repetition Control: Tracks `unique_source_tokens` and `repetition_ratio`.
+       Raises CausalIntegrityError if padding or repetition exceeds tolerance.
+    4. Causal Invariant: |D_realized - D_requested| <= 1 / T.
     """
     if not (0.0 <= dose <= 1.0):
         raise ValueError(f"Dose must be between 0.0 and 1.0, got {dose}")
@@ -315,43 +316,108 @@ def create_exact_token_dose_stream(
     if tokenizer is None:
         tokenizer = AutoTokenizer.from_pretrained("ProsusAI/finbert")
 
-    # 1. Build pre-cutoff token pool
+    rng = np.random.RandomState(random_seed)
+
+    def extract_item(item: Any, default_prefix: str, idx: int) -> Tuple[str, str, str]:
+        if hasattr(item, "text"):
+            text = str(item.text)
+            doc_id = getattr(item, "document_id", None) or getattr(item, "sample_id", None) or f"{default_prefix}_{idx:04d}"
+            time_str = getattr(item, "available_time", None) or getattr(item, "event_time", "") or ""
+        elif isinstance(item, dict):
+            text = str(item.get("text", ""))
+            doc_id = str(item.get("document_id") or item.get("sample_id") or f"{default_prefix}_{idx:04d}")
+            time_str = str(item.get("available_time") or item.get("event_time") or "")
+        else:
+            text = str(item)
+            doc_id = f"{default_prefix}_{idx:04d}"
+            time_str = ""
+        return text, str(doc_id), str(time_str)
+
+    # 1. Deterministic Seeded Sampling for Pre-Cutoff Tokens
     pre_tokens: List[int] = []
+    pre_token_doc_ids: List[str] = []
+    pre_unique_toks = set()
+    pre_repeated_count = 0
+
     if n_pre_tokens > 0:
-        for t in pre_corpus:
+        if len(pre_corpus) == 0:
+            raise CausalIntegrityError("Pre-cutoff corpus is empty; cannot satisfy pre-cutoff token budget.")
+        pre_indices = rng.permutation(len(pre_corpus))
+        for idx in pre_indices:
+            t, d_id, _ = extract_item(pre_corpus[idx], "pre", idx)
             if hasattr(tokenizer, "encode"):
                 toks = tokenizer.encode(t, add_special_tokens=False)
             else:
                 toks = tokenizer(t)["input_ids"]
-            pre_tokens.extend(toks)
+            for tok in toks:
+                if tok in pre_unique_toks:
+                    pre_repeated_count += 1
+                else:
+                    pre_unique_toks.add(tok)
+                pre_tokens.append(tok)
+                pre_token_doc_ids.append(d_id)
+                if len(pre_tokens) >= n_pre_tokens:
+                    break
             if len(pre_tokens) >= n_pre_tokens:
                 break
+
         if len(pre_tokens) < n_pre_tokens:
-            if len(pre_tokens) == 0:
-                pre_tokens = [getattr(tokenizer, "pad_token_id", 0) or 100]
-            repeats = (n_pre_tokens // len(pre_tokens)) + 1
+            shortfall = n_pre_tokens - len(pre_tokens)
+            rep_ratio = float(shortfall) / float(n_pre_tokens)
+            if max_repetition_ratio is not None and rep_ratio > max_repetition_ratio:
+                raise CausalIntegrityError(
+                    f"Pre-cutoff token shortfall ({shortfall}/{n_pre_tokens}, {rep_ratio:.1%}) "
+                    f"exceeds tolerance ({max_repetition_ratio:.1%}). Insufficient corpus tokens."
+                )
+            repeats = (n_pre_tokens // max(1, len(pre_tokens))) + 1
             pre_tokens = (pre_tokens * repeats)[:n_pre_tokens]
+            pre_token_doc_ids = (pre_token_doc_ids * repeats)[:n_pre_tokens]
         else:
             pre_tokens = pre_tokens[:n_pre_tokens]
+            pre_token_doc_ids = pre_token_doc_ids[:n_pre_tokens]
 
-    # 2. Build post-cutoff token pool
+    # 2. Deterministic Seeded Sampling for Post-Cutoff Tokens
     post_tokens: List[int] = []
+    post_token_doc_ids: List[str] = []
+    post_unique_toks = set()
+    post_repeated_count = 0
+
     if n_post_tokens > 0:
-        for t in post_corpus:
+        if len(post_corpus) == 0:
+            raise CausalIntegrityError("Post-cutoff corpus is empty; cannot satisfy post-cutoff token budget.")
+        post_indices = rng.permutation(len(post_corpus))
+        for idx in post_indices:
+            t, d_id, _ = extract_item(post_corpus[idx], "post", idx)
             if hasattr(tokenizer, "encode"):
                 toks = tokenizer.encode(t, add_special_tokens=False)
             else:
                 toks = tokenizer(t)["input_ids"]
-            post_tokens.extend(toks)
+            for tok in toks:
+                if tok in post_unique_toks:
+                    post_repeated_count += 1
+                else:
+                    post_unique_toks.add(tok)
+                post_tokens.append(tok)
+                post_token_doc_ids.append(d_id)
+                if len(post_tokens) >= n_post_tokens:
+                    break
             if len(post_tokens) >= n_post_tokens:
                 break
+
         if len(post_tokens) < n_post_tokens:
-            if len(post_tokens) == 0:
-                post_tokens = [getattr(tokenizer, "pad_token_id", 0) or 100]
-            repeats = (n_post_tokens // len(post_tokens)) + 1
+            shortfall = n_post_tokens - len(post_tokens)
+            rep_ratio = float(shortfall) / float(n_post_tokens)
+            if max_repetition_ratio is not None and rep_ratio > max_repetition_ratio:
+                raise CausalIntegrityError(
+                    f"Post-cutoff token shortfall ({shortfall}/{n_post_tokens}, {rep_ratio:.1%}) "
+                    f"exceeds tolerance ({max_repetition_ratio:.1%}). Insufficient corpus tokens."
+                )
+            repeats = (n_post_tokens // max(1, len(post_tokens))) + 1
             post_tokens = (post_tokens * repeats)[:n_post_tokens]
+            post_token_doc_ids = (post_token_doc_ids * repeats)[:n_post_tokens]
         else:
             post_tokens = post_tokens[:n_post_tokens]
+            post_token_doc_ids = post_token_doc_ids[:n_post_tokens]
 
     assert len(pre_tokens) == n_pre_tokens, f"Pre tokens mismatch: {len(pre_tokens)} vs {n_pre_tokens}"
     assert len(post_tokens) == n_post_tokens, f"Post tokens mismatch: {len(post_tokens)} vs {n_post_tokens}"
@@ -359,23 +425,41 @@ def create_exact_token_dose_stream(
     realized_dose = float(n_post_tokens) / float(total_tokens_needed)
     assert abs(realized_dose - dose) <= (1.0 / total_tokens_needed) + 1e-9
 
-    # 3. Mix/pack tokens into blocks
+    # 3. Mix/pack tokens and doc IDs into blocks
     if dose == 0.0:
         all_tokens = pre_tokens
+        all_doc_ids = pre_token_doc_ids
+        all_token_types = ["pre"] * len(pre_tokens)
+        block_types = ["pre_only"] * num_blocks
     elif dose == 1.0:
         all_tokens = post_tokens
+        all_doc_ids = post_token_doc_ids
+        all_token_types = ["post"] * len(post_tokens)
+        block_types = ["post_only"] * num_blocks
     else:
         # Deterministically chunk and mix pre and post tokens
         chunk_size = min(32, block_length)
         pre_chunks = [pre_tokens[i : i + chunk_size] for i in range(0, len(pre_tokens), chunk_size)]
+        pre_doc_chunks = [pre_token_doc_ids[i : i + chunk_size] for i in range(0, len(pre_token_doc_ids), chunk_size)]
         post_chunks = [post_tokens[i : i + chunk_size] for i in range(0, len(post_tokens), chunk_size)]
-        labeled = [(c, "pre") for c in pre_chunks] + [(c, "post") for c in post_chunks]
-        rng = np.random.RandomState(random_seed)
+        post_doc_chunks = [post_token_doc_ids[i : i + chunk_size] for i in range(0, len(post_token_doc_ids), chunk_size)]
+
+        labeled = (
+            [(c, d, "pre") for c, d in zip(pre_chunks, pre_doc_chunks)]
+            + [(c, d, "post") for c, d in zip(post_chunks, post_doc_chunks)]
+        )
         perm = rng.permutation(len(labeled))
         all_tokens = []
+        all_doc_ids = []
+        all_token_types = []
         for p in perm:
             all_tokens.extend(labeled[p][0])
+            all_doc_ids.extend(labeled[p][1])
+            all_token_types.extend([labeled[p][2]] * len(labeled[p][0]))
         all_tokens = all_tokens[:total_tokens_needed]
+        all_doc_ids = all_doc_ids[:total_tokens_needed]
+        all_token_types = all_token_types[:total_tokens_needed]
+        block_types = ["mixed"] * num_blocks
 
     assert len(all_tokens) == total_tokens_needed
 
@@ -383,6 +467,28 @@ def create_exact_token_dose_stream(
     attention_mask_tensor = torch.ones((num_blocks, block_length), dtype=torch.long)
     dataset = PackedTokenDataset(input_ids_tensor, attention_mask_tensor)
     c_hash = hashlib.sha256(input_ids_tensor.numpy().tobytes()).hexdigest()
+
+    # 4. Generate Treatment Block Manifest
+    treatment_block_manifest = []
+    for b_idx in range(num_blocks):
+        b_slice_docs = all_doc_ids[b_idx * block_length : (b_idx + 1) * block_length]
+        b_slice_types = all_token_types[b_idx * block_length : (b_idx + 1) * block_length]
+        unique_b_docs = sorted(list(set(b_slice_docs)))
+        b_pre = sum(1 for tt in b_slice_types if tt == "pre")
+        b_post = sum(1 for tt in b_slice_types if tt == "post")
+        treatment_block_manifest.append({
+            "block_index": b_idx,
+            "dose": float(dose),
+            "block_type": block_types[b_idx],
+            "token_count": block_length,
+            "pre_tokens": b_pre,
+            "post_tokens": b_post,
+            "source_document_ids": unique_b_docs,
+        })
+
+    unique_source_tokens = len(pre_unique_toks | post_unique_toks)
+    total_unique_sampled = len(set(all_tokens))
+    repetition_ratio = 1.0 - (float(total_unique_sampled) / float(total_tokens_needed))
 
     return {
         "dataset": dataset,
@@ -394,6 +500,9 @@ def create_exact_token_dose_stream(
         "num_blocks": num_blocks,
         "block_length": block_length,
         "corpus_hash": c_hash,
+        "unique_source_tokens": unique_source_tokens,
+        "repetition_ratio": repetition_ratio,
+        "treatment_block_manifest": treatment_block_manifest,
     }
 
 

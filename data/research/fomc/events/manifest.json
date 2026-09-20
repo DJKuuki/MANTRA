@@ -1,0 +1,21 @@
+{
+  "dataset_name": "fomc_scheduled_events_2015_2019",
+  "version": "1.0.0",
+  "source": "Federal Reserve Board of Governors Official Press Releases",
+  "hash_mode": "canonical_text_utf8_lf_nfkc",
+  "dataset_sha256": "33bd3879c36fbde16ab1427538019a50014e24634fff6323accf01bae5ce4d64",
+  "num_events": 40,
+  "total_paragraphs": 181,
+  "start_event_time": "2015-01-28T19:00:00Z",
+  "end_event_time": "2019-12-11T19:00:00Z",
+  "source_verification": {
+    "verified_count": 40,
+    "total_count": 40,
+    "verification_rate": 1.0
+  },
+  "future_action_distribution": {
+    "cut_minus_1": 3,
+    "hold_0": 28,
+    "hike_plus_1": 9
+  }
+}

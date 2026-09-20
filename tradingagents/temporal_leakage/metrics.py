@@ -18,6 +18,7 @@ from __future__ import annotations
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 import numpy as np
+import pandas as pd
 from scipy import stats
 from sklearn.linear_model import Ridge, RidgeClassifier
 from sklearn.metrics import confusion_matrix, f1_score, matthews_corrcoef
@@ -538,3 +539,401 @@ def pareto_coordinates(
         "economic_E_L_ic": float(e_l_ic),
         "economic_E_L_sharpe": float(e_l_sharpe),
     }
+
+
+# ==============================================================================
+# Phase 4: Event-Level Grouped Temporal Evaluation & Statistical Metrics
+# ==============================================================================
+
+
+def grouped_temporal_split(
+    event_ids: Sequence[str],
+    event_times: Sequence[str],
+    n_splits: int = 3,
+) -> List[Tuple[np.ndarray, np.ndarray]]:
+    """Partition sample indices into expanding-window temporal folds grouped by event.
+
+    Guarantees:
+    1. Group Disjointness: Train_Events ∩ Test_Events = ∅.
+    2. Temporal Monotonicity: max(Train_Event_Times) < min(Test_Event_Times).
+    3. Multi-paragraph Integrity: All paragraphs sharing an event_id enter or exit together.
+
+    Args:
+        event_ids: Sequence of event identifiers for each observation.
+        event_times: Sequence of event timestamps (ISO format) for each observation.
+        n_splits: Number of expanding-window temporal splits.
+
+    Returns:
+        List of (train_indices, test_indices) tuples of np.ndarray.
+    """
+    if len(event_ids) != len(event_times):
+        raise ValueError("Length mismatch between event_ids and event_times.")
+
+    # 1. Deduplicate events and determine chronological order
+    event_df = pd.DataFrame({
+        "orig_idx": np.arange(len(event_ids)),
+        "event_id": [str(e) for e in event_ids],
+        "event_time": [str(t) for t in event_times],
+    })
+
+    unique_events = (
+        event_df[["event_id", "event_time"]]
+        .drop_duplicates(subset=["event_id"])
+        .sort_values("event_time")
+        .reset_index(drop=True)
+    )
+
+    n_events = len(unique_events)
+    if n_events < 2:
+        return []
+
+    actual_splits = max(1, min(n_splits, n_events - 1))
+    test_size = max(1, n_events // (actual_splits + 1))
+
+    folds = []
+    for split_idx in range(actual_splits):
+        # Expanding window on unique events
+        train_end = (split_idx + 1) * test_size
+        test_end = min(n_events, train_end + test_size)
+        if split_idx == actual_splits - 1:
+            test_end = n_events
+
+        train_event_set = set(unique_events["event_id"].iloc[:train_end])
+        test_event_set = set(unique_events["event_id"].iloc[train_end:test_end])
+
+        # Assert zero leakage
+        assert len(train_event_set & test_event_set) == 0, "Group leakage detected!"
+
+        # Map back to original sample indices
+        train_indices = event_df.index[event_df["event_id"].isin(train_event_set)].to_numpy()
+        test_indices = event_df.index[event_df["event_id"].isin(test_event_set)].to_numpy()
+
+        if len(train_indices) > 0 and len(test_indices) > 0:
+            folds.append((train_indices, test_indices))
+
+    return folds
+
+
+def aggregate_event_representations(
+    h: np.ndarray,
+    event_ids: Sequence[str],
+    rule: str = "mean",
+) -> Tuple[np.ndarray, List[str]]:
+    """Aggregate paragraph representations h into event-level representations h_event.
+
+    Args:
+        h: Array of shape (N_paragraphs, D).
+        event_ids: Sequence of event identifiers of length N_paragraphs.
+        rule: Aggregation rule. Default: 'mean'.
+
+    Returns:
+        Tuple of (h_events array of shape (N_events, D), list of unique event_ids).
+    """
+    event_list = list(event_ids)
+    unique_events = []
+    seen = set()
+    for e in event_list:
+        if e not in seen:
+            seen.add(e)
+            unique_events.append(e)
+
+    h_agg = []
+    for ev in unique_events:
+        mask = np.array([e == ev for e in event_list])
+        h_ev = h[mask]
+        if rule == "mean":
+            h_agg.append(np.mean(h_ev, axis=0))
+        elif rule == "max":
+            h_agg.append(np.max(h_ev, axis=0))
+        elif rule == "last":
+            h_agg.append(h_ev[-1])
+        else:
+            raise ValueError(f"Unsupported aggregation rule: {rule}")
+
+    return np.array(h_agg), unique_events
+
+
+def evaluate_representational_leakage_grouped(
+    h_leak: np.ndarray,
+    h_clean: np.ndarray,
+    y_future: Sequence[Any],
+    event_ids: Sequence[str],
+    event_times: Sequence[str],
+    n_splits: int = 3,
+    n_permutations: int = 200,
+    random_seed: int = 42,
+    aggregation_rule: str = "mean",
+) -> Dict[str, Any]:
+    """Calculate Representational Leakage with Event as the Primary Statistical Unit.
+
+    Primary Method:
+    1. Aggregates paragraph representations h to event representation:
+       h_event = mean(h_paragraphs_in_event).
+    2. Performs strictly expanding-window grouped temporal cross-validation:
+       Train_Events ∩ Test_Events = ∅.
+    3. Evaluates paired differences: Delta_k = FoldScore_leak(k) - FoldScore_clean(k).
+    4. Evaluates paired event-level sign-flip permutation test.
+    """
+    # 1. Aggregate to Event Level
+    h_leak_ev, unique_events = aggregate_event_representations(h_leak, event_ids, rule=aggregation_rule)
+    h_clean_ev, _ = aggregate_event_representations(h_clean, event_ids, rule=aggregation_rule)
+
+    # Event-level labels and timestamps (verified identical within event)
+    ev_df = pd.DataFrame({
+        "event_id": [str(e) for e in event_ids],
+        "event_time": [str(t) for t in event_times],
+        "y": list(y_future),
+    }).drop_duplicates(subset=["event_id"]).set_index("event_id").loc[unique_events].reset_index()
+
+    y_ev = ev_df["y"].to_numpy()
+    times_ev = ev_df["event_time"].tolist()
+
+    n_events = len(unique_events)
+    unique_y = np.unique(y_ev)
+
+    if n_events < 4 or len(unique_y) < 2:
+        return {
+            "probe_score_leak": float(np.nan),
+            "probe_score_clean": float(np.nan),
+            "l_repr": 0.0,
+            "statistical_unit": "event",
+            "n_events": n_events,
+            "fold_scores_leak": [],
+            "fold_scores_clean": [],
+            "paired_fold_deltas": [],
+            "p_value": 1.0,
+            "is_statistically_significant": False,
+            "insufficient_samples": True,
+        }
+
+    # 2. Grouped Temporal Folds on Unique Events
+    folds = grouped_temporal_split(unique_events, times_ev, n_splits=n_splits)
+    if not folds:
+        return {
+            "probe_score_leak": float(np.nan),
+            "probe_score_clean": float(np.nan),
+            "l_repr": 0.0,
+            "statistical_unit": "event",
+            "n_events": n_events,
+            "insufficient_samples": True,
+        }
+
+    is_classification = (y_ev.dtype.kind in "iub") or len(unique_y) <= 5
+
+    fold_scores_l = []
+    fold_scores_c = []
+    paired_deltas = []
+
+    for train_idx, test_idx in folds:
+        y_train, y_test = y_ev[train_idx], y_ev[test_idx]
+        if len(np.unique(y_train)) < 2 or len(np.unique(y_test)) < 1:
+            continue
+
+        if is_classification:
+            clf_l = RidgeClassifier(alpha=1.0, random_state=random_seed)
+            clf_l.fit(h_leak_ev[train_idx], y_train)
+            score_l = float(f1_score(y_test, clf_l.predict(h_leak_ev[test_idx]), average="macro", zero_division=0))
+
+            clf_c = RidgeClassifier(alpha=1.0, random_state=random_seed)
+            clf_c.fit(h_clean_ev[train_idx], y_train)
+            score_c = float(f1_score(y_test, clf_c.predict(h_clean_ev[test_idx]), average="macro", zero_division=0))
+        else:
+            reg_l = Ridge(alpha=1.0, random_state=random_seed)
+            reg_l.fit(h_leak_ev[train_idx], y_train)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=stats.ConstantInputWarning)
+                corr_l, _ = stats.spearmanr(reg_l.predict(h_leak_ev[test_idx]), y_test)
+            score_l = float(corr_l if not np.isnan(corr_l) else 0.0)
+
+            reg_c = Ridge(alpha=1.0, random_state=random_seed)
+            reg_c.fit(h_clean_ev[train_idx], y_train)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=stats.ConstantInputWarning)
+                corr_c, _ = stats.spearmanr(reg_c.predict(h_clean_ev[test_idx]), y_test)
+            score_c = float(corr_c if not np.isnan(corr_c) else 0.0)
+
+        fold_scores_l.append(score_l)
+        fold_scores_c.append(score_c)
+        paired_deltas.append(score_l - score_c)
+
+    if not paired_deltas:
+        return {
+            "probe_score_leak": float(np.nan),
+            "probe_score_clean": float(np.nan),
+            "l_repr": 0.0,
+            "statistical_unit": "event",
+            "n_events": n_events,
+            "insufficient_samples": True,
+        }
+
+    mean_leak = float(np.mean(fold_scores_l))
+    mean_clean = float(np.mean(fold_scores_c))
+    l_repr = float(np.mean(paired_deltas))
+
+    # Event-level Paired Sign-Flip Permutation Test
+    rng = np.random.RandomState(random_seed)
+    deltas_arr = np.array(paired_deltas)
+    perm_means = []
+    for _ in range(n_permutations):
+        signs = rng.choice([-1.0, 1.0], size=len(deltas_arr))
+        perm_means.append(float(np.mean(deltas_arr * signs)))
+
+    p_val = float(np.mean(np.array(perm_means) >= l_repr))
+
+    return {
+        "probe_score_leak": mean_leak,
+        "probe_score_clean": mean_clean,
+        "l_repr": l_repr,
+        "statistical_unit": "event",
+        "n_events": n_events,
+        "aggregation_rule": aggregation_rule,
+        "fold_scores_leak": fold_scores_l,
+        "fold_scores_clean": fold_scores_c,
+        "paired_fold_deltas": paired_deltas,
+        "p_value": p_val,
+        "is_statistically_significant": bool(p_val < 0.05 and l_repr > 0.0),
+        "insufficient_samples": False,
+    }
+
+
+def evaluate_economic_effect_event_level(
+    stance_scores_leak: Sequence[float],
+    stance_scores_clean: Sequence[float],
+    market_returns: Sequence[float],
+    event_ids: Sequence[str],
+    aggregation_rule: str = "mean",
+    n_bootstrap: int = 1000,
+    random_seed: int = 42,
+) -> Dict[str, Any]:
+    """Calculate Event-Level Leakage-Induced Economic Effect (E_L,event).
+
+    Strict Confirmatory Principles:
+    1. One observation per event: stance scores aggregated via pre-registered rule,
+       market returns matched 1:1 with unique event_id.
+    2. Delta IC = IC(s_event_leak, r_event) - IC(s_event_clean, r_event).
+    3. Block Bootstrap unit is Event (never independent paragraphs).
+    """
+    df = pd.DataFrame({
+        "event_id": [str(e) for e in event_ids],
+        "s_leak": np.asarray(stance_scores_leak, dtype=np.float64),
+        "s_clean": np.asarray(stance_scores_clean, dtype=np.float64),
+        "ret": np.asarray(market_returns, dtype=np.float64),
+    })
+
+    # Group by event_id: aggregate stances, preserve single event return
+    grouped = df.groupby("event_id").agg({
+        "s_leak": aggregation_rule,
+        "s_clean": aggregation_rule,
+        "ret": "first",
+    }).reset_index()
+
+    s_l = grouped["s_leak"].to_numpy()
+    s_c = grouped["s_clean"].to_numpy()
+    f_ret = grouped["ret"].to_numpy()
+    n_events = len(grouped)
+
+    # Compute Level A Information Coefficient
+    ic_l, _ = stats.spearmanr(s_l, f_ret) if np.std(s_l) > 1e-8 else (0.0, 1.0)
+    ic_c, _ = stats.spearmanr(s_c, f_ret) if np.std(s_c) > 1e-8 else (0.0, 1.0)
+    ic_l = float(ic_l if not np.isnan(ic_l) else 0.0)
+    ic_c = float(ic_c if not np.isnan(ic_c) else 0.0)
+    delta_ic = ic_l - ic_c
+
+    # Event Block Bootstrap for Delta IC
+    boot_idx_mat = stationary_block_bootstrap_indices(
+        n=n_events,
+        expected_block_length=max(2.0, n_events / 8.0),
+        n_boot=n_bootstrap,
+        random_seed=random_seed,
+    )
+    boot_delta_ics = []
+    for idx in boot_idx_mat:
+        sub_sl, sub_sc, sub_ret = s_l[idx], s_c[idx], f_ret[idx]
+        b_icl, _ = stats.spearmanr(sub_sl, sub_ret) if np.std(sub_sl) > 1e-8 else (0.0, 1.0)
+        b_icc, _ = stats.spearmanr(sub_sc, sub_ret) if np.std(sub_sc) > 1e-8 else (0.0, 1.0)
+        b_icl = float(b_icl if not np.isnan(b_icl) else 0.0)
+        b_icc = float(b_icc if not np.isnan(b_icc) else 0.0)
+        boot_delta_ics.append(b_icl - b_icc)
+
+    ci_l = float(np.percentile(boot_delta_ics, 2.5))
+    ci_u = float(np.percentile(boot_delta_ics, 97.5))
+    p_val = float(np.mean(np.array(boot_delta_ics) <= 0.0)) if delta_ic > 0 else float(np.mean(np.array(boot_delta_ics) >= 0.0))
+
+    return {
+        "n_events": n_events,
+        "statistical_unit": "event",
+        "aggregation_rule": aggregation_rule,
+        "ic_leak": ic_l,
+        "ic_clean": ic_c,
+        "delta_ic": delta_ic,
+        "delta_ic_ci_95": [ci_l, ci_u],
+        "p_value": p_val,
+        "is_statistically_significant": bool(ci_l > 0.0 and delta_ic > 0.0),
+    }
+
+
+def evaluate_behavioral_leakage_event_level(
+    sensitivities_leak: Sequence[float],
+    sensitivities_clean: Sequence[float],
+    event_ids: Sequence[str],
+    aggregation_rule: str = "mean",
+) -> Dict[str, Any]:
+    """Calculate Event-Level Behavioral Leakage (L_behavior,event).
+
+    S_event(M) = mean_{paragraphs in event}(S_paragraph(M)).
+    L_behavior,event(D) = S_event(M_D) - S_event(M_D0).
+    """
+    df = pd.DataFrame({
+        "event_id": [str(e) for e in event_ids],
+        "sens_leak": np.asarray(sensitivities_leak, dtype=np.float64),
+        "sens_clean": np.asarray(sensitivities_clean, dtype=np.float64),
+    })
+
+    grouped = df.groupby("event_id").agg({
+        "sens_leak": aggregation_rule,
+        "sens_clean": aggregation_rule,
+    }).reset_index()
+
+    s_ev_leak = float(np.mean(grouped["sens_leak"]))
+    s_ev_clean = float(np.mean(grouped["sens_clean"]))
+    l_behavior_event = s_ev_leak - s_ev_clean
+
+    return {
+        "n_events": len(grouped),
+        "statistical_unit": "event",
+        "aggregation_rule": aggregation_rule,
+        "mask_sensitivity_leak_event": s_ev_leak,
+        "mask_sensitivity_clean_event": s_ev_clean,
+        "l_behavior_event": l_behavior_event,
+    }
+
+
+def event_clustered_bootstrap_indices(
+    event_ids: Sequence[str],
+    n_boot: int = 1000,
+    random_seed: int = 42,
+) -> List[np.ndarray]:
+    """Resample whole events with replacement for clustered statistical inference.
+
+    Returns:
+        List[np.ndarray] where each element is an array of resampled observation indices
+        guaranteeing all observations belonging to the same event are sampled together.
+    """
+    event_arr = np.asarray(event_ids)
+    unique_events = np.unique(event_arr)
+    n_unique = len(unique_events)
+
+    # Precompute mapping from event -> sample indices
+    event_to_indices = {ev: np.where(event_arr == ev)[0] for ev in unique_events}
+
+    rng = np.random.RandomState(random_seed)
+    boot_indices_list: List[np.ndarray] = []
+
+    for _ in range(n_boot):
+        sampled_events = rng.choice(unique_events, size=n_unique, replace=True)
+        resampled_idx: List[int] = []
+        for ev in sampled_events:
+            resampled_idx.extend(event_to_indices[ev])
+        boot_indices_list.append(np.array(resampled_idx, dtype=np.int64))
+
+    return boot_indices_list
