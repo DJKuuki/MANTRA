@@ -1,147 +1,131 @@
-# Phase 4A Confirmatory Data & Phase 4B Production Runner Closure Report (v1.2.1)
+# Phase 4A Confirmatory Data & Phase 4B Runtime Binding & Metrics Closure Report (v1.2.2)
 
-**Stage**: Phase 4B — Production Runner Closure & Scientific Code Freeze  
+**Stage**: Phase 4B — Runtime Binding & Metrics Closure & Cryptographic Protocol Lock  
 **Repository**: `DJKuuki/MANTRA`  
 **Evaluation Date**: 2026-09-20  
-**Specification Version**: 1.2.1  
-**Scientific Code Freeze Commit (Commit E)**: `a3ad3383bdee0d56f32d9e40a3cc53a35c4cfbc9`  
-**Protocol Lock Source Tree SHA**: `bc97536cc1793a30bbc5a6d13079c5eb9603e9ac335922b780a425ef9dbc6cf6`  
-**Gate Verdict**: **PHASE 4B PRODUCTION RUNNER CLOSURE PASSED / SCIENTIFIC EXECUTION CODE FROZEN / READY FOR HUMAN EXECUTION AUTHORIZATION / REAL PHASE 4B COMPUTE NOT YET STARTED**
+**Specification Version**: 1.2.2  
+**Scientific Code Freeze Commit (Commit G)**: `580d5806aea88eb83ac514c1538695898055ed44`  
+**Protocol Lock Source Tree SHA**: `5263ef39d39ba343c7f677beb8e969ed7ae74525509cd5c0be1cf081271c0bf4`  
+**Gate Verdict**: **PHASE 4B RUNTIME BINDING & METRICS CLOSURE PASSED / ALL 53 GATE TESTS GREEN / PROTOCOL v1.2.2 LOCKED / REAL PHASE 4B COMPUTE STRICTLY BLOCKED / AWAITING HUMAN AUTHORIZATION**
 
 ---
 
 > [!IMPORTANT]
 > **NO PHASE 4B EMPIRICAL MODEL RESULTS EXISTED BEFORE THIS EXECUTION IMPLEMENTATION FREEZE**  
-> All 25 confirmatory MLM branches, 5 seeds, and 5 doses remain unexecuted. `configs/phase4_execution_authorization.json` does NOT exist in the repository, and the production runner fails closed without human authorization.
+> All 25 confirmatory MLM branches, 5 seeds, and 5 doses remain unexecuted. `configs/phase4_execution_authorization.json` does NOT exist in the repository, and the production runner strictly fails closed without explicit human authorization.
 
 ---
 
 ## 1. Executive Summary & Audit Resolution
 
-The Phase 4B Production Runner Closure completes the scientific execution backend while preserving all Phase 4A data, anchor, and statistical protocol locks:
+The Phase 4B Runtime Binding & Metrics Closure hardens the execution backend to eliminate all discrepancies between the frozen scientific protocol and runtime behavior:
 
-1. **Production FinBERT Backend (`ProductionConfirmatoryBackend`)**:
-   - Replaced mock-only execution skeleton with a fully implemented, real FinBERT confirmatory execution backend inheriting from `Phase4ExecutionBackend`.
-   - Uses frozen `ProsusAI/finbert` checkpoint locked to revision `4556d13015211d73dccd3fdd39d39232506f3e43`.
-   - Calls `create_exact_token_dose_stream` with exact 256,000 token budget across all 5 doses ($D \in \{0.00, 0.25, 0.50, 0.75, 1.00\}$) satisfying the dose invariant $|D_{\text{realized}} - D_{\text{requested}}| \le 1/T$ and forced repetition ratio $\le 0.20$.
-   - Enforces per-seed causal symmetries: bit-identical initial model parameter hash, identical deterministic MLM mask schedule, identical fresh FOMC classification head initialization, and paired downstream sample ordering across all 5 doses within each seed.
-   - Evaluates real anchor paragraph hidden representations and event-level centroid aggregations.
-   - Computes real competence ($C$), behavioral masking sensitivity ($S_D$), and economic IC ($E_L$: 2Y Treasury primary, SPY secondary). Sets `temporal_robustness = "NOT_EVALUATED"`.
-   - Explicitly emits `data_mode = "EMPIRICAL"`. Strictly prohibits synthetic noise or mock fallbacks in production.
+1. **Protocol Lock Manifest & Cryptographic Bindings (v1.2.2)**:
+   - `verify_phase4_protocol_lock` verifies all 12 controlled files and returns full cryptographic provenance: `scientific_code_commit`, `code_commit`, `source_tree_hash`, and `protocol_version`.
+   - `verify_phase4b_authorization` strictly enforces all 4 cryptographic bindings against the protocol lock manifest.
+   - `verify_phase4_code_freeze` binds against the locked commit and source tree hash.
 
-2. **Test-Only Mock Backend Isolation & Rejection**:
-   - `MockConfirmatoryBackend` is retained strictly for CI and dry-run orchestration.
-   - Calling full confirmatory execution with `MockConfirmatoryBackend` raises `ProductionBackendValidationError`.
-   - Default full execution backend resolves strictly to `ProductionConfirmatoryBackend`.
+2. **Strict Event-Level Economic Endpoint Mappings**:
+   - `ProductionConfirmatoryBackend` and the confirmatory orchestrator extract market outcomes strictly from `market_outcomes.treasury_2y_yield_change` (primary) and `market_outcomes.spy_1d_return` (secondary).
+   - Missing fields fail closed immediately with `PreregistrationLockError`, prohibiting silent random or zero fallbacks.
+   - Economic endpoints are evaluated using event-level Information Coefficients with stationary block bootstrap confidence intervals (`evaluate_economic_effect_event_level`).
 
-3. **Persistent Artifact Serialization (`Phase4ArtifactWriter`)**:
-   - Serializes all 25 branch manifests (`manifests/seed{S}_d{D}.json`), 25 branch metrics (`metrics/seed{S}_d{D}.json`), aggregate confirmatory results (`results/phase4_confirmatory_results.json`), and execution/protocol provenance (`provenance/execution_environment.json`, `provenance/protocol_verification.json`).
-   - Every branch manifest records all 25 required provenance fields.
+3. **Centralized Metric Evaluator Single Source of Truth**:
+   - The confirmatory orchestrator reuses `evaluate_representational_leakage_grouped` for continuous rate-change primary inference, passing the resolved `probe_alpha: 1.0` through to Ridge regression without hardcoded defaults.
+   - The binary directional co-primary `next_scheduled_change_vs_hold` is evaluated using `RidgeClassifier(alpha=probe_alpha)` outputting macro F1.
+   - Behavioral leakage is evaluated at the event level via `evaluate_behavioral_leakage_event_level`, marking FDR correction as `NOT_EVALUATED_PROTOCOL_UNDERSPECIFIED`.
+   - Competence provenance is recorded as `NOT_EVALUATED_NO_EVAL_SPLIT` when `eval_samples` is None.
 
-4. **Cryptographic Authorization Hardening**:
-   - `verify_phase4b_authorization` strictly enforces all four cryptographic bindings: `protocol_version`, `protocol_lock_sha256`, `locked_scientific_code_commit`, and `locked_source_tree_hash`.
-   - Fails closed on any missing or mismatched binding (`Phase4BAuthorizationError`).
-   - Code freeze enforcement verifies clean working tree and checks that git diff against freeze commit contains zero controlled scientific source files.
+4. **Runtime Contract Reconciliation & Strict Parameter Locking**:
+   - Implemented `resolve_phase4_runtime_contract(conf_cfg, prereg_cfg)` verifying semantic equality across all hyperparameters:
+     - `mlm_training.max_steps`: exactly 100
+     - `mlm_training.scheduler`: "none"
+     - `mlm_training.warmup_ratio`: 0.0
+     - `downstream_evaluation.random_seed`: 42
+     - `downstream_evaluation.probe_alpha`: 1.0
+     - `token_budget`: 256,000 tokens
+     - `dose_ladder`: [0.0, 0.25, 0.5, 0.75, 1.0]
+     - `seeds`: [13, 42, 87, 123, 2024]
+   - Discrepancies fail closed with `PreregistrationLockError`.
 
----
-
-## 2. Quantitative Gate Verification Audit
-
-All 38 Gate tests (`tests/test_phase4a_gate.py` Tests A through AL) and all 171 repository unit tests pass with 100% green status:
-
-```text
-============================= test session starts =============================
-platform win32 -- Python 3.13.4, pytest-9.0.3, pluggy-1.6.0
-rootdir: E:\MANTRA
-configfile: pyproject.toml
-collected 38 items in tests/test_phase4a_gate.py
-
-tests/test_phase4a_gate.py::test_a_within_event_consistency PASSED       [  2%]
-tests/test_phase4a_gate.py::test_b_grouped_temporal_split PASSED         [  5%]
-tests/test_phase4a_gate.py::test_c_event_level_economic_effect PASSED    [  7%]
-tests/test_phase4a_gate.py::test_d_event_clustered_bootstrap PASSED      [ 10%]
-tests/test_phase4a_gate.py::test_e_anchor_canonical_source_existence PASSED [ 13%]
-tests/test_phase4a_gate.py::test_f_policy_future_action_provenance PASSED [ 15%]
-tests/test_phase4a_gate.py::test_g_market_outcome_recomputation PASSED   [ 18%]
-tests/test_phase4a_gate.py::test_h_contamination_timeline_provenance PASSED [ 21%]
-tests/test_phase4a_gate.py::test_i_treatment_block_provenance PASSED     [ 23%]
-tests/test_phase4a_gate.py::test_j_exact_dose_ladder_invariant PASSED    [ 26%]
-tests/test_phase4a_gate.py::test_k_no_mid_year_placeholder PASSED        [ 28%]
-tests/test_phase4a_gate.py::test_l_preregistration_lock_enforcement PASSED [ 31%]
-tests/test_phase4a_gate.py::test_m_actual_contamination_corpus_integrity PASSED [ 34%]
-tests/test_phase4a_gate.py::test_n_contamination_temporal_range_derived PASSED [ 36%]
-tests/test_phase4a_gate.py::test_o_event_level_primary_permutation_unit PASSED [ 39%]
-tests/test_phase4a_gate.py::test_p_explicit_target_type_enforcement PASSED [ 42%]
-tests/test_phase4a_gate.py::test_q_protocol_lock_enforcement PASSED      [ 44%]
-tests/test_phase4a_gate.py::test_r_config_semantic_equality PASSED       [ 47%]
-tests/test_phase4a_gate.py::test_s_source_registry_all_40_documents PASSED [ 50%]
-tests/test_phase4a_gate.py::test_t_base_revision_and_downstream_recipe_lock PASSED [ 52%]
-tests/test_phase4a_gate.py::test_u_treatment_sampling_real_corpus_preflight PASSED [ 55%]
-tests/test_phase4a_gate.py::test_v_clean_corpus_strict_availability_cutoff PASSED [ 57%]
-tests/test_phase4a_gate.py::test_w_contamination_window_and_50_50_source_verification PASSED [ 60%]
-tests/test_phase4a_gate.py::test_x_continuous_future_rate_change_derivation PASSED [ 63%]
-tests/test_phase4a_gate.py::test_y_treatment_repetition_metrics_separation PASSED [ 65%]
-tests/test_phase4a_gate.py::test_z_source_tree_lock_and_code_freeze PASSED [ 68%]
-tests/test_phase4a_gate.py::test_aa_phase4b_runner_orchestration_and_authorization PASSED [ 71%]
-tests/test_phase4a_gate.py::test_ab_production_backend_exists PASSED     [ 73%]
-tests/test_phase4a_gate.py::test_ac_default_full_run_is_never_mock PASSED [ 76%]
-tests/test_phase4a_gate.py::test_ad_mock_rejected_in_full_empirical_mode PASSED [ 78%]
-tests/test_phase4a_gate.py::test_ae_authorization_cryptographic_binding PASSED [ 81%]
-tests/test_phase4a_gate.py::test_af_dirty_tree_blocks_production PASSED  [ 84%]
-tests/test_phase4a_gate.py::test_ag_controlled_scientific_source_modification_blocks_execution PASSED [ 86%]
-tests/test_phase4a_gate.py::test_ah_real_backend_uses_exact_dose_stream PASSED [ 89%]
-tests/test_phase4a_gate.py::test_ai_real_backend_does_not_emit_synthetic_metrics PASSED [ 92%]
-tests/test_phase4a_gate.py::test_aj_artifact_writer PASSED               [ 94%]
-tests/test_phase4a_gate.py::test_ak_manifest_completeness PASSED         [ 97%]
-tests/test_phase4a_gate.py::test_al_production_execution_still_blocked PASSED [100%]
-
-============================= 38 passed in 17.48s =============================
-Full repository suite: 171 passed, 33 subtests passed in 60.50s.
-```
+5. **Artifact Writer Separation & Provenance Tracking**:
+   - `Phase4ArtifactWriter.write_confirmatory_results` strictly rejects non-`EMPIRICAL` data modes when `allow_mock=False`.
+   - Branch manifests record all required cryptographic provenance fields: `scientific_code_commit`, `execution_repository_head`, `source_tree_hash`, `protocol_lock_sha256`, and `protocol_version`.
 
 ---
 
-## 3. Quantitative Verification Counts
+## 2. Complete Phase 4 Gate Verification Matrix (Tests A through AZ)
 
-| Audit Dimension | Target / Planned | Actual Verified | Verification Mode |
-| :--- | :--- | :--- | :--- |
-| **Independent Events ($N$)** | 40 | 40 | Exact metadata match (`events.jsonl`) |
-| **Paragraph Anchors ($M$)** | 181 | 181 | 100% verified verbatim in cached HTML |
-| **Anchors Source-Verified** | 181 | 181 / 181 (100%) | Test E (No sampling) |
-| **Source Documents Verified** | 40 | 40 / 40 (100%) | Test S (Raw HTML + SHA match) |
-| **Pre-Cutoff Sham Documents** | $\ge 40$ | 63 | Test V ($\max \le \text{2019-12-31T23:59:59Z}$) |
-| **Contamination Documents** | $\ge 50$ | 50 | Test M (`documents.jsonl`, 237,273 words) |
-| **Contamination Raw Sources** | 50 | 50 / 50 (100%) | Test W (`verify_contamination_document_sources`) |
-| **Evaluated OOS Test Events** | 32 | 32 | Grouped temporal CV (4 folds $\times$ 8) |
-| **Primary Inferential $N$** | 32 | 32 events | Test O (Event-level paired permutation) |
-| **Policy Target Reconstruction** | 40 | 40 / 40 (100%) | Test X ($y_e = \Delta r_e$ bit-exact) |
-| **Market Outcome Reconstruction** | 40 | 40 / 40 (100%) | Test G (Bit-exact recomputation) |
-| **Protocol Controlled Files** | 12 | 12 | Test Q (`phase4_protocol_lock.json`) |
-| **Source Tree Hash Frozen** | 1 | 1 | Test Z (`source_tree_hash` locked) |
-| **Production Backend Implemented** | `ProductionConfirmatoryBackend` | Validated | Test AB (Subclasses backend, FinBERT rev) |
-| **Default Backend is Production** | Production | Production | Test AC (Default is never mock) |
-| **Mock Backend Prohibited** | Hard Fail | Hard Fail | Test AD (`ProductionBackendValidationError`) |
-| **Cryptographic Authorization** | 4 Bindings | 4 Bindings | Test AE (Lock SHA, Tree Hash, Commit, Version) |
-| **Dirty Tree Enforcement** | Blocked | Blocked | Test AF (`CodeFreezeError` on dirty git tree) |
-| **Modified Source Blocked** | Blocked | Blocked | Test AG (Tree mismatch and descendant check) |
-| **Exact Dose Stream Integration** | 256k tokens | 256k tokens | Test AH ($|D_{\text{realized}} - D| \le 1/T$) |
-| **Empirical Data Mode Only** | `data_mode=EMPIRICAL` | Validated | Test AI (`temporal_robustness=NOT_EVALUATED`) |
-| **Artifact Serialization** | 25 manifests, metrics | 25 / 25 | Test AJ (`Phase4ArtifactWriter` roundtrip) |
-| **Manifest Completeness** | 25 provenance fields | 25 / 25 | Test AK (All provenance fields present) |
-| **Execution Blocked** | Fail-Closed | Fail-Closed | Test AL (`Phase4BAuthorizationError`) |
+All 53 Gate tests (`tests/test_phase4a_gate.py` Tests A through AZ + Metric Integration) and all 186 repository unit tests pass with 100% green status:
+
+| Check / Test ID | Target Specification | Realized Implementation | Verification Status |
+|:---|:---|:---|:---|
+| **Test A: Within-Event Consistency** | $N=40$ events, single label/timestamp | 40/40 consistent | PASSED |
+| **Test B: Grouped Temporal CV** | 4 folds, expanding window, 8 test/fold | Monotonic, disjoint | PASSED |
+| **Test C: Event Economic Stance** | 40 unique events, stance aggregation | Event-level stance | PASSED |
+| **Test D: Event Clustered Bootstrap** | Bootstrap clusters whole events | Stationary block boot | PASSED |
+| **Test E: Anchor Verbatim Sources** | 181 anchors verbatim in official HTML | 181/181 (100%) match | PASSED |
+| **Test F: Future Action Derivation** | Target derives from policy history | Zero-discrepancy | PASSED |
+| **Test G: Market Outcome Recomputation**| Daily raw tables recomputed | Bit-exact match | PASSED |
+| **Test H: Contamination Provenance** | Strict gap after 2020-01-01 | $\ge 28$ day gap | PASSED |
+| **Test I: Treatment Block Manifest** | Exact block tracking & token counts | Full provenance | PASSED |
+| **Test J: Dose Ladder Invariant** | $\|D_{\text{realized}} - D\| \le 1/T$ | Max diff $\le 1/256000$ | PASSED |
+| **Test K: No Mid-Year Placeholders** | Exact ISO-8601 UTC release times | 100% exact | PASSED |
+| **Test L: Preregistration Lock** | Hash lock on prereg config & doc | Cryptographically locked | PASSED |
+| **Test M: Contamination Corpus Integrity**| $\ge 50$ post-cutoff official documents | 50 docs verified | PASSED |
+| **Test N: Contamination Range Derived** | Programmatic min/max temporal bounds | $T_{\text{min}}/T_{\text{max}}$ verified | PASSED |
+| **Test O: Primary Permutation Unit** | Event-level ($N_{\text{OOS}} = 32$) | Permutation on events | PASSED |
+| **Test P: Target Type Enforcement** | Continuous Ridge regression | Non-degenerate | PASSED |
+| **Test Q: Protocol Lock Enforcement** | 12 controlled files locked | SHA-256 verified | PASSED |
+| **Test R: Config Semantic Equality** | Conf matches Prereg contract | Reconciled & locked | PASSED |
+| **Test S: Source Registry Documents** | 40/40 documents verified | 100% validated | PASSED |
+| **Test T: Base Model & Recipe Lock** | FinBERT rev `4556d13...` | Recipe locked | PASSED |
+| **Test U: Real Corpus Sampling Preflight**| D0-D100 sampling preflight | 256k tokens/branch | PASSED |
+| **Test V: Clean Corpus Availability** | $\le 2019-12-31$ cutoff enforced | 100% pre-cutoff | PASSED |
+| **Test W: Contamination Window** | 2020-01 to 2023-01 window | Strict separation | PASSED |
+| **Test X: Continuous Rate Change** | Explicit $\Delta r_e$ derivation | Continuous floats | PASSED |
+| **Test Y: Repetition Metrics** | Realized dose vs repetition ratio | Independent metrics | PASSED |
+| **Test Z: Source Tree Lock** | Source tree hash locked | Freeze verified | PASSED |
+| **Test AA: Mock Orchestration** | 25 branches execute in dry run | Full DAG verified | PASSED |
+| **Test AB: Production Backend Exists**| `ProductionConfirmatoryBackend` | Distinct from mock | PASSED |
+| **Test AC: Default Full Run** | Default resolves to Production | Never mock | PASSED |
+| **Test AD: Mock Rejected in Empirical**| Rejects `MockConfirmatoryBackend` | Fail-closed | PASSED |
+| **Test AE: Authorization Bindings** | 4 cryptographic bindings | Verified | PASSED |
+| **Test AF: Dirty Tree Enforcement** | Blocked on uncommitted files | Fail-closed | PASSED |
+| **Test AG: Modified Source Blocked** | Blocked on source modification | Fail-closed | PASSED |
+| **Test AH: Exact Dose Stream** | 256k token budget, $|D_r - D| \le 1/T$ | Verified | PASSED |
+| **Test AI: Empirical Data Mode Only**| `data_mode=EMPIRICAL` | No synthetic noise | PASSED |
+| **Test AJ: Artifact Serialization** | 25 manifests, metrics, results | Complete roundtrip | PASSED |
+| **Test AK: Manifest Completeness** | 25 provenance fields | All fields present | PASSED |
+| **Test AL: Production Blocked** | Without authorization manifest | Fail-closed | PASSED |
+| **Test AM: Protocol Lock Integrity**| Returns complete bindings, $\ge 1.2.1$ | Verified | PASSED |
+| **Test AN: Authorization Validation**| Validates commit, tree, lock, ver | Verified | PASSED |
+| **Test AO: Code Freeze Consumption**| Consumes lock manifest metadata | Verified | PASSED |
+| **Test AP: Economic Field Mappings**| Requires 2Y yield & SPY 1D return | Fails on missing | PASSED |
+| **Test AQ: Economic Bootstrap** | Event-level Information Coefficient CI | Verified | PASSED |
+| **Test AR: Evaluator Probe Alpha** | Uses `evaluate_representational_leakage_grouped` | `probe_alpha: 1.0` | PASSED |
+| **Test AS: Competence Provenance** | `NOT_EVALUATED_NO_EVAL_SPLIT` | No fake numbers | PASSED |
+| **Test AT: Behavioral Analysis** | Event-level sensitivity contrast | FDR marked | PASSED |
+| **Test AU: Binary Direction Co-Primary**| RidgeClassifier on rate change vs hold | Macro F1 | PASSED |
+| **Test AV: Runtime Contract** | `resolve_phase4_runtime_contract` | Full reconciliation | PASSED |
+| **Test AW: MLM Hyperparameters** | `max_steps: 100`, `scheduler: none` | Locked in configs | PASSED |
+| **Test AX: Statistical Invariants** | 40 events, 32 OOS events, 181 anchors | Invariants hold | PASSED |
+| **Test AY: Provenance Completeness** | Manifest records all 5 bindings | Verified | PASSED |
+| **Test AZ: Mock Data Mode Rejection**| `allow_mock=False` rejects mock data | Fail-closed | PASSED |
+| **Integration: Deterministic Metrics**| End-to-end evaluation on 40 events | Deterministic | PASSED |
 
 ---
 
-## 4. Cryptographic Protocol Lock Manifest (v1.2.1)
+## 3. Cryptographic Protocol Lock Manifest (v1.2.2)
 
 - **Protocol Lock Manifest**: `configs/phase4_protocol_lock.json`
-- **Protocol Version**: `1.2.1`
-- **Source Tree Hash**: `bc97536cc1793a30bbc5a6d13079c5eb9603e9ac335922b780a425ef9dbc6cf6`
-- **Scientific Code Freeze Commit (Commit E)**: `a3ad3383bdee0d56f32d9e40a3cc53a35c4cfbc9`
+- **Protocol Version**: `1.2.2`
+- **Source Tree Hash**: `5263ef39d39ba343c7f677beb8e969ed7ae74525509cd5c0be1cf081271c0bf4`
+- **Scientific Code Freeze Commit (Commit G)**: `580d5806aea88eb83ac514c1538695898055ed44`
 - **Base Model Revision**: Locked to `ProsusAI/finbert` commit `4556d13015211d73dccd3fdd39d39232506f3e43`.
 - **Controlled Files (12 Artifacts)**:
-  1. `configs/phase4_preregistration.yaml` (`31f767a819a6461ad861b215fc5a2f582a7b355e43fb82b1c42d09300136ae98`)
-  2. `configs/phase4_confirmatory.yaml` (`181a63086e551cc4c391c18925e109d0b9724547544583d0599b3e08679dbfef`)
+  1. `configs/phase4_preregistration.yaml` (`8996a2ab16ab37917e55d56e3aad6f82d106abda98c2d2cce8ff6c4cfb5f6e0d`)
+  2. `configs/phase4_confirmatory.yaml` (`427dc55d93d0181c531d4a8bef6826024f427755e0cc5be99285c7dc2d7015ad`)
   3. `data/research/fomc/events/events.jsonl` (`981ad9f483e0518d1601f3391231e532458ca71e379404ef83795132693381e4`)
   4. `data/research/fomc/confirmatory_anchors/anchors.jsonl` (`b03a2262f2222e8e28a29c903247682501244652f5a958d093d2109714e5c8ae`)
   5. `data/research/fomc/policy_history.csv` (`51f233d3e957a54a7b87ecaf073c1d9906fb9e02bc45a68945910ec693b04fc2`)
@@ -155,16 +139,18 @@ Full repository suite: 171 passed, 33 subtests passed in 60.50s.
 
 ---
 
-## 5. Phase 4B Confirmatory Execution Specifications
+## 4. Phase 4B Confirmatory Execution Specifications
 
 - **Production Execution Backend**: `ProductionConfirmatoryBackend` in `tradingagents/temporal_leakage/phase4_confirmatory.py`
 - **Orchestration Graph**: Deterministic 34-step dependency DAG (`run_phase4_confirmatory`)
 - **Dose Ladder**: 5 levels $D \in \{0.00, 0.25, 0.50, 0.75, 1.00\}$
 - **Random Seeds**: 5 seeds $\{13, 42, 87, 123, 2024\}$
 - **Token Budget**: Exactly 256,000 subword tokens per branch (realized dose $|D_{\text{realized}} - D| \le 1/256000$)
+- **MLM Training**: Exactly 100 max steps, `scheduler: "none"`, `warmup_ratio: 0.0`, `learning_rate: 5e-5`
 - **Total Confirmatory Branches**: 25 MLM branches
 - **Downstream Cross-Validation**: 4-fold grouped temporal CV ($N_{\text{OOS}} = 32$ events, 8 train events per fold)
 - **Primary Estimator**: Ridge Regression ($\alpha = 1.0$) on continuous future rate change $y_e = \Delta r_e$
 - **Primary Inferential Test**: Sign-flip permutation test on event-level absolute error improvement ($B = 2,000$, $N = 32$)
-- **Authorization Guard**: Requires external signed authorization manifest at `configs/phase4_execution_authorization.json` binding protocol version `1.2.1`, lock SHA, freeze commit, and tree hash to initiate compute.
-
+- **Co-Primary Estimator**: Ridge Classifier ($\alpha = 1.0$) on binary direction vs hold ($B = 2,000$, $N = 32$)
+- **Economic Endpoints**: 2Y Treasury yield change (primary) and SPY 1D return (secondary) evaluated via event-level IC with stationary block bootstrap
+- **Authorization Guard**: Requires external signed authorization manifest at `configs/phase4_execution_authorization.json` binding protocol version `1.2.2`, lock SHA, freeze commit, and tree hash to initiate compute.
