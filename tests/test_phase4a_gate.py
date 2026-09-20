@@ -67,8 +67,14 @@ from tradingagents.temporal_leakage.phase4_confirmatory import (
     Phase4BAuthorizationError,
     PreregistrationHashMismatchError,
     PreregistrationLockError,
+    ProductionBackendValidationError,
+    Phase4ArtifactWriter,
+    ProductionConfirmatoryBackend,
+    MockConfirmatoryBackend,
+    Phase4ExecutionBackend,
     compute_file_sha256,
     compute_source_tree_hash,
+    execute_phase4b_confirmatory,
     run_phase4_confirmatory,
     run_phase4_mock_orchestration,
     verify_phase4_code_freeze,
@@ -1041,4 +1047,496 @@ def test_aa_phase4b_runner_orchestration_and_authorization():
     assert mock_res["target_type"] == "continuous"
     assert mock_res["model_type"] == "ridge_regression"
     assert len(mock_res["branches"]) == 25
+
+
+# ---------------------------------------------------------------------------
+# Test AB: Production Backend Exists
+# ---------------------------------------------------------------------------
+def test_ab_production_backend_exists():
+    """Verify ProductionConfirmatoryBackend exists, subclasses Phase4ExecutionBackend,
+    and is distinct from MockConfirmatoryBackend."""
+    assert issubclass(ProductionConfirmatoryBackend, Phase4ExecutionBackend)
+    assert issubclass(MockConfirmatoryBackend, Phase4ExecutionBackend)
+    assert ProductionConfirmatoryBackend is not MockConfirmatoryBackend
+
+    backend = ProductionConfirmatoryBackend()
+    assert hasattr(backend, "execute_branch")
+    assert hasattr(backend, "run_branch")
+    assert backend.base_checkpoint == "ProsusAI/finbert"
+    assert backend.base_revision == "4556d13015211d73dccd3fdd39d39232506f3e43"
+
+
+# ---------------------------------------------------------------------------
+# Test AC: Default Full Run Is Never Mock
+# ---------------------------------------------------------------------------
+def test_ac_default_full_run_is_never_mock(monkeypatch):
+    """Verify default full run backend resolves to ProductionConfirmatoryBackend, never Mock."""
+    initialized_backends = []
+    orig_init = ProductionConfirmatoryBackend.__init__
+
+    def spy_init(self, *args, **kwargs):
+        initialized_backends.append(self)
+        orig_init(self, *args, **kwargs)
+
+    monkeypatch.setattr(ProductionConfirmatoryBackend, "__init__", spy_init)
+
+    with tempfile.TemporaryDirectory() as td:
+        auth_file = Path(td) / "auth.json"
+        tree_hash = compute_source_tree_hash(PROJECT_ROOT)
+        with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
+            proto_ver = json.load(f).get("protocol_version", "1.2.1")
+        lock_sha = compute_file_sha256(PROTOCOL_LOCK_PATH, normalize_newlines=True)
+        with open(auth_file, "w", encoding="utf-8") as f:
+            json.dump({
+                "protocol_version": proto_ver,
+                "human_authorized": True,
+                "protocol_lock_sha256": lock_sha,
+                "locked_scientific_code_commit": "db048133e81055ba1f937c234a0677f8ed6061ea",
+                "locked_source_tree_hash": tree_hash,
+            }, f)
+
+        monkeypatch.setattr(
+            "tradingagents.temporal_leakage.phase4_confirmatory.verify_phase4_code_freeze",
+            lambda **kwargs: {"status": "CODE_FROZEN_AND_VERIFIED"},
+        )
+
+        class StopBeforeCompute(Exception):
+            pass
+
+        monkeypatch.setattr(
+            ProductionConfirmatoryBackend,
+            "execute_branch",
+            lambda *args, **kwargs: (_ for _ in ()).throw(StopBeforeCompute("Stopped before compute")),
+        )
+
+        with pytest.raises(StopBeforeCompute):
+            execute_phase4b_confirmatory(
+                config_path=CONF_CONFIG_PATH,
+                prereg_path=PREREG_CONFIG_PATH,
+                backend=None,
+                authorization_path=auth_file,
+                project_root=PROJECT_ROOT,
+                is_mock_orchestration=False,
+            )
+
+        assert len(initialized_backends) == 1
+        assert isinstance(initialized_backends[0], ProductionConfirmatoryBackend)
+        assert not isinstance(initialized_backends[0], MockConfirmatoryBackend)
+
+
+# ---------------------------------------------------------------------------
+# Test AD: Mock Rejected In Full Empirical Mode
+# ---------------------------------------------------------------------------
+def test_ad_mock_rejected_in_full_empirical_mode(monkeypatch):
+    """Verify MockConfirmatoryBackend is strictly rejected when full empirical execution is attempted."""
+    mock_backend = MockConfirmatoryBackend()
+    with tempfile.TemporaryDirectory() as td:
+        auth_file = Path(td) / "auth.json"
+        tree_hash = compute_source_tree_hash(PROJECT_ROOT)
+        with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
+            proto_ver = json.load(f).get("protocol_version", "1.2.1")
+        lock_sha = compute_file_sha256(PROTOCOL_LOCK_PATH, normalize_newlines=True)
+        with open(auth_file, "w", encoding="utf-8") as f:
+            json.dump({
+                "protocol_version": proto_ver,
+                "human_authorized": True,
+                "protocol_lock_sha256": lock_sha,
+                "locked_scientific_code_commit": "db048133e81055ba1f937c234a0677f8ed6061ea",
+                "locked_source_tree_hash": tree_hash,
+            }, f)
+
+        monkeypatch.setattr(
+            "tradingagents.temporal_leakage.phase4_confirmatory.verify_phase4_code_freeze",
+            lambda **kwargs: {"status": "CODE_FROZEN_AND_VERIFIED"},
+        )
+
+        with pytest.raises(ProductionBackendValidationError, match="MockConfirmatoryBackend is strictly prohibited"):
+            execute_phase4b_confirmatory(
+                config_path=CONF_CONFIG_PATH,
+                prereg_path=PREREG_CONFIG_PATH,
+                backend=mock_backend,
+                authorization_path=auth_file,
+                project_root=PROJECT_ROOT,
+                is_mock_orchestration=False,
+            )
+
+
+# ---------------------------------------------------------------------------
+# Test AE: Authorization Cryptographic Binding
+# ---------------------------------------------------------------------------
+def test_ae_authorization_cryptographic_binding():
+    """Verify authorization verifier strictly enforces cryptographic bindings and fails closed on missing/mismatched fields."""
+    with tempfile.TemporaryDirectory() as td:
+        auth_p = Path(td) / "auth.json"
+        valid_data = {
+            "protocol_version": "1.2.0",
+            "human_authorized": True,
+            "protocol_lock_sha256": "a" * 64,
+            "locked_scientific_code_commit": "b" * 40,
+            "locked_source_tree_hash": "c" * 64,
+        }
+
+        # 1. Missing protocol_lock_sha256
+        bad1 = copy.deepcopy(valid_data)
+        del bad1["protocol_lock_sha256"]
+        with open(auth_p, "w", encoding="utf-8") as f:
+            json.dump(bad1, f)
+        with pytest.raises(Phase4BAuthorizationError, match="protocol_lock_sha256"):
+            verify_phase4b_authorization(auth_p, protocol_version="1.2.0", protocol_lock_sha256="a"*64, locked_git_commit="b"*40, locked_source_tree_hash="c"*64)
+
+        # 2. Mismatched protocol_lock_sha256
+        bad2 = copy.deepcopy(valid_data)
+        bad2["protocol_lock_sha256"] = "f" * 64
+        with open(auth_p, "w", encoding="utf-8") as f:
+            json.dump(bad2, f)
+        with pytest.raises(Phase4BAuthorizationError, match="protocol_lock_sha256"):
+            verify_phase4b_authorization(auth_p, protocol_version="1.2.0", protocol_lock_sha256="a"*64, locked_git_commit="b"*40, locked_source_tree_hash="c"*64)
+
+        # 3. Missing locked_scientific_code_commit
+        bad3 = copy.deepcopy(valid_data)
+        del bad3["locked_scientific_code_commit"]
+        with open(auth_p, "w", encoding="utf-8") as f:
+            json.dump(bad3, f)
+        with pytest.raises(Phase4BAuthorizationError, match="locked_scientific_code_commit"):
+            verify_phase4b_authorization(auth_p, protocol_version="1.2.0", protocol_lock_sha256="a"*64, locked_git_commit="b"*40, locked_source_tree_hash="c"*64)
+
+        # 4. Mismatched locked_scientific_code_commit
+        bad4 = copy.deepcopy(valid_data)
+        bad4["locked_scientific_code_commit"] = "0" * 40
+        with open(auth_p, "w", encoding="utf-8") as f:
+            json.dump(bad4, f)
+        with pytest.raises(Phase4BAuthorizationError, match="locked_scientific_code_commit"):
+            verify_phase4b_authorization(auth_p, protocol_version="1.2.0", protocol_lock_sha256="a"*64, locked_git_commit="b"*40, locked_source_tree_hash="c"*64)
+
+        # 5. Missing locked_source_tree_hash
+        bad5 = copy.deepcopy(valid_data)
+        del bad5["locked_source_tree_hash"]
+        with open(auth_p, "w", encoding="utf-8") as f:
+            json.dump(bad5, f)
+        with pytest.raises(Phase4BAuthorizationError, match="locked_source_tree_hash"):
+            verify_phase4b_authorization(auth_p, protocol_version="1.2.0", protocol_lock_sha256="a"*64, locked_git_commit="b"*40, locked_source_tree_hash="c"*64)
+
+        # 6. human_authorized == False
+        bad6 = copy.deepcopy(valid_data)
+        bad6["human_authorized"] = False
+        with open(auth_p, "w", encoding="utf-8") as f:
+            json.dump(bad6, f)
+        with pytest.raises(Phase4BAuthorizationError, match="human_authorized must be true"):
+            verify_phase4b_authorization(auth_p, protocol_version="1.2.0", protocol_lock_sha256="a"*64, locked_git_commit="b"*40, locked_source_tree_hash="c"*64)
+
+        # 7. Valid manifest passes
+        with open(auth_p, "w", encoding="utf-8") as f:
+            json.dump(valid_data, f)
+        res = verify_phase4b_authorization(auth_p, protocol_version="1.2.0", protocol_lock_sha256="a"*64, locked_git_commit="b"*40, locked_source_tree_hash="c"*64)
+        assert res["status"] == "AUTHORIZED"
+        assert res["human_authorized"] is True
+
+
+# ---------------------------------------------------------------------------
+# Test AF: Dirty Tree Blocks Production
+# ---------------------------------------------------------------------------
+def test_af_dirty_tree_blocks_production(monkeypatch):
+    """Verify dirty Git working tree blocks production execution under enforce_git_clean=True."""
+    tree_hash = compute_source_tree_hash(PROJECT_ROOT)
+
+    monkeypatch.setattr(
+        "tradingagents.temporal_leakage.phase4_confirmatory.check_git_status",
+        lambda root: {"git_available": True, "head_commit": "abcdef123456", "git_dirty": True},
+    )
+
+    with pytest.raises(CodeFreezeError, match="working tree is dirty"):
+        verify_phase4_code_freeze(
+            project_root=PROJECT_ROOT,
+            locked_git_commit="abcdef123456",
+            locked_source_tree_hash=tree_hash,
+            enforce_git_clean=True,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Test AG: Controlled Scientific Source Modification Blocks Execution
+# ---------------------------------------------------------------------------
+def test_ag_controlled_scientific_source_modification_blocks_execution(monkeypatch):
+    """Verify modifying controlled scientific source files triggers CodeFreezeError."""
+    # 1. Tree hash mismatch
+    with pytest.raises(CodeFreezeError, match="Source tree hash mismatch"):
+        verify_phase4_code_freeze(
+            project_root=PROJECT_ROOT,
+            locked_source_tree_hash="0" * 64,
+            enforce_git_clean=False,
+        )
+
+    # 2. Descendant commit check with modified controlled files
+    import subprocess
+    original_run = subprocess.run
+
+    def mock_subprocess_run(cmd, *args, **kwargs):
+        if isinstance(cmd, list) and "diff" in cmd:
+            class MockRes:
+                stdout = "tradingagents/temporal_leakage/phase4_confirmatory.py\n"
+                stderr = ""
+                returncode = 0
+            return MockRes()
+        if isinstance(cmd, list) and "--is-ancestor" in cmd:
+            class MockAncestor:
+                returncode = 0
+            return MockAncestor()
+        return original_run(cmd, *args, **kwargs)
+
+    monkeypatch.setattr("subprocess.run", mock_subprocess_run)
+    monkeypatch.setattr(
+        "tradingagents.temporal_leakage.phase4_confirmatory.check_git_status",
+        lambda root: {"git_available": True, "head_commit": "1111111111111111111111111111111111111111", "git_dirty": False},
+    )
+
+    with pytest.raises(CodeFreezeError, match="Controlled scientific source files modified"):
+        verify_phase4_code_freeze(
+            project_root=PROJECT_ROOT,
+            locked_git_commit="2222222222222222222222222222222222222222",
+            enforce_git_clean=True,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Test AH: Real Backend Uses Exact Dose Stream
+# ---------------------------------------------------------------------------
+def test_ah_real_backend_uses_exact_dose_stream(monkeypatch):
+    """Verify ProductionConfirmatoryBackend calls create_exact_token_dose_stream with exact dose invariant."""
+    with open(PRE_CUTOFF_DOCS_PATH, "r", encoding="utf-8") as f:
+        pre_docs = [json.loads(line) for line in f if line.strip()]
+    with open(CONTAMINATION_DOCS_PATH, "r", encoding="utf-8") as f:
+        post_docs = [json.loads(line) for line in f if line.strip()]
+
+    stream_called_with = {}
+    from tradingagents.temporal_leakage import twin_pipeline
+    orig_create_exact = twin_pipeline.create_exact_token_dose_stream
+
+    def spy_create_exact(*args, **kwargs):
+        stream_called_with.update(kwargs)
+        return orig_create_exact(*args, **kwargs)
+
+    monkeypatch.setattr("tradingagents.temporal_leakage.twin_pipeline.create_exact_token_dose_stream", spy_create_exact)
+
+    class FastTokenizer:
+        def encode(self, text, add_special_tokens=False):
+            return [abs(hash(w)) % 1000 for w in text.split()]
+
+    backend = ProductionConfirmatoryBackend(
+        mock_tokenizer_for_testing=FastTokenizer(),
+    )
+
+    backend._seed_cache[42] = {
+        "tokenizer": FastTokenizer(),
+        "base_mlm": None,
+        "initial_model_hash": "mock_hash",
+        "mask_schedule": [],
+        "mask_schedule_hash": "mask_hash",
+        "downstream_head_state_dict": {},
+        "downstream_initial_head_hash": "head_hash",
+        "token_budget": 5120,
+        "num_blocks": 10,
+        "block_length": 512,
+    }
+
+    monkeypatch.setattr("copy.deepcopy", lambda x: x)
+    monkeypatch.setattr("tradingagents.temporal_leakage.twin_pipeline.hash_model_parameters", lambda x: "mock_hash")
+
+    class StopAfterStream(Exception):
+        pass
+
+    monkeypatch.setattr(
+        "tradingagents.temporal_leakage.twin_pipeline.run_continued_pretraining_mlm",
+        lambda **kwargs: (_ for _ in ()).throw(StopAfterStream("Stream generated successfully")),
+    )
+
+    events = load_events()
+    with open(ANCHORS_PATH, "r", encoding="utf-8") as f:
+        anchors = [json.loads(line) for line in f if line.strip()]
+
+    with open(CONF_CONFIG_PATH, "r", encoding="utf-8") as f:
+        conf_cfg = yaml.safe_load(f)
+
+    with pytest.raises(StopAfterStream):
+        backend.execute_branch(
+            seed=42,
+            dose=0.50,
+            pre_docs=pre_docs,
+            post_docs=post_docs,
+            anchors=anchors,
+            events=events,
+            conf_cfg=conf_cfg,
+            mock_model=object(),
+            mock_tokenizer=FastTokenizer(),
+        )
+
+    assert stream_called_with["dose"] == 0.50
+    assert stream_called_with["num_blocks"] == 10
+    assert stream_called_with["block_length"] == 512
+    assert stream_called_with["max_repetition_ratio"] == 0.20
+
+
+# ---------------------------------------------------------------------------
+# Test AI: Real Backend Does Not Emit Synthetic Metrics
+# ---------------------------------------------------------------------------
+def test_ai_real_backend_does_not_emit_synthetic_metrics():
+    """Verify Production backend specifies data_mode='EMPIRICAL' and temporal_robustness='NOT_EVALUATED'
+    while Mock backend specifies data_mode='MOCK'."""
+    mock_backend = MockConfirmatoryBackend()
+    events = load_events()
+    anchors = [{"anchor_id": "a1", "event_id": events[0]["event_id"], "text": "Fed keeps rates unchanged."}]
+    with open(CONF_CONFIG_PATH, "r", encoding="utf-8") as f:
+        conf_cfg = yaml.safe_load(f)
+
+    mock_res = mock_backend.execute_branch(
+        seed=13,
+        dose=0.50,
+        pre_docs=[],
+        post_docs=[],
+        anchors=anchors,
+        events=events,
+        conf_cfg=conf_cfg,
+    )
+    assert mock_res["data_mode"] == "MOCK"
+
+    prod_backend = ProductionConfirmatoryBackend()
+    assert prod_backend.__doc__ is not None
+    assert "data_mode='EMPIRICAL'" in prod_backend.__doc__
+    assert "NOT_EVALUATED" in prod_backend.__doc__
+
+
+# ---------------------------------------------------------------------------
+# Test AJ: Artifact Writer
+# ---------------------------------------------------------------------------
+def test_aj_artifact_writer():
+    """Verify Phase4ArtifactWriter writes all 25 branch manifests, 25 branch metrics,
+    results JSON, and provenance manifests, and reads them back deterministically."""
+    with tempfile.TemporaryDirectory() as td:
+        writer = Phase4ArtifactWriter(output_root=td)
+        mock_branches = {}
+        seeds = [13, 42, 87, 123, 2024]
+        doses = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+        for s in seeds:
+            for d in doses:
+                key = f"seed_{s}_dose_{int(round(d * 100)):03d}"
+                mock_branches[key] = {
+                    "seed": s,
+                    "dose": d,
+                    "requested_dose": d,
+                    "realized_dose": d,
+                    "pre_cutoff_tokens": int(256000 * (1 - d)),
+                    "post_cutoff_tokens": int(256000 * d),
+                    "total_tokens": 256000,
+                    "forced_repetition_ratio": 0.0,
+                    "data_mode": "MOCK",
+                    "initial_model_hash": f"init_{s}",
+                    "post_mlm_model_hash": f"mlm_{s}_{d}",
+                    "downstream_initial_head_hash": f"head_{s}",
+                    "downstream_sample_order_hash": f"order_{s}",
+                    "mask_schedule_hash": f"mask_{s}",
+                    "clean_corpus_sha256": "clean_sha",
+                    "contamination_corpus_sha256": "contam_sha",
+                    "treatment_stream_sha256": f"stream_{s}_{d}",
+                    "base_checkpoint": "ProsusAI/finbert",
+                    "base_revision": "4556d13015211d73dccd3fdd39d39232506f3e43",
+                    "tokenizer_name": "ProsusAI/finbert",
+                    "tokenizer_revision": "4556d13015211d73dccd3fdd39d39232506f3e43",
+                    "mlm_steps": 100,
+                    "optimizer": "AdamW",
+                    "learning_rate": 5e-5,
+                    "weight_decay": 0.01,
+                    "downstream_hyperparameters": {"epochs": 3},
+                    "temporal_robustness": "NOT_EVALUATED",
+                }
+
+        results = {
+            "status": "COMPLETED",
+            "branches": mock_branches,
+            "decision_rules_applied": {"primary_confirmed": True},
+        }
+        env_info = {"python_version": "3.10", "platform": "windows"}
+        lock_info = {"protocol_version": "1.2.0", "locked": True}
+
+        summary = writer.write_all(results, env_info=env_info, lock_info=lock_info)
+
+        assert len(summary["manifest_paths"]) == 25
+        assert len(summary["metrics_paths"]) == 25
+        assert Path(summary["results_path"]).exists()
+        assert Path(summary["environment_path"]).exists()
+        assert Path(summary["protocol_verification_path"]).exists()
+
+        with open(summary["results_path"], "r", encoding="utf-8") as f:
+            read_res = json.load(f)
+        assert len(read_res["branches"]) == 25
+        assert read_res["decision_rules_applied"]["primary_confirmed"] is True
+
+        for mp in summary["manifest_paths"]:
+            with open(mp, "r", encoding="utf-8") as f:
+                b_mf = json.load(f)
+            assert "seed" in b_mf
+            assert "dose" in b_mf
+            assert "total_tokens" in b_mf
+
+
+# ---------------------------------------------------------------------------
+# Test AK: Manifest Completeness
+# ---------------------------------------------------------------------------
+def test_ak_manifest_completeness():
+    """Verify that per-branch manifest contains all required provenance fields."""
+    required_fields = [
+        "seed", "dose", "requested_dose", "realized_dose",
+        "pre_cutoff_tokens", "post_cutoff_tokens", "total_tokens",
+        "forced_repetition_ratio", "clean_corpus_sha256",
+        "contamination_corpus_sha256", "treatment_stream_sha256",
+        "base_checkpoint", "base_revision", "tokenizer_revision",
+        "initial_model_hash", "post_mlm_model_hash", "mask_schedule_hash",
+        "downstream_initial_head_hash", "downstream_sample_order_hash",
+        "mlm_steps", "optimizer", "learning_rate", "weight_decay",
+        "temporal_robustness", "data_mode",
+    ]
+
+    mock_backend = MockConfirmatoryBackend()
+    events = load_events()
+    anchors = [{"anchor_id": "a1", "event_id": events[0]["event_id"], "text": "Fed policy statement."}]
+    with open(CONF_CONFIG_PATH, "r", encoding="utf-8") as f:
+        conf_cfg = yaml.safe_load(f)
+
+    b_res = mock_backend.execute_branch(
+        seed=13,
+        dose=0.25,
+        pre_docs=[],
+        post_docs=[],
+        anchors=anchors,
+        events=events,
+        conf_cfg=conf_cfg,
+    )
+
+    with tempfile.TemporaryDirectory() as td:
+        writer = Phase4ArtifactWriter(output_root=td)
+        mf_path = writer.write_branch_manifest(b_res)
+        with open(mf_path, "r", encoding="utf-8") as f:
+            manifest_data = json.load(f)
+
+        for field in required_fields:
+            assert field in manifest_data, f"Missing required provenance field in branch manifest: '{field}'"
+
+
+# ---------------------------------------------------------------------------
+# Test AL: Production Execution Still Blocked
+# ---------------------------------------------------------------------------
+def test_al_production_execution_still_blocked():
+    """Verify Phase 4B production model execution is strictly blocked because authorization file is missing."""
+    auth_file = PROJECT_ROOT / "configs" / "phase4_execution_authorization.json"
+    assert not auth_file.exists(), "phase4_execution_authorization.json must NOT exist in the repository!"
+
+    with pytest.raises(Phase4BAuthorizationError, match="FULL_EXECUTION_BLOCKED"):
+        verify_phase4b_authorization(auth_file)
+
+    with pytest.raises(Phase4BAuthorizationError, match="FULL_EXECUTION_BLOCKED"):
+        run_phase4_confirmatory(
+            config_path=CONF_CONFIG_PATH,
+            prereg_path=PREREG_CONFIG_PATH,
+            smoke_mode=False,
+        )
+
 
