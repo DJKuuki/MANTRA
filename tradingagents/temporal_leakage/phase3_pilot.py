@@ -30,7 +30,7 @@ from scipy import stats
 from transformers import AutoModelForMaskedLM, AutoTokenizer
 
 from .datasets.trillion_dollar_words import load_trillion_dollar_words
-from .fomc_benchmark import FOMCBenchmark, TemporalSample, load_fomc_dataset
+from .fomc_benchmark import FOMCBenchmark, TemporalSample, load_fomc_dataset, verify_file_sha256
 from .hf_encoder import (
     HuggingFaceTemporalEncoder,
     build_fresh_fomc_classifier_from_base_encoder,
@@ -75,10 +75,8 @@ def load_verified_anchors(
 
     actual_sha = hashlib.sha256(a_path.read_bytes()).hexdigest()
     expected_sha = manifest_data.get("dataset_sha256") or manifest_data.get("checksum")
-    if expected_sha and expected_sha.startswith("sha256:"):
-        expected_sha = expected_sha[7:]
 
-    if expected_sha and actual_sha.lower() != expected_sha.lower():
+    if expected_sha and not verify_file_sha256(a_path, expected_sha):
         raise ValueError(
             f"Anchor dataset SHA256 verification failed for '{a_path}'. "
             f"Manifest expected '{expected_sha}', got '{actual_sha}'."
@@ -227,9 +225,7 @@ def run_phase3_pilot(
         with open(stance_manifest_path, "r", encoding="utf-8") as f:
             sm_data = json.load(f)
             expected_sm_sha = sm_data.get("dataset_sha256") or sm_data.get("checksum", "")
-            if expected_sm_sha.startswith("sha256:"):
-                expected_sm_sha = expected_sm_sha[7:]
-            if expected_sm_sha and stance_sha256.lower() != expected_sm_sha.lower():
+            if expected_sm_sha and not verify_file_sha256(stance_path, expected_sm_sha):
                 raise ValueError(f"Stance dataset SHA256 mismatch: {stance_sha256} != {expected_sm_sha}")
 
     tdw_samples = load_trillion_dollar_words(filepath=stance_path)

@@ -28,8 +28,10 @@ from .metrics import (
     pareto_coordinates,
 )
 from .fomc_benchmark import (
+    compute_canonical_sha256,
     create_toy_fomc_dataset,
     load_fomc_dataset,
+    verify_file_sha256,
     FOMCBenchmark,
     ToyFOMCBenchmark,
     DatasetValidationError,
@@ -80,6 +82,8 @@ __all__ = [
     "pareto_coordinates",
     "create_toy_fomc_dataset",
     "load_fomc_dataset",
+    "compute_canonical_sha256",
+    "verify_file_sha256",
     "FOMCBenchmark",
     "ToyFOMCBenchmark",
     "DatasetValidationError",

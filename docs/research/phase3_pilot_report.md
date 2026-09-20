@@ -6,7 +6,7 @@
 **Status**: **PHASE 3 PILOT PIPELINE VALID — EMPIRICAL POWER INSUFFICIENT FOR CONFIRMATORY STUDY (LOW POWER PILOT)**  
 **Preceding Phase 2.1 Code Freeze Commit**: `8a5781128db8481e3a4e1605d92413bc9706bdce`  
 **Phase 3 Code Freeze Commit (Commit A)**: `e5a6a96fa51faf7c14307451476d538973c1dc28`  
-**Phase 3 Artifacts Commit (Commit B)**: `8304bbc281ddd8b9497a8f59605e4448a9e2437b` (amended)  
+**Phase 3 Artifacts Commit (Commit B)**: `4ecd3c970be1699e40f21d8b5a9f5a8e42843d96`
 
 ---
 
@@ -42,14 +42,23 @@ To eliminate researcher degrees of freedom and guarantee total reproducibility, 
 | Provenance Attribute | Value |
 | :--- | :--- |
 | **Commit A (Code Freeze)** | `e5a6a96fa51faf7c14307451476d538973c1dc28` |
+| **Commit B (Artifacts)** | `4ecd3c970be1699e40f21d8b5a9f5a8e42843d96` |
 | **Git Working Tree Status** | Clean (`git_dirty: false`, `code_commit_exact: true`) |
 | **Source Tree Hash** | `8badd580e041fb2716b356ed36a51624ae23ee35` |
 | **Configuration SHA256** | `f1a18a15810129061173d93275a5bbaaa9d65bf32e75aac2f485215375dce770` |
 | **Python Environment** | Python 3.13.4 (Host) / Python 3.11.15 (Validated Multi-version Virtual Environment) |
+| **CI Compatibility Guarantee** | Ubuntu Linux (Python 3.10 & 3.11 via GitHub Actions) + Windows 11; `verify_file_sha256` handles LF/CRLF platform invariance. |
 | **Execution Hardware** | NVIDIA GeForce GTX 1660 SUPER (CUDA 12.8, Compute Capability 7.5) |
 | **Execution Duration** | 32 minutes 21 seconds (15 branches $\times$ MLM continued pretraining + downstream fine-tuning + full metric extraction) |
 
 All 15 branch manifests (`manifest_s{seed}_d{dose}.json`) and the master summary `phase3_pilot_results.json` embed these exact provenance hashes.
+
+> [!NOTE]
+> **Cross-Platform Line Ending & Hash Invariance Audit**:  
+> Following initial GitHub Actions run on Ubuntu Linux runners, a platform discrepancy was identified where Git on Windows checked out text files with `\r\n` (CRLF) while Linux runners checked out `\n` (LF), causing strict raw-byte SHA-256 comparisons of `anchors.jsonl` to differ between operating systems.  
+> To resolve this permanently:
+> 1. `.gitattributes` was added enforcing `text eol=lf` across all code, datasets, manifests, and configs.
+> 2. `verify_file_sha256` was introduced into `fomc_benchmark.py` to verify hashes across canonical LF, raw, and CRLF forms, ensuring exact verification across heterogeneous OS environments.
 
 ---
 

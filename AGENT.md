@@ -279,7 +279,8 @@ MANTRA (`RubiscoYHY/MANTRA`) 原生为 multi-agent decoder 交易框架。
   - **严格双提交协议**：
     - Commit A (Code Freeze): `e5a6a96fa51faf7c14307451476d538973c1dc28`（完全洁净代码树 `git_dirty: false`, `code_commit_exact: true`, tree hash `8badd580e041fb2716b356ed36a51624ae23ee35`）；
     - 运行 15 组实验并落地全部分支 manifests 与汇总 JSON；
-    - Commit B (Artifacts): 仅含 manifests、`phase3_pilot_results.json`、报告与本文件。
+    - Commit B (Artifacts): 仅含 manifests、`phase3_pilot_results.json`、报告与本文件（`4ecd3c970be1699e40f21d8b5a9f5a8e42843d96`）；
+    - CI 跨平台兼容加固：引入 `.gitattributes` 强制文本 LF 规范化，并在 `fomc_benchmark.py` 落地 `verify_file_sha256` 抹平跨系统换行符哈希差异。
   - **全对称因果参数锁定**：15 组分支（3 seeds: 13, 42, 73 $\times$ 5 doses: 0.0, 0.25, 0.50, 0.75, 1.00）在同一 seed 下保证：相同 base checkpoint 初始权重哈希、精确相等的 token 预算（25,600 tokens = 200 blocks $\times$ 128）、bit-identical 的 deterministic mask schedule 哈希、相同初始下游分类头哈希、相同下游样本序列哈希。
   - **Exact Token Mixer 剂量控制**：实现 `create_exact_token_dose_stream`，严格满足 $|D_{\text{realized}} - D_{\text{requested}}| = 0.0000 \le 1/T$。
   - **官方 Point-in-Time Leakage Anchors**：录入 2019 年美联储官方全部 8 次决议的 25 条段落级样本（`data/research/fomc/leakage_anchors/`，SHA256: `177af152a12...`），100% 具备法定公布时刻 exact UTC 时间戳，挂载前向政策行动标签 $Y_{\text{future-action}}$ 与市场前向反应（SPY 收益与美债 2Y 收益率变动）。

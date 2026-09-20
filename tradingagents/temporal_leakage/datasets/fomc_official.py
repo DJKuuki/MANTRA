@@ -23,7 +23,7 @@ import json
 from pathlib import Path
 from typing import List, Optional, Union
 
-from ..fomc_benchmark import FOMCBenchmark, TemporalSample, load_fomc_dataset, validate_dataset
+from ..fomc_benchmark import FOMCBenchmark, TemporalSample, load_fomc_dataset, validate_dataset, verify_file_sha256
 
 
 def create_fomc_official_fixture() -> FOMCBenchmark:
@@ -168,10 +168,8 @@ def load_fomc_official_statements(
     if manifest_data is not None:
         expected_sha = manifest_data.get("dataset_sha256") or manifest_data.get("checksum")
         if expected_sha:
-            if expected_sha.startswith("sha256:"):
-                expected_sha = expected_sha[7:]
-            actual_sha = hashlib.sha256(path.read_bytes()).hexdigest()
-            if actual_sha.lower() != expected_sha.lower():
+            if not verify_file_sha256(path, expected_sha):
+                actual_sha = hashlib.sha256(path.read_bytes()).hexdigest()
                 raise ValueError(
                     f"Dataset SHA256 verification failed for '{path}'. "
                     f"Manifest expected '{expected_sha}', but actual file SHA256 is '{actual_sha}'."
@@ -229,12 +227,9 @@ def create_fomc_official_benchmark(
                 # Verify SHA256
                 expected_sha = m_data.get("dataset_sha256") or m_data.get("checksum")
                 if expected_sha:
-                    if expected_sha.startswith("sha256:"):
-                        expected_sha = expected_sha[7:]
                     target_file = filepath or (m_path.parent / m_data.get("data_file", ""))
                     if Path(target_file).exists():
-                        actual_sha = hashlib.sha256(Path(target_file).read_bytes()).hexdigest()
-                        manifest_hash_verified = (actual_sha.lower() == expected_sha.lower())
+                        manifest_hash_verified = verify_file_sha256(target_file, expected_sha)
 
                 avail_prov = m_data.get("availability_provenance")
                 availability_provenance_verified = bool(avail_prov and str(avail_prov).strip())

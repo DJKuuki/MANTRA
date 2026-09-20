@@ -14,11 +14,63 @@ import csv
 import json
 from dataclasses import asdict
 from datetime import datetime
+import hashlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 from .temporal_model import TemporalSample, parse_iso_utc
+
+
+def compute_canonical_sha256(content: Union[str, bytes, Path]) -> str:
+    """Compute canonical SHA-256 hash of text content using normalized LF line endings.
+
+    Normalizing all newline conventions (CRLF -> LF) guarantees exact, deterministic
+    hash parity across Windows, Linux/macOS, and Git checkouts.
+    """
+    if isinstance(content, Path):
+        raw = content.read_bytes()
+    elif isinstance(content, str):
+        raw = content.encode("utf-8")
+    else:
+        raw = content
+    return hashlib.sha256(raw.replace(b"\r\n", b"\n")).hexdigest()
+
+
+def verify_file_sha256(filepath: Union[str, Path], expected_sha: str) -> bool:
+    """Verify SHA-256 checksum of a file across platforms and git newline checkouts.
+
+    A match is verified if `expected_sha` matches:
+    1. The raw file bytes on disk (exact match).
+    2. The canonical LF-normalized file bytes (POSIX / Git default).
+    3. The CRLF-normalized file bytes (Windows checkout default).
+    """
+    if not expected_sha or not str(expected_sha).strip():
+        return False
+    exp = str(expected_sha).strip().lower()
+    if exp.startswith("sha256:"):
+        exp = exp[7:]
+
+    p = Path(filepath)
+    if not p.exists():
+        return False
+
+    raw_bytes = p.read_bytes()
+    # 1. Raw match
+    if hashlib.sha256(raw_bytes).hexdigest().lower() == exp:
+        return True
+
+    # 2. Canonical LF match
+    lf_bytes = raw_bytes.replace(b"\r\n", b"\n")
+    if hashlib.sha256(lf_bytes).hexdigest().lower() == exp:
+        return True
+
+    # 3. CRLF match
+    crlf_bytes = lf_bytes.replace(b"\n", b"\r\n")
+    if hashlib.sha256(crlf_bytes).hexdigest().lower() == exp:
+        return True
+
+    return False
 
 
 class DatasetValidationError(ValueError):

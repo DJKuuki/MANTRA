@@ -1,0 +1,23 @@
+# Auto-detect text files and perform LF normalization on checkin
+* text=auto
+
+# Ensure code, configs, datasets, and manifests always use LF line endings
+*.py text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.jsonl text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.csv text eol=lf
+*.sh text eol=lf
+
+# Explicit binary files
+*.bin binary
+*.pt binary
+*.pth binary
+*.safetensors binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
