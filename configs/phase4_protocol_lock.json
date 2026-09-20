@@ -4,6 +4,7 @@
   "status": "LOCKED",
   "base_revision": "4556d13015211d73dccd3fdd39d39232506f3e43",
   "source_tree_hash": "f9584967d9342f0fe687ebb59204a2daa7493c0c5fc4636ca1e422b244867fe4",
+  "code_commit": "db048133e81055ba1f937c234a0677f8ed6061ea",
   "files": {
     "phase4_preregistration.yaml": "31f767a819a6461ad861b215fc5a2f582a7b355e43fb82b1c42d09300136ae98",
     "phase4_confirmatory.yaml": "181a63086e551cc4c391c18925e109d0b9724547544583d0599b3e08679dbfef",

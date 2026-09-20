@@ -1,53 +1,85 @@
-# Phase 4A Confirmatory Data & Preregistration Gate Finalization Report (v1.1.0)
+# Phase 4A Confirmatory Data & Preregistration Gate Protocol Closure Report (v1.2.0)
 
-**Stage**: Phase 4A — Confirmatory Data & Preregistration Gate Finalization  
-**Repository**: `RubiscoYHY/MANTRA`  
+**Stage**: Phase 4A — Confirmatory Data & Preregistration Gate Protocol Closure  
+**Repository**: `DJKuuki/MANTRA`  
 **Evaluation Date**: 2026-09-20  
-**Specification Version**: 1.1.0  
-**Gate Verdict**: **PHASE 4A FINALIZATION PASSED / CONFIRMATORY PROTOCOL v1.1 LOCKED / PHASE 4B REMAINS BLOCKED PENDING HUMAN APPROVAL**  
+**Specification Version**: 1.2.0  
+**Code Freeze Commit (Commit C)**: `db048133e81055ba1f937c234a0677f8ed6061ea`  
+**Protocol Lock Source Tree SHA**: `f9584967d9342f0fe687ebb59204a2daa7493c0c5fc4636ca1e422b244867fe4`  
+**Gate Verdict**: **PHASE 4A PROTOCOL CLOSURE PASSED / PHASE 4B RUNNER FROZEN / READY FOR HUMAN EXECUTION AUTHORIZATION**
 
 ---
 
-## 1. Gate Execution & Audit Summary
+## 1. Executive Summary & Audit Resolution
 
-The Phase 4A Finalization Patch hardens the confirmatory design into a machine-locked, runtime-bound, and statistically executable protocol. All 21 Phase 4A Gate tests (`tests/test_phase4a_gate.py` Tests A through U) and all 133 pre-existing repository unit tests (total 154 tests) pass with $100\%$ green status.
+The Phase 4A Protocol Closure v1.2 addresses and closes all remaining protocol, data provenance, and runtime orchestration findings from previous audits:
+
+1. **Pre-Cutoff D0 Sham Corpus Strict Temporal Invariant**:
+   - Dropped `fomc-minutes-2019-12-11` (whose release timestamp was `2020-01-01T19:00:00Z` > 2019 cutoff).
+   - Retained 63 verified official documents (40 statements 2015–2019, 23 minutes 2017–2019).
+   - Invariant strictly verified: $\max(\text{available\_time}) = \text{2019-12-11T19:00:00Z} \le \text{2019-12-31T23:59:59Z}$ (Test V).
+2. **Contamination Corpus Availability Window & 50/50 Raw Source Verification**:
+   - Availability window aligned to exact release timestamps: `2020-01-29T19:00:00Z` to `2023-01-04T19:00:00Z` (Test W).
+   - Deterministic HTML canonical extraction algorithm implemented and verified 50/50 against raw source HTML files (`all_verified: True`).
+3. **Continuous Future Target Derivation**:
+   - Target rate change $y_e = \Delta r_e = \text{target\_upper\_after} - \text{target\_upper\_before}$ derived bit-exact from `policy_history.csv` across all 40 events (Test X).
+   - Preserves magnitude and continuous rate changes ($\pm 0.50, \pm 0.25, 0.00$).
+4. **Treatment Repetition Metrics Separation**:
+   - Disentangled shortfall cycling ratio (`forced_repetition_ratio`) from vocabulary diversity (`token_type_diversity`).
+   - Verified `forced_repetition_ratio == 0.00 <= 0.20` across all doses on real corpora under 256k tokens (Test Y).
+5. **Machine-Locked Source Tree & Phase 4B Runner**:
+   - Deterministic source tree SHA computed across all controlled Python modules and execution configs (Test Z).
+   - End-to-end 34-step orchestration graph implemented and verified under mock execution across all 25 confirmatory branches (5 doses $\times$ 5 seeds) on 32 OOS events (Test AA).
+   - Hard execution blocker enforces `Phase4BAuthorizationError` fail-closed when authorization manifest is missing.
+
+---
+
+## 2. Quantitative Gate Verification Audit
+
+All 27 Gate tests (`tests/test_phase4a_gate.py` Tests A through AA) and all 160 repository unit tests pass with 100% green status:
 
 ```text
 ============================= test session starts =============================
 platform win32 -- Python 3.13.4, pytest-9.0.3, pluggy-1.6.0
 rootdir: E:\MANTRA
 configfile: pyproject.toml
-collected 21 items in tests/test_phase4a_gate.py
+collected 27 items in tests/test_phase4a_gate.py
 
-tests/test_phase4a_gate.py::test_a_within_event_consistency PASSED       [  4%]
-tests/test_phase4a_gate.py::test_b_grouped_temporal_split PASSED         [  9%]
-tests/test_phase4a_gate.py::test_c_event_level_economic_effect PASSED    [ 14%]
-tests/test_phase4a_gate.py::test_d_event_clustered_bootstrap PASSED      [ 19%]
-tests/test_phase4a_gate.py::test_e_anchor_canonical_source_existence PASSED [ 23%]
-tests/test_phase4a_gate.py::test_f_policy_future_action_provenance PASSED [ 28%]
-tests/test_phase4a_gate.py::test_g_market_outcome_recomputation PASSED   [ 33%]
-tests/test_phase4a_gate.py::test_h_contamination_timeline_provenance PASSED [ 38%]
-tests/test_phase4a_gate.py::test_i_treatment_block_provenance PASSED     [ 42%]
-tests/test_phase4a_gate.py::test_j_exact_dose_ladder_invariant PASSED    [ 47%]
-tests/test_phase4a_gate.py::test_k_no_mid_year_placeholder PASSED        [ 52%]
-tests/test_phase4a_gate.py::test_l_preregistration_lock_enforcement PASSED [ 57%]
-tests/test_phase4a_gate.py::test_m_actual_contamination_corpus_integrity PASSED [ 61%]
-tests/test_phase4a_gate.py::test_n_contamination_temporal_range_derived PASSED [ 66%]
-tests/test_phase4a_gate.py::test_o_event_level_primary_permutation_unit PASSED [ 71%]
-tests/test_phase4a_gate.py::test_p_explicit_target_type_enforcement PASSED [ 76%]
-tests/test_phase4a_gate.py::test_q_protocol_lock_enforcement PASSED      [ 80%]
-tests/test_phase4a_gate.py::test_r_config_semantic_equality PASSED       [ 85%]
-tests/test_phase4a_gate.py::test_s_source_registry_all_40_documents PASSED [ 90%]
-tests/test_phase4a_gate.py::test_t_base_revision_and_downstream_recipe_lock PASSED [ 95%]
-tests/test_phase4a_gate.py::test_u_treatment_sampling_real_corpus_preflight PASSED [100%]
+tests/test_phase4a_gate.py::test_a_within_event_consistency PASSED       [  3%]
+tests/test_phase4a_gate.py::test_b_grouped_temporal_split PASSED         [  7%]
+tests/test_phase4a_gate.py::test_c_event_level_economic_effect PASSED    [ 11%]
+tests/test_phase4a_gate.py::test_d_event_clustered_bootstrap PASSED      [ 14%]
+tests/test_phase4a_gate.py::test_e_anchor_canonical_source_existence PASSED [ 18%]
+tests/test_phase4a_gate.py::test_f_policy_future_action_provenance PASSED [ 22%]
+tests/test_phase4a_gate.py::test_g_market_outcome_recomputation PASSED   [ 25%]
+tests/test_phase4a_gate.py::test_h_contamination_timeline_provenance PASSED [ 29%]
+tests/test_phase4a_gate.py::test_i_treatment_block_provenance PASSED     [ 33%]
+tests/test_phase4a_gate.py::test_j_exact_dose_ladder_invariant PASSED    [ 37%]
+tests/test_phase4a_gate.py::test_k_no_mid_year_placeholder PASSED        [ 40%]
+tests/test_phase4a_gate.py::test_l_preregistration_lock_enforcement PASSED [ 44%]
+tests/test_phase4a_gate.py::test_m_actual_contamination_corpus_integrity PASSED [ 48%]
+tests/test_phase4a_gate.py::test_n_contamination_temporal_range_derived PASSED [ 51%]
+tests/test_phase4a_gate.py::test_o_event_level_primary_permutation_unit PASSED [ 55%]
+tests/test_phase4a_gate.py::test_p_explicit_target_type_enforcement PASSED [ 59%]
+tests/test_phase4a_gate.py::test_q_protocol_lock_enforcement PASSED      [ 62%]
+tests/test_phase4a_gate.py::test_r_config_semantic_equality PASSED       [ 66%]
+tests/test_phase4a_gate.py::test_s_source_registry_all_40_documents PASSED [ 70%]
+tests/test_phase4a_gate.py::test_t_base_revision_and_downstream_recipe_lock PASSED [ 74%]
+tests/test_phase4a_gate.py::test_u_treatment_sampling_real_corpus_preflight PASSED [ 77%]
+tests/test_phase4a_gate.py::test_v_clean_corpus_strict_availability_cutoff PASSED [ 81%]
+tests/test_phase4a_gate.py::test_w_contamination_window_and_50_50_source_verification PASSED [ 85%]
+tests/test_phase4a_gate.py::test_x_continuous_future_rate_change_derivation PASSED [ 88%]
+tests/test_phase4a_gate.py::test_y_treatment_repetition_metrics_separation PASSED [ 92%]
+tests/test_phase4a_gate.py::test_z_source_tree_lock_and_code_freeze PASSED [ 96%]
+tests/test_phase4a_gate.py::test_aa_phase4b_runner_orchestration_and_authorization PASSED [100%]
 
-============================= 21 passed in 14.19s =============================
-Full repository suite: 154 passed, 33 subtests passed in 51.47s.
+============================= 27 passed in 18.03s =============================
+Full repository suite: 160 passed, 33 subtests passed in 60.14s.
 ```
 
 ---
 
-## 2. Quantitative Verification Counts
+## 3. Quantitative Verification Counts
 
 | Audit Dimension | Target / Planned | Actual Verified | Verification Mode |
 | :--- | :--- | :--- | :--- |
@@ -55,78 +87,51 @@ Full repository suite: 154 passed, 33 subtests passed in 51.47s.
 | **Paragraph Anchors ($M$)** | 181 | 181 | 100% verified verbatim in cached HTML |
 | **Anchors Source-Verified** | 181 | 181 / 181 (100%) | Test E (No sampling) |
 | **Source Documents Verified** | 40 | 40 / 40 (100%) | Test S (Raw HTML + SHA match) |
-| **Contamination Documents** | $\ge 50$ | 50 | `documents.jsonl` (237,273 words) |
-| **Contamination Documents Verified** | 50 | 50 / 50 (100%) | Test M (Schema + Exact Timestamps) |
-| **Pre-Cutoff Sham Documents** | $\ge 40$ | 64 | `phase4_pre_cutoff` (251,649 words) |
+| **Pre-Cutoff Sham Documents** | $\ge 40$ | 63 | Test V ($\max \le \text{2019-12-31T23:59:59Z}$) |
+| **Contamination Documents** | $\ge 50$ | 50 | Test M (`documents.jsonl`, 237,273 words) |
+| **Contamination Raw Sources** | 50 | 50 / 50 (100%) | Test W (`verify_contamination_document_sources`) |
 | **Evaluated OOS Test Events** | 32 | 32 | Grouped temporal CV (4 folds $\times$ 8) |
 | **Primary Inferential $N$** | 32 | 32 events | Test O (Event-level paired permutation) |
-| **Policy Reconstruction** | 40 | 40 / 40 (100%) | Test F (Bit-exact derivation) |
+| **Policy Target Reconstruction** | 40 | 40 / 40 (100%) | Test X ($y_e = \Delta r_e$ bit-exact) |
 | **Market Outcome Reconstruction** | 40 | 40 / 40 (100%) | Test G (Bit-exact recomputation) |
-| **Protocol Controlled Files** | 10 | 10 | `configs/phase4_protocol_lock.json` |
-| **Protocol Hashes Verified** | 10 | 10 / 10 (100%) | Test Q (Normalized LF SHA-256) |
+| **Protocol Controlled Files** | 12 | 12 | Test Q (`phase4_protocol_lock.json`) |
+| **Source Tree Hash Frozen** | 1 | 1 | Test Z (`source_tree_hash` locked) |
+| **Phase 4B Mock Branches** | 25 | 25 / 25 (100%) | Test AA (5 doses $\times$ 5 seeds end-to-end) |
+| **Phase 4B Authorization Guard**| Fail-Closed | Fail-Closed | Test AA (`Phase4BAuthorizationError`) |
 
 ---
 
-## 3. Contamination Corpus Specification
-
-- **Location**: `data/research/fomc/phase4_contamination/`
-- **Total Documents**: 50 official Federal Reserve post-cutoff documents
-  - `scheduled_statement`: 23 documents (Primary)
-  - `unscheduled_statement`: 2 documents (2020-03-03, 2020-03-15 emergency releases)
-  - `policy_strategy_statement`: 1 document (2020-08-27 Jackson Hole revised framework)
-  - `meeting_minutes`: 24 documents (Secondary)
-- **Total Words**: 237,273 words
-- **Estimated Subword Tokens**: ~308,454 tokens (> 256,000 budget)
-- **Temporal Range**: `2020-01-29T19:00:00Z` to `2023-01-04T19:00:00Z` (derived programmatically)
-- **Isolation Audit**:
-  - Document ID Overlap: Exactly 0
-  - Text Exact Hash Overlap: Exactly 0
-  - Temporal Gap Buffer: 48 calendar days ($\max(T_{\text{anchors}}) < \min(T_{\text{contamination}})$)
-- **Dataset SHA-256**: `54b3e84e8ef958e78032815a6cc76e1ca68cb0428afe71b390a583ee60e25c58`
-
----
-
-## 4. Primary Inferential Statistical Procedure
-
-- **Primary Target**: Next scheduled FOMC target rate change ($\Delta r \in \{-0.25, 0.0, +0.25, +0.50\}$)
-- **Target Type**: Explicitly `continuous` (prohibits unique-value heuristic guessing)
-- **Model**: Ridge Regression ($L_2$ regularization, $\alpha=1.0$)
-- **Effect Metric**: Delta Spearman Rank Correlation ($\Delta \rho = \rho_{\text{leak}} - \rho_{\text{clean}}$)
-- **Primary Inferential Statistic**: Mean paired event absolute error improvement:
-  $$d_e = |y_e - \hat{y}_{\text{clean}}(e)| - |y_e - \hat{y}_{\text{leak}}(e)|$$
-- **Permutation Unit**: Strictly **event** ($N_{\text{OOS}} = 32$ evaluated Out-of-Sample events)
-- **Permutation Count**: $B = 2,000$ sign flips across the 32 event deltas
-- **A Priori Statistical Power**: $86.4\%$ power validated via empirical Monte Carlo simulation ($N_{\text{OOS}}=32, d=0.50, \alpha=0.05$)
-
----
-
-## 5. Cryptographic Protocol Lock & Execution Constraints
+## 4. Cryptographic Protocol Lock Manifest (v1.2.0)
 
 - **Protocol Lock Manifest**: `configs/phase4_protocol_lock.json`
-- **Protocol Version**: `1.1.0`
-- **Controlled Files (10 Artifacts)**:
-  1. `configs/phase4_preregistration.yaml` (`d56b79724701223ef9c3b03cd1d7b641b159ea62acf5b3d46af3847f734fb12f`)
-  2. `configs/phase4_confirmatory.yaml` (`853c55db7f4c7f7772452a4b9d6f6fceedd2de012c63c47dd9037b1062663d47`)
-  3. `data/research/fomc/events/events.jsonl` (`33bd3879c36fbde16ab1427538019a50014e24634fff6323accf01bae5ce4d64`)
+- **Protocol Version**: `1.2.0`
+- **Source Tree Hash**: `f9584967d9342f0fe687ebb59204a2daa7493c0c5fc4636ca1e422b244867fe4`
+- **Code Freeze Commit**: `db048133e81055ba1f937c234a0677f8ed6061ea`
+- **Base Model Revision**: Locked to `ProsusAI/finbert` commit `4556d13015211d73dccd3fdd39d39232506f3e43`.
+- **Controlled Files (12 Artifacts)**:
+  1. `configs/phase4_preregistration.yaml` (`31f767a819a6461ad861b215fc5a2f582a7b355e43fb82b1c42d09300136ae98`)
+  2. `configs/phase4_confirmatory.yaml` (`181a63086e551cc4c391c18925e109d0b9724547544583d0599b3e08679dbfef`)
+  3. `data/research/fomc/events/events.jsonl` (`981ad9f483e0518d1601f3391231e532458ca71e379404ef83795132693381e4`)
   4. `data/research/fomc/confirmatory_anchors/anchors.jsonl` (`b03a2262f2222e8e28a29c903247682501244652f5a958d093d2109714e5c8ae`)
   5. `data/research/fomc/policy_history.csv` (`51f233d3e957a54a7b87ecaf073c1d9906fb9e02bc45a68945910ec693b04fc2`)
   6. `data/research/market/market_manifest.json` (`692dcd327316fe29ff2e68ce82cc6d5d1101e2aa41d09b570305fc95a5fa059c`)
   7. `data/research/market/spy_daily_raw.csv` (`11f7d6f3bfb171b70f0de96e0f74d5d8954c139050e61646d140a7052ece143e`)
   8. `data/research/market/treasury_2y_raw.csv` (`337d5863a73e91d7418a5fa04c58482c206aacf492de55ae12b47b823a9dfca8`)
   9. `data/research/fomc/phase4_contamination/documents.jsonl` (`54b3e84e8ef958e78032815a6cc76e1ca68cb0428afe71b390a583ee60e25c58`)
-  10. `data/research/fomc/phase4_contamination/manifest.json` (`2703882fdebabb56199de6b1375dcbdd83ec091b3703823d071fff0f8aa8e071`)
-- **Base Model Revision**: Locked to `ProsusAI/finbert` commit `4556d13015211d73dccd3fdd39d39232506f3e43`.
-- **Downstream Fine-Tuning Recipe**: Frozen across epochs (3), batch size (16), learning rate ($2 \times 10^{-5}$), optimizer (AdamW), warmup ($10\%$), max length (128).
-- **Execution Guard**: Phase 4B model execution is strictly blocked in code (`PreregistrationLockError`) until human authorization is committed.
+  10. `data/research/fomc/phase4_contamination/manifest.json` (`6893fdb60a4c85cbfcca2293f81df079ffa4a44b7aa62dcf0b908fe807b5b6ae`)
+  11. `data/research/fomc/phase4_pre_cutoff/documents.jsonl` (`5202f14b340c3212dc48c13e1ba7a8a814cb472a4c25df072bed14b7a3f19e4c`)
+  12. `data/research/fomc/phase4_pre_cutoff/manifest.json` (`8e85378df1d68b0917990a7c1ed89b80fe75e00fe156854b3f13c9ac1bbece9a`)
 
 ---
 
-## 6. Treatment Sampling Feasibility Preflight
+## 5. Phase 4B Confirmatory Execution Specifications
 
-Evaluated on real pre/post corpora with 256,000 token budget (500 blocks $\times$ 512 tokens):
-- **D0 Repetition Ratio**: $0.00$ ($\le 0.20$ threshold)
-- **D25 Repetition Ratio**: $0.00$ ($\le 0.20$ threshold)
-- **D50 Repetition Ratio**: $0.00$ ($\le 0.20$ threshold)
-- **D75 Repetition Ratio**: $0.00$ ($\le 0.20$ threshold)
-- **D100 Repetition Ratio**: $0.00$ ($\le 0.20$ threshold)
-- **Dose Invariant**: $|D_{\text{realized}} - D_{\text{requested}}| \le 1/T$ verified across all doses.
+- **Execution Runner**: `tradingagents/temporal_leakage/phase4_confirmatory.py`
+- **Orchestration Graph**: Deterministic 34-step dependency DAG (`run_phase4_confirmatory`)
+- **Dose Ladder**: 5 levels $D \in \{0.00, 0.25, 0.50, 0.75, 1.00\}$
+- **Random Seeds**: 5 seeds $\{42, 123, 456, 789, 101112\}$
+- **Total Confirmatory Branches**: 25 MLM branches
+- **Downstream Cross-Validation**: 4-fold grouped temporal CV ($N_{\text{OOS}} = 32$ events, 8 train events per fold)
+- **Primary Estimator**: Ridge Regression ($\alpha = 1.0$) on continuous future rate change $y_e = \Delta r_e$
+- **Primary Inferential Test**: Sign-flip permutation test on event-level absolute error improvement ($B = 2,000$, $N = 32$)
+- **Authorization Guard**: Requires external signed authorization manifest at `configs/phase4_execution_authorization.json` to initiate GPU compute.
