@@ -1,14 +1,14 @@
-# Phase 4 Confirmatory Study Preregistration Specification (v1.2.3)
+# Phase 4 Confirmatory Study Preregistration Specification (v1.2.4)
 # Machine-verifiable locked contract for confirmatory evaluation.
 
-version: "1.2.3"
+version: "1.2.4"
 locked: true
-locked_at: "2026-09-20T20:10:00Z"
+locked_at: "2026-09-20T22:30:00Z"
 base_commit: "fee82a2c059d486b8f0cde7b067d686cfcf39dd0"
-amendment_status: "PRE-COMPUTE CORRECTION (NO PHASE 4B CONFIRMATORY MODEL RESULTS EXISTED)"
+amendment_status: "PRE-RESULT EXECUTION INTEGRATION CORRECTION (NO PHASE 4B CONFIRMATORY ENDPOINT PRODUCED)"
 
 preregistration_doc_path: "docs/research/phase4_preregistration.md"
-preregistration_doc_sha256: "b807833d53e768e39d1629ce789dad6e3c9a9d63a5a3ea3afaba46104f1a58f0"
+preregistration_doc_sha256: "a213d2544a77a4ac178ed9be0a7926c9d600656854b408bf5d0650305a6dbec5"
 
 dataset:
   name: "fomc_scheduled_statements_2015_2019"

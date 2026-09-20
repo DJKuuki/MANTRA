@@ -1088,7 +1088,7 @@ def test_ac_default_full_run_is_never_mock(monkeypatch):
         tree_hash = compute_source_tree_hash(PROJECT_ROOT)
         with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
             lock_meta = json.load(f)
-            proto_ver = lock_meta.get("protocol_version", "1.2.3")
+            proto_ver = lock_meta.get("protocol_version", "1.2.4")
             locked_commit = lock_meta.get("code_commit") or lock_meta.get("scientific_code_commit", "unknown")
         lock_sha = compute_file_sha256(PROTOCOL_LOCK_PATH, normalize_newlines=True)
         with open(auth_file, "w", encoding="utf-8") as f:
@@ -1140,7 +1140,7 @@ def test_ad_mock_rejected_in_full_empirical_mode(monkeypatch):
         tree_hash = compute_source_tree_hash(PROJECT_ROOT)
         with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
             lock_meta = json.load(f)
-            proto_ver = lock_meta.get("protocol_version", "1.2.3")
+            proto_ver = lock_meta.get("protocol_version", "1.2.4")
             locked_commit = lock_meta.get("code_commit") or lock_meta.get("scientific_code_commit", "unknown")
         lock_sha = compute_file_sha256(PROTOCOL_LOCK_PATH, normalize_newlines=True)
         with open(auth_file, "w", encoding="utf-8") as f:
@@ -1560,14 +1560,14 @@ def test_am_protocol_lock_manifest_verification_and_integrity():
         conf_config_path=CONF_CONFIG_PATH,
     )
     assert lock_meta["status"] == "PROTOCOL_LOCKED_AND_VERIFIED"
-    assert lock_meta["protocol_version"] == "1.2.3"
+    assert lock_meta["protocol_version"] == "1.2.4"
     assert "source_tree_hash" in lock_meta
     assert "scientific_code_commit" in lock_meta
     assert "code_commit" in lock_meta
     assert len(lock_meta["source_tree_hash"]) == 64
     assert len(lock_meta["scientific_code_commit"]) == 40
 
-    # Tamper test: missing source_tree_hash in v1.2.3 must fail closed
+    # Tamper test: missing source_tree_hash in v1.2.4 must fail closed
     with tempfile.TemporaryDirectory() as td:
         tampered_lock = Path(td) / "lock.json"
         with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
@@ -1582,7 +1582,7 @@ def test_am_protocol_lock_manifest_verification_and_integrity():
                 project_root=PROJECT_ROOT,
             )
 
-    # Tamper test: missing commit bindings in v1.2.3 must fail closed
+    # Tamper test: missing commit bindings in v1.2.4 must fail closed
     with tempfile.TemporaryDirectory() as td:
         tampered_lock = Path(td) / "lock.json"
         with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
@@ -1608,7 +1608,7 @@ def test_an_authorization_binding_validation():
     with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
         lock_manifest = json.load(f)
     lock_sha = compute_file_sha256(PROTOCOL_LOCK_PATH, normalize_newlines=True)
-    proto_ver = lock_manifest.get("protocol_version", "1.2.3")
+    proto_ver = lock_manifest.get("protocol_version", "1.2.4")
 
     with tempfile.TemporaryDirectory() as td:
         auth_file = Path(td) / "auth.json"
@@ -1899,7 +1899,7 @@ def test_av_runtime_contract_reconciliation():
         prereg_cfg = yaml.safe_load(f)
 
     contract = resolve_phase4_runtime_contract(conf_cfg, prereg_cfg)
-    assert contract["protocol_version"] == "1.2.3"
+    assert contract["protocol_version"] == "1.2.4"
     assert contract["mlm_max_steps"] == 100
     assert contract["mlm_scheduler"] == "none"
     assert contract["mlm_warmup_ratio"] == 0.0
@@ -1996,7 +1996,7 @@ def test_ay_branch_manifest_provenance_completeness():
     b_res["execution_repository_head"] = "a" * 40
     b_res["source_tree_hash"] = "b" * 64
     b_res["protocol_lock_sha256"] = "c" * 64
-    b_res["protocol_version"] = "1.2.3"
+    b_res["protocol_version"] = "1.2.4"
 
     with tempfile.TemporaryDirectory() as td:
         writer = Phase4ArtifactWriter(output_root=td)
@@ -2160,6 +2160,257 @@ def test_bb_ancestry_verification_allows_doc_only_descendants(monkeypatch):
     assert res["status"] == "CODE_FROZEN_AND_VERIFIED"
     assert res["scientific_code_commit"] == "2222222222222222222222222222222222222222"
     assert res["execution_repository_head"] == "3333333333333333333333333333333333333333"
+
+
+# ---------------------------------------------------------------------------
+# Test BC: Production Anchor Representation Uses Canonical Encoder Encode
+# ---------------------------------------------------------------------------
+def test_bc_production_anchor_representation_uses_encoder_encode():
+    """Verify Production backend uses canonical encode() method on HuggingFaceTemporalEncoder
+    and never invokes non-existent extract_representations()."""
+    import torch
+    from transformers import BertConfig, BertForSequenceClassification
+    from tradingagents.temporal_leakage.hf_encoder import HuggingFaceTemporalEncoder
+
+    cfg = BertConfig(
+        hidden_size=32,
+        num_hidden_layers=1,
+        num_attention_heads=2,
+        intermediate_size=64,
+        vocab_size=100,
+    )
+    mock_hf_model = BertForSequenceClassification(cfg)
+
+    class FastBatchTokenizer:
+        def __call__(self, texts, **kwargs):
+            class BatchEncoding(dict):
+                def to(self, device):
+                    return BatchEncoding({k: (v.to(device) if hasattr(v, "to") else v) for k, v in self.items()})
+            if isinstance(texts, str):
+                texts = [texts]
+            n = len(texts)
+            return BatchEncoding({
+                "input_ids": torch.randint(0, 100, (n, 16)),
+                "attention_mask": torch.ones(n, 16, dtype=torch.long),
+            })
+
+    fast_tok = FastBatchTokenizer()
+    encoder = HuggingFaceTemporalEncoder(model=mock_hf_model, tokenizer=fast_tok, device="cpu")
+
+    # 1. Structural interface assertions
+    assert hasattr(encoder, "encode"), "HuggingFaceTemporalEncoder must provide encode()"
+    assert not hasattr(encoder, "extract_representations"), (
+        "HuggingFaceTemporalEncoder must NOT have extract_representations() attribute"
+    )
+
+    # 2. Load official 181 anchors
+    with open(ANCHORS_PATH, "r", encoding="utf-8") as f:
+        anchors = [json.loads(line) for line in f if line.strip()]
+    assert len(anchors) == 181
+    anchor_texts = [a["text"] for a in anchors]
+
+    # 3. Call encode and verify output contract
+    encode_called = {"count": 0}
+    orig_encode = encoder.encode
+
+    def wrapped_encode(texts, **kwargs):
+        encode_called["count"] += 1
+        return orig_encode(texts, **kwargs)
+
+    encoder.encode = wrapped_encode
+
+    embeddings = encoder.encode(anchor_texts)
+
+    assert encode_called["count"] == 1, "encode() must be invoked exactly once for anchor batch"
+    assert isinstance(embeddings, np.ndarray), "Output must be numpy ndarray"
+    assert embeddings.ndim == 2, f"Embedding rank must be 2, got {embeddings.ndim}"
+    assert embeddings.shape == (181, 32), f"Expected shape (181, 32), got {embeddings.shape}"
+    assert np.all(np.isfinite(embeddings)), "All embedding values must be finite"
+
+
+# ---------------------------------------------------------------------------
+# Test BD: Production First Branch Preflight Integration
+# ---------------------------------------------------------------------------
+def test_bd_production_first_branch_preflight_integration():
+    """ENGINEERING INTEGRATION TEST ONLY:
+    Exercises full component DAG of ProductionConfirmatoryBackend for a single branch (Seed 13, Dose 0.00)
+    using injected lightweight components:
+      treatment construction -> MLM stage -> encoder transfer -> downstream fine-tune
+      -> anchor encode -> stance prediction -> behavioral sensitivity -> artifact serialization.
+    Validates end-to-end API integration and contract without running expensive full-scale compute."""
+    import torch
+    from transformers import BertConfig, BertForMaskedLM
+    from tradingagents.temporal_leakage.temporal_model import TemporalSample
+
+    # Injected lightweight base MLM model
+    cfg = BertConfig(
+        hidden_size=32,
+        num_hidden_layers=1,
+        num_attention_heads=2,
+        intermediate_size=64,
+        vocab_size=1000,
+    )
+    tiny_mlm = BertForMaskedLM(cfg)
+
+    class FastTokenizer:
+        def __init__(self):
+            self.mask_token_id = 103
+            self.pad_token_id = 0
+            self.unk_token_id = 1
+            self.cls_token_id = 101
+            self.sep_token_id = 102
+
+        def encode(self, text, add_special_tokens=False):
+            return [(abs(hash(w)) % 900) + 10 for w in text.split()]
+
+        def __call__(self, texts, **kwargs):
+            class BatchEncoding(dict):
+                def to(self, device):
+                    return BatchEncoding({k: (v.to(device) if hasattr(v, "to") else v) for k, v in self.items()})
+            if isinstance(texts, str):
+                texts = [texts]
+            n = len(texts)
+            max_len = 16
+            return BatchEncoding({
+                "input_ids": torch.randint(10, 900, (n, max_len)),
+                "attention_mask": torch.ones(n, max_len, dtype=torch.long),
+            })
+
+    fast_tok = FastTokenizer()
+
+    # Load real events, anchors, and documents
+    events = load_events()
+    with open(ANCHORS_PATH, "r", encoding="utf-8") as f:
+        anchors = [json.loads(line) for line in f if line.strip()]
+
+    with open(CONF_CONFIG_PATH, "r", encoding="utf-8") as f:
+        conf_cfg = yaml.safe_load(f)
+
+    # Use reduced steps and blocks for rapid preflight execution
+    branch_cfg = copy.deepcopy(conf_cfg)
+    branch_cfg["model"]["device"] = "cpu"
+    branch_cfg["mlm_training"]["num_blocks"] = 5
+    branch_cfg["mlm_training"]["block_length"] = 64
+    branch_cfg["mlm_training"]["token_budget"] = 320
+    branch_cfg["mlm_training"]["max_steps"] = 1
+    branch_cfg["downstream_training"] = {
+        "epochs": 1,
+        "max_steps": 1,
+        "batch_size": 4,
+        "learning_rate": 1e-4,
+        "weight_decay": 0.01,
+        "optimizer": "AdamW",
+        "scheduler": "linear",
+        "warmup_ratio": 0.0,
+        "max_seq_length": 16,
+    }
+
+    pre_docs = [
+        {
+            "document_id": f"clean_{i}",
+            "available_time": "2018-01-01T00:00:00Z",
+            "text": f"Federal Open Market Committee policy statement economic activity expansion labor employment rate inflation target {i} " * 20,
+        }
+        for i in range(10)
+    ]
+    post_docs = [
+        {
+            "document_id": f"contam_{i}",
+            "available_time": "2021-01-01T00:00:00Z",
+            "text": f"Federal Open Market Committee policy future inflation minutes asset purchase normalization pandemic recovery {i} " * 20,
+        }
+        for i in range(10)
+    ]
+
+    backend = ProductionConfirmatoryBackend(
+        device="cpu",
+        mock_model_for_testing=tiny_mlm,
+        mock_tokenizer_for_testing=fast_tok,
+    )
+
+    mock_train_samples = [
+        TemporalSample(
+            text=f"Dummy sentence {i} for fine tuning stance classifier.",
+            event_time="2017-01-01T00:00:00Z",
+            available_time="2017-01-01T00:00:00Z",
+            task_label=1 if i % 2 == 0 else -1,
+            sample_id=f"train_{i}",
+            metadata={"year": 2017},
+        )
+        for i in range(8)
+    ]
+
+    with tempfile.TemporaryDirectory() as td:
+        out_dir = Path(td)
+        b_res = backend.execute_branch(
+            seed=13,
+            dose=0.00,
+            pre_docs=pre_docs,
+            post_docs=post_docs,
+            anchors=anchors,
+            events=events,
+            conf_cfg=branch_cfg,
+            train_samples=mock_train_samples,
+            output_dir=out_dir / "checkpoints",
+        )
+
+        # 1. Assertions on branch results
+        assert b_res["data_mode"] == "EMPIRICAL"
+        assert b_res["seed"] == 13
+        assert b_res["dose"] == 0.00
+        assert b_res["event_embeddings"].shape == (40, 32)
+        assert np.all(np.isfinite(b_res["event_embeddings"]))
+        assert len(b_res["event_stance_scores"]) == 40
+        assert len(b_res["event_sensitivities"]) == 40
+        assert np.isfinite(b_res["economic_ic_2y"])
+        assert np.isfinite(b_res["economic_ic_spy"])
+
+        # 2. Assert artifact serialization succeeds
+        writer = Phase4ArtifactWriter(output_root=out_dir / "artifacts")
+        b_res["scientific_code_commit"] = "0" * 40
+        b_res["execution_repository_head"] = "0" * 40
+        b_res["source_tree_hash"] = "1" * 64
+        b_res["protocol_lock_sha256"] = "2" * 64
+        b_res["protocol_version"] = "1.2.4"
+
+        mf_path = writer.write_branch_manifest(b_res)
+        assert mf_path.exists()
+        with open(mf_path, "r", encoding="utf-8") as f:
+            mf_data = json.load(f)
+        assert mf_data["data_mode"] == "EMPIRICAL"
+        assert mf_data["protocol_version"] == "1.2.4"
+
+        met_path = writer.write_branch_metrics(b_res)
+        assert met_path.exists()
+
+
+# ---------------------------------------------------------------------------
+# Test BE: Historical v1.2.3 Artifacts Rejected Under Protocol v1.2.4
+# ---------------------------------------------------------------------------
+def test_be_v123_partial_execution_rejected_under_v124():
+    """Verify that historical v1.2.3 authorization or branch execution artifacts
+    are strictly rejected under Protocol v1.2.4 invariants."""
+    with tempfile.TemporaryDirectory() as td:
+        auth_file = Path(td) / "auth_v123.json"
+        with open(auth_file, "w", encoding="utf-8") as f:
+            json.dump({
+                "protocol_version": "1.2.3",
+                "human_authorized": True,
+                "protocol_lock_sha256": "a" * 64,
+                "locked_scientific_code_commit": "b" * 40,
+                "locked_source_tree_hash": "c" * 64,
+            }, f)
+
+        # verify_phase4b_authorization under v1.2.4 must fail closed on v1.2.3 authorization
+        with pytest.raises(Phase4BAuthorizationError, match="Protocol version mismatch in authorization"):
+            verify_phase4b_authorization(
+                auth_file,
+                protocol_version="1.2.4",
+                protocol_lock_sha256="a" * 64,
+                locked_git_commit="b" * 40,
+                locked_source_tree_hash="c" * 64,
+            )
+
 
 
 

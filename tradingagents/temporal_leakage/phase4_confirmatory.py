@@ -258,8 +258,8 @@ def verify_phase4_protocol_lock(
     with open(lock_p, "r", encoding="utf-8") as f:
         lock_manifest = json.load(f)
 
-    valid_versions = ["1.1.0", "1.2.0", "1.2.1", "1.2.2", "1.2.3"]
-    proto_ver = lock_manifest.get("protocol_version", "1.2.3")
+    valid_versions = ["1.1.0", "1.2.0", "1.2.1", "1.2.2", "1.2.3", "1.2.4"]
+    proto_ver = lock_manifest.get("protocol_version", "1.2.4")
     if proto_ver not in valid_versions:
         raise PreregistrationLockError(
             f"Protocol lock version must be in {valid_versions}, found '{proto_ver}'"
@@ -481,7 +481,7 @@ def resolve_phase4_runtime_contract(
 
     return {
         "status": "CONTRACT_RESOLVED",
-        "protocol_version": prereg_cfg.get("version", "1.2.3"),
+        "protocol_version": prereg_cfg.get("version", "1.2.4"),
         "dose_ladder": c_doses,
         "seeds": c_seeds,
         "token_budget": c_tb,
@@ -562,7 +562,7 @@ def verify_preregistration_lock(
 
 def verify_phase4b_authorization(
     authorization_path: Path | str,
-    protocol_version: str = "1.2.3",
+    protocol_version: str = "1.2.4",
     protocol_lock_sha256: Optional[str] = None,
     locked_git_commit: Optional[str] = None,
     locked_source_tree_hash: Optional[str] = None,
@@ -1131,7 +1131,7 @@ class ProductionConfirmatoryBackend(Phase4ExecutionBackend):
 
         # 7. Extract real hidden representations from anchor paragraphs
         anchor_texts = [a["text"] for a in anchors]
-        anchor_reps = fine_tuned_encoder.extract_representations(anchor_texts)
+        anchor_reps = fine_tuned_encoder.encode(anchor_texts)
 
         event_ids_order = [e["event_id"] for e in events]
         event_reps_list = []
@@ -1303,7 +1303,7 @@ def execute_phase4b_confirmatory(
 
     locked_commit = lock_meta.get("scientific_code_commit") or lock_meta.get("code_commit")
     locked_tree = lock_meta.get("source_tree_hash")
-    proto_ver = lock_meta.get("protocol_version", "1.2.3")
+    proto_ver = lock_meta.get("protocol_version", "1.2.4")
 
     if locked_commit is None or locked_tree is None:
         raise PreregistrationLockError(
@@ -1639,7 +1639,7 @@ def run_phase4_mock_orchestration(
         lock_sha = compute_file_sha256(lock_file, normalize_newlines=True)
 
         mock_auth_data = {
-            "protocol_version": lock_manifest.get("protocol_version", "1.2.3"),
+            "protocol_version": lock_manifest.get("protocol_version", "1.2.4"),
             "human_authorized": True,
             "authorizer": "MOCK_DRY_RUN_TEST",
             "authorized_at": "2026-09-20T14:30:00Z",

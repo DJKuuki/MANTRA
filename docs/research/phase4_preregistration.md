@@ -1,22 +1,20 @@
-# Formal Preregistration: Phase 4 Confirmatory Temporal Leakage Study (v1.2.3)
+# Formal Preregistration: Phase 4 Confirmatory Temporal Leakage Study (v1.2.4)
 
 **Protocol Title**: Machine-Verifiable Point-in-Time Evaluation of Representational and Behavioral Temporal Contamination in Financial Central Bank Language Models  
 **Preregistration Status**: LOCKED PRIOR TO CONFIRMATORY COMPUTE  
-**Preregistration Specification Version**: 1.2.3 (Phase 4B Final Gate Patch)  
+**Preregistration Specification Version**: 1.2.4 (Phase 4B Production Integration Hotfix & Re-Freeze)  
 **Repository**: `RubiscoYHY/MANTRA`  
 **Git Base Revision**: `4556d13015211d73dccd3fdd39d39232506f3e43`  
 **Date of Lock**: 2026-09-20  
 
 > [!IMPORTANT]
-> **Protocol Closure Declaration**:
-> This version (v1.2.0) incorporates protocol corrections approved during the Phase 4A Protocol Closure audit prior to any Phase 4B confirmatory compute:
-> 1. Enforces strict information availability (`available_time <= 2019-12-31T23:59:59Z`) for clean sham corpus eligibility, excluding `fomc-minutes-2019-12-11` (released 2020-01-01).
-> 2. Sets contamination availability window to `2020-01-29T19:00:00Z` to `2023-01-04T19:00:00Z`, reflecting the January 2023 release of the December 2022 meeting minutes.
-> 3. Completes 50/50 raw source verification for all contamination documents with deterministic canonical HTML reconstruction.
-> 4. Explicitly derives true continuous future rate change ($y_e = \Delta r_e$) from `policy_history.csv` before/after rate bounds.
-> 5. Separates forced repetition ratio from token vocabulary diversity.
-> 6. Enforces source-tree code freeze via `source_tree_hash` and strict human authorization gate.
-> Full-scale model training remains strictly locked pending external human authorization.
+> **Protocol Closure & Production Integration Amendment Declaration**:
+> This version (v1.2.4) incorporates a pre-result production API integration correction prior to Phase 4B confirmatory compute completion:
+> 1. Resolves `HuggingFaceTemporalEncoder` anchor representation extraction method call from `extract_representations()` to `encode()`, matching the canonical evaluation-mode attention-mask-aware mean pooling representation API across non-padding tokens.
+> 2. The v1.2.3 execution was aborted during the first D0 branch before any Phase 4B confirmatory endpoint was computed, inspected, or serialized. No Phase 4B confirmatory endpoint result was produced before the v1.2.4 correction.
+> 3. Preserves all frozen scientific parameters, hypotheses, dose ladders, seeds, datasets, and decision rules from v1.2.0-v1.2.3.
+> 4. Enforces that historical v1.2.3 partial execution artifacts cannot be reused or resumed under v1.2.4; all 25 confirmatory branches must execute from scratch once authorized.
+> 5. Human execution authorization manifest `configs/phase4_execution_authorization.json` is cleared, re-locking confirmatory compute pending post-gate authorization.
 
 ---
 
