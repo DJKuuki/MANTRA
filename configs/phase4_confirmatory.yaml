@@ -1,4 +1,4 @@
-# Phase 4 Confirmatory Execution Configuration (v1.1.0)
+# Phase 4 Confirmatory Execution Configuration (v1.2.0)
 # Governed strictly by configs/phase4_preregistration.yaml
 
 experiment_id: "phase4_confirmatory_evaluation"
@@ -16,13 +16,21 @@ dataset:
   expected_anchors: 181
   cutoff_timestamp: "2019-12-31T23:59:59Z"
 
+clean_sham_dataset:
+  documents_path: "data/research/fomc/phase4_pre_cutoff/documents.jsonl"
+  manifest_path: "data/research/fomc/phase4_pre_cutoff/manifest.json"
+  dataset_sha256: "5202f14b340c3212dc48c13e1ba7a8a814cb472a4c25df072bed14b7a3f19e4c"
+  document_count: 63
+  min_available_time: "2015-01-28T19:00:00Z"
+  max_available_time: "2019-12-11T19:00:00Z"
+
 contamination_dataset:
   documents_path: "data/research/fomc/phase4_contamination/documents.jsonl"
   manifest_path: "data/research/fomc/phase4_contamination/manifest.json"
   dataset_sha256: "54b3e84e8ef958e78032815a6cc76e1ca68cb0428afe71b390a583ee60e25c58"
   document_count: 50
   min_available_time: "2020-01-29T19:00:00Z"
-  max_available_time: "2022-12-14T19:00:00Z"
+  max_available_time: "2023-01-04T19:00:00Z"
 
 dose_ladder: [0.00, 0.25, 0.50, 0.75, 1.00]
 seeds: [13, 42, 87, 123, 2024]
@@ -46,6 +54,10 @@ mlm_training:
 
 downstream_evaluation:
   statistical_unit: "independent_fomc_event"
+  primary_target: "future_rate_change"
+  target_type: "continuous"
+  model_type: "ridge_regression"
+  probe_alpha: 1.0
   aggregation_rule: "mean"
   cv_folds: 4
   min_train_events: 8

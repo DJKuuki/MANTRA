@@ -121,3 +121,107 @@ def audit_anchor_contamination_isolation(
         "canonical_text_overlap_count": len(text_hash_overlap),
         "canonical_text_overlap_hashes": text_hash_overlap,
     }
+
+
+def verify_contamination_document_sources(
+    documents: List[Dict[str, Any]],
+    raw_sources_dir: Optional[Union[str, Path]] = None,
+) -> Dict[str, Any]:
+    """Exhaustively verify 100% of contamination documents against raw HTML sources.
+
+    Checks for every document:
+    1. Raw source snapshot exists on disk.
+    2. Raw file SHA-256 matches recorded raw_source_sha256.
+    3. Source URL is from official Federal Reserve domain (https://www.federalreserve.gov/).
+    4. Canonical text is deterministically reconstructed from raw HTML.
+    5. Reconstructed canonical text SHA-256 matches canonical_text_sha256.
+    6. Stored treatment text corresponds exactly to reconstructed canonical text.
+    7. Exact available_time provenance is present and valid.
+    8. Document ID is unique.
+
+    Returns structured summary with verified_count and total_count.
+    """
+    import hashlib
+    import re
+    from bs4 import BeautifulSoup
+
+    if raw_sources_dir is None:
+        raw_sources_dir = Path("data/research/fomc/phase4_contamination/raw_sources")
+    raw_dir = Path(raw_sources_dir)
+
+    seen_ids: Set[str] = set()
+    verified_count = 0
+    verification_errors: List[str] = []
+
+    for idx, doc in enumerate(documents):
+        doc_id = doc.get("document_id", f"doc_{idx}")
+        # Check uniqueness
+        if doc_id in seen_ids:
+            verification_errors.append(f"Duplicate document ID: {doc_id}")
+            continue
+        seen_ids.add(doc_id)
+
+        # 1. Raw source snapshot exists
+        raw_path = raw_dir / f"{doc_id}.html"
+        if not raw_path.exists():
+            verification_errors.append(f"Missing raw snapshot for {doc_id}: {raw_path}")
+            continue
+
+        # 2. Raw file SHA-256 matches recorded hash (normalized to LF)
+        raw_bytes = raw_path.read_bytes().replace(b"\r\n", b"\n")
+        raw_sha = hashlib.sha256(raw_bytes).hexdigest()
+        expected_raw_sha = doc.get("raw_source_sha256", "")
+        if raw_sha != expected_raw_sha:
+            verification_errors.append(
+                f"Raw SHA mismatch for {doc_id}: computed {raw_sha} != recorded {expected_raw_sha}"
+            )
+            continue
+
+        # 3. Source URL from official Federal Reserve domain
+        source_url = doc.get("source_url", "")
+        if not source_url.startswith("https://www.federalreserve.gov/"):
+            verification_errors.append(f"Source URL not from federalreserve.gov for {doc_id}: {source_url}")
+            continue
+
+        # 4. Canonical text deterministically reconstructed from raw source
+        soup = BeautifulSoup(raw_bytes.decode("utf-8", errors="replace"), "html.parser")
+        article = (
+            soup.find("div", id="article")
+            or soup.find("div", id="content")
+            or soup.find("div", class_="col-xs-12 col-sm-8 col-md-8")
+            or soup
+        )
+        reconstructed_text = article.get_text(separator=" ")
+        reconstructed_text = re.sub(r"\s+", " ", reconstructed_text).strip()
+
+        # 5. Reconstructed canonical text SHA-256 matches recorded canonical_text_sha256
+        canon_sha = hashlib.sha256(reconstructed_text.encode("utf-8")).hexdigest()
+        expected_canon_sha = doc.get("canonical_text_sha256", "")
+        if canon_sha != expected_canon_sha:
+            verification_errors.append(
+                f"Canonical SHA mismatch for {doc_id}: computed {canon_sha} != recorded {expected_canon_sha}"
+            )
+            continue
+
+        # 6. Stored treatment text corresponds exactly to reconstructed canonical text
+        stored_text = doc.get("text", "")
+        if stored_text != reconstructed_text:
+            verification_errors.append(f"Stored text mismatch for {doc_id}")
+            continue
+
+        # 7. Exact available_time provenance is present and valid
+        if doc.get("availability_quality") != "exact" or not doc.get("available_time"):
+            verification_errors.append(f"Invalid availability provenance for {doc_id}")
+            continue
+
+        verified_count += 1
+
+    all_verified = bool(verified_count == len(documents) and not verification_errors)
+    return {
+        "verified_count": verified_count,
+        "total_count": len(documents),
+        "all_verified": all_verified,
+        "verification_summary": f"{verified_count} / {len(documents)}",
+        "errors": verification_errors,
+    }
+

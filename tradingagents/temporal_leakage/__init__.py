@@ -66,14 +66,23 @@ from .twin_pipeline import (
 from .phase4_confirmatory import (
     PreregistrationLockError,
     PreregistrationHashMismatchError,
+    CodeFreezeError,
+    Phase4BAuthorizationError,
     compute_file_sha256,
+    compute_source_tree_hash,
+    verify_phase4_code_freeze,
+    verify_phase4_protocol_lock,
     verify_preregistration_lock,
+    verify_phase4b_authorization,
+    execute_phase4b_confirmatory,
+    run_phase4_mock_orchestration,
     run_phase4_confirmatory,
 )
 from .datasets.contamination import (
     load_phase4_contamination_documents,
     derive_contamination_temporal_range,
     audit_anchor_contamination_isolation,
+    verify_contamination_document_sources,
 )
 
 __all__ = [
@@ -130,10 +139,19 @@ __all__ = [
     "run_baseline_and_smoke_experiment",
     "PreregistrationLockError",
     "PreregistrationHashMismatchError",
+    "CodeFreezeError",
+    "Phase4BAuthorizationError",
     "compute_file_sha256",
+    "compute_source_tree_hash",
+    "verify_phase4_code_freeze",
+    "verify_phase4_protocol_lock",
     "verify_preregistration_lock",
+    "verify_phase4b_authorization",
+    "execute_phase4b_confirmatory",
+    "run_phase4_mock_orchestration",
     "run_phase4_confirmatory",
     "load_phase4_contamination_documents",
     "derive_contamination_temporal_range",
     "audit_anchor_contamination_isolation",
+    "verify_contamination_document_sources",
 ]

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "source": "Federal Reserve Board of Governors Official Press Releases",
   "hash_mode": "canonical_text_utf8_lf_nfkc",
-  "dataset_sha256": "33bd3879c36fbde16ab1427538019a50014e24634fff6323accf01bae5ce4d64",
+  "dataset_sha256": "981ad9f483e0518d1601f3391231e532458ca71e379404ef83795132693381e4",
   "num_events": 40,
   "total_paragraphs": 181,
   "start_event_time": "2015-01-28T19:00:00Z",

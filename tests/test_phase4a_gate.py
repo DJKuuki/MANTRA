@@ -42,6 +42,7 @@ import pytest
 from tradingagents.temporal_leakage.datasets.contamination import (
     derive_contamination_temporal_range,
     load_phase4_contamination_documents,
+    verify_contamination_document_sources,
 )
 from tradingagents.temporal_leakage.datasets.market_data import (
     load_market_tables,
@@ -62,10 +63,17 @@ from tradingagents.temporal_leakage.metrics import (
 )
 from tradingagents.temporal_leakage.phase4_confirmatory import (
     CONTROLLED_FILE_MAPPINGS,
+    CodeFreezeError,
+    Phase4BAuthorizationError,
     PreregistrationHashMismatchError,
     PreregistrationLockError,
     compute_file_sha256,
+    compute_source_tree_hash,
+    run_phase4_confirmatory,
+    run_phase4_mock_orchestration,
+    verify_phase4_code_freeze,
     verify_phase4_protocol_lock,
+    verify_phase4b_authorization,
     verify_preregistration_lock,
 )
 from tradingagents.temporal_leakage.twin_pipeline import (
@@ -646,7 +654,9 @@ def test_q_protocol_lock_enforcement():
         conf_config_path=CONF_CONFIG_PATH,
     )
     assert res["status"] == "PROTOCOL_LOCKED_AND_VERIFIED"
-    assert res["controlled_file_count"] == 10
+    assert res["controlled_file_count"] == 12
+    assert res["clean_sham_corpus_locked"] is True
+    assert res["contamination_corpus_locked"] is True
     assert res["base_model_revision_locked"] is True
     assert res["execution_config_semantic_equality"] is True
 
@@ -784,3 +794,251 @@ def test_u_treatment_sampling_real_corpus_preflight():
         )
         assert abs(stream["realized_dose"] - d) <= (1.0 / total_tokens) + 1e-9
         assert len(stream.get("treatment_block_manifest", [])) == 500
+        assert stream["forced_repetition_ratio"] == 0.0
+        assert stream["forced_repetition_ratio"] <= 0.20
+
+
+# ---------------------------------------------------------------------------
+# Test V: Clean Corpus Strict Information Availability & Edge Case Rejection
+# ---------------------------------------------------------------------------
+def test_v_clean_corpus_strict_availability_cutoff():
+    """Verify clean sham corpus adheres to strict information availability cutoff (<= 2019-12-31T23:59:59Z)."""
+    with open(PRE_CUTOFF_DOCS_PATH, "r", encoding="utf-8") as f:
+        pre_docs = [json.loads(line) for line in f if line.strip()]
+
+    assert len(pre_docs) == 63, f"Expected 63 pre-cutoff documents, found {len(pre_docs)}"
+
+    cutoff_time = "2019-12-31T23:59:59Z"
+    for doc in pre_docs:
+        assert doc["available_time"] <= cutoff_time, (
+            f"Availability cutoff violation in clean corpus: {doc['document_id']} "
+            f"has available_time {doc['available_time']} > {cutoff_time}"
+        )
+        assert doc["temporal_class"] == "pre_cutoff"
+        assert doc["availability_quality"] == "exact"
+
+    # Regression test: FOMC minutes for 2019-12-11 meeting were released 2020-01-01T19:00:00Z.
+    # Principle: Event time does not determine information availability. Must be rejected.
+    pre_doc_ids = {d["document_id"] for d in pre_docs}
+    assert "fomc-minutes-2019-12-11" not in pre_doc_ids, (
+        "fomc-minutes-2019-12-11 was incorrectly admitted into clean corpus despite post-cutoff release!"
+    )
+
+    # Manifest verification
+    manifest_p = PROJECT_ROOT / "data" / "research" / "fomc" / "phase4_pre_cutoff" / "manifest.json"
+    with open(manifest_p, "r", encoding="utf-8") as f:
+        m_data = json.load(f)
+    assert m_data["document_count"] == 63
+    assert m_data["temporal_max"] <= cutoff_time
+    assert verify_file_sha256(PRE_CUTOFF_DOCS_PATH, m_data["dataset_sha256"])
+
+    # Tamper test with temporary copy
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_lock = Path(tmpdir) / "protocol_lock.json"
+        with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
+            lock_data = json.load(f)
+
+        lock_data["files"]["clean_sham_documents.jsonl"] = "0000000000000000000000000000000000000000000000000000000000000000"
+        with open(tmp_lock, "w", encoding="utf-8") as f:
+            json.dump(lock_data, f, indent=2)
+
+        with pytest.raises(PreregistrationHashMismatchError, match="Controlled file hash mismatch"):
+            verify_phase4_protocol_lock(
+                protocol_lock_path=tmp_lock,
+                project_root=PROJECT_ROOT,
+                prereg_config_path=PREREG_CONFIG_PATH,
+                conf_config_path=CONF_CONFIG_PATH,
+            )
+
+
+# ---------------------------------------------------------------------------
+# Test W: Contamination Availability Window & 50/50 Raw Source Verification
+# ---------------------------------------------------------------------------
+def test_w_contamination_window_and_50_50_source_verification():
+    """Verify contamination availability window matches derived timestamps and all 50 documents verify against raw HTML."""
+    post_docs = load_phase4_contamination_documents(CONTAMINATION_DOCS_PATH)
+    assert len(post_docs) == 50, f"Expected 50 contamination documents, got {len(post_docs)}"
+
+    # Check temporal range consistency
+    temporal_meta = derive_contamination_temporal_range(post_docs)
+    assert temporal_meta["contamination_min_time"] == "2020-01-29T19:00:00Z"
+    assert temporal_meta["contamination_max_time"] == "2023-01-04T19:00:00Z"
+
+    with open(CONF_CONFIG_PATH, "r", encoding="utf-8") as f:
+        conf_cfg = yaml.safe_load(f)
+    assert conf_cfg["contamination_dataset"]["min_available_time"] == "2020-01-29T19:00:00Z"
+    assert conf_cfg["contamination_dataset"]["max_available_time"] == "2023-01-04T19:00:00Z"
+
+    # Exhaustive 50/50 raw source verification
+    raw_dir = PROJECT_ROOT / "data" / "research" / "fomc" / "phase4_contamination" / "raw_sources"
+    res = verify_contamination_document_sources(post_docs, raw_sources_dir=raw_dir)
+    assert res["all_verified"] is True
+    assert res["verified_count"] == 50
+    assert res["total_count"] == 50
+    assert res["verification_summary"] == "50 / 50"
+    assert len(res["errors"]) == 0
+
+
+# ---------------------------------------------------------------------------
+# Test X: Continuous Future Rate-Change Target Derivation
+# ---------------------------------------------------------------------------
+def test_x_continuous_future_rate_change_derivation():
+    """Verify primary future rate change target is derived continuously from policy bounds."""
+    policy_df = load_policy_history(POLICY_PATH)
+    events = load_events()
+
+    for event in events:
+        date_str = event["metadata"]["meeting_date"]
+        derived = derive_future_action(date_str, policy_df)
+
+        assert "future_rate_change" in derived, f"future_rate_change missing in derived target for {date_str}"
+        assert isinstance(derived["future_rate_change"], float)
+        assert event["future_rate_change"] == derived["future_rate_change"]
+
+        # Assert no heuristic action * 0.25 was used: must match upper after - upper before
+        curr_idx = policy_df.index[policy_df["meeting_date"] == date_str].tolist()[0]
+        next_row = policy_df.iloc[curr_idx + 1]
+        raw_diff = round(float(next_row["target_upper_after"]) - float(next_row["target_upper_before"]), 4)
+        assert derived["future_rate_change"] == raw_diff
+
+    # Verify routing to Ridge regression
+    rng = np.random.RandomState(42)
+    rep_clean = rng.randn(40, 8)
+    rep_leak = rep_clean + rng.randn(40, 8) * 0.1
+    y_continuous = [e["future_rate_change"] for e in events]
+    event_ids = [e["event_id"] for e in events]
+    event_times = [e["event_time"] for e in events]
+
+    res = evaluate_representational_leakage_grouped(
+        representations_leak=rep_leak,
+        representations_clean=rep_clean,
+        y=y_continuous,
+        event_ids=event_ids,
+        event_times=event_times,
+        target_type="continuous",
+        n_splits=4,
+        min_train_events=8,
+        n_permutations=50,
+        random_seed=42,
+    )
+    assert res["model_type"] == "ridge_regression"
+
+
+# ---------------------------------------------------------------------------
+# Test Y: Treatment Repetition Metrics Separation
+# ---------------------------------------------------------------------------
+def test_y_treatment_repetition_metrics_separation():
+    """Verify forced corpus exhaustion repetition is explicitly separated from token type diversity."""
+    with open(PRE_CUTOFF_DOCS_PATH, "r", encoding="utf-8") as f:
+        pre_docs = [json.loads(line) for line in f if line.strip()]
+    with open(CONTAMINATION_DOCS_PATH, "r", encoding="utf-8") as f:
+        post_docs = [json.loads(line) for line in f if line.strip()]
+
+    class SimpleTokenizer:
+        def encode(self, text: str, add_special_tokens: bool = False):
+            return [abs(hash(w)) % 10000 for w in text.split()]
+
+    # 1. Real corpora under normal budget: forced repetition is 0.0
+    stream = create_exact_token_dose_stream(
+        pre_corpus=pre_docs,
+        post_corpus=post_docs,
+        dose=0.50,
+        num_blocks=50,
+        block_length=512,
+        tokenizer=SimpleTokenizer(),
+        random_seed=42,
+        max_repetition_ratio=0.20,
+    )
+    assert stream["forced_repetition_ratio"] == 0.0
+    assert stream["forced_repetition_tokens"] == 0
+    assert 0.0 < stream["token_type_diversity"] < 1.0
+    # Confirm forced_repetition_ratio != token_type_diversity
+    assert stream["forced_repetition_ratio"] != stream["token_type_diversity"]
+
+    # 2. Tiny corpus simulating shortfall
+    tiny_corpus = [{"text": "Federal Reserve monetary policy", "document_id": "tiny_1"}]
+    stream_cycled = create_exact_token_dose_stream(
+        pre_corpus=tiny_corpus,
+        post_corpus=tiny_corpus,
+        dose=0.0,
+        num_blocks=2,
+        block_length=100,
+        tokenizer=SimpleTokenizer(),
+        random_seed=42,
+        max_repetition_ratio=1.0,  # allow cycling for test
+    )
+    assert stream_cycled["forced_repetition_ratio"] > 0.50
+    assert stream_cycled["forced_repetition_tokens"] > 0
+
+
+# ---------------------------------------------------------------------------
+# Test Z: Source Tree Lock & Code Freeze Enforcement
+# ---------------------------------------------------------------------------
+def test_z_source_tree_lock_and_code_freeze():
+    """Verify source tree hash is computed and code freeze fails closed on modified source files."""
+    tree_hash = compute_source_tree_hash(PROJECT_ROOT)
+    assert isinstance(tree_hash, str) and len(tree_hash) == 64
+
+    # Verification against current tree hash
+    freeze_meta = verify_phase4_code_freeze(
+        project_root=PROJECT_ROOT,
+        locked_source_tree_hash=tree_hash,
+        enforce_git_clean=False,
+    )
+    assert freeze_meta["status"] == "CODE_FROZEN_AND_VERIFIED"
+    assert freeze_meta["source_tree_hash"] == tree_hash
+
+    # Failure on mismatched hash
+    with pytest.raises(CodeFreezeError, match="Source tree hash mismatch"):
+        verify_phase4_code_freeze(
+            project_root=PROJECT_ROOT,
+            locked_source_tree_hash="deadbeef" * 8,
+            enforce_git_clean=False,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Test AA: Phase 4B Runner Orchestration & Authorization Gate
+# ---------------------------------------------------------------------------
+def test_aa_phase4b_runner_orchestration_and_authorization():
+    """Verify Phase 4B execution runner executes all 25 branches under mock and blocks without authorization."""
+    # 1. Full training without authorization must fail closed
+    with pytest.raises(Phase4BAuthorizationError, match="FULL_EXECUTION_BLOCKED"):
+        run_phase4_confirmatory(
+            config_path=CONF_CONFIG_PATH,
+            prereg_path=PREREG_CONFIG_PATH,
+            smoke_mode=False,
+        )
+
+    # 2. Authorization with invalid version fails
+    with tempfile.TemporaryDirectory() as td:
+        bad_auth = Path(td) / "auth.json"
+        with open(bad_auth, "w", encoding="utf-8") as f:
+            json.dump({"protocol_version": "0.9.0", "human_authorized": True}, f)
+
+        with pytest.raises(Phase4BAuthorizationError, match="Protocol version mismatch"):
+            verify_phase4b_authorization(bad_auth, protocol_version="1.2.0")
+
+    # 3. Smoke mode succeeds and verifies gate
+    smoke_res = run_phase4_confirmatory(
+        config_path=CONF_CONFIG_PATH,
+        prereg_path=PREREG_CONFIG_PATH,
+        smoke_mode=True,
+    )
+    assert smoke_res["status"] == "CONFIRMATORY_GATE_VERIFIED"
+    assert smoke_res["num_events"] == 40
+    assert smoke_res["num_anchors"] == 181
+
+    # 4. Mock orchestration executes all 25 branches end-to-end
+    mock_res = run_phase4_mock_orchestration(
+        config_path=CONF_CONFIG_PATH,
+        prereg_path=PREREG_CONFIG_PATH,
+        project_root=PROJECT_ROOT,
+    )
+    assert mock_res["status"] == "PHASE4B_ORCHESTRATION_COMPLETED"
+    assert mock_res["total_branches_scheduled"] == 25
+    assert mock_res["oos_events_count"] == 32
+    assert mock_res["target_type"] == "continuous"
+    assert mock_res["model_type"] == "ridge_regression"
+    assert len(mock_res["branches"]) == 25
+

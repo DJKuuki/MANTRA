@@ -339,6 +339,7 @@ def create_exact_token_dose_stream(
     pre_unique_toks = set()
     pre_repeated_count = 0
 
+    pre_shortfall = 0
     if n_pre_tokens > 0:
         if len(pre_corpus) == 0:
             raise CausalIntegrityError("Pre-cutoff corpus is empty; cannot satisfy pre-cutoff token budget.")
@@ -362,11 +363,11 @@ def create_exact_token_dose_stream(
                 break
 
         if len(pre_tokens) < n_pre_tokens:
-            shortfall = n_pre_tokens - len(pre_tokens)
-            rep_ratio = float(shortfall) / float(n_pre_tokens)
+            pre_shortfall = n_pre_tokens - len(pre_tokens)
+            rep_ratio = float(pre_shortfall) / float(n_pre_tokens)
             if max_repetition_ratio is not None and rep_ratio > max_repetition_ratio:
                 raise CausalIntegrityError(
-                    f"Pre-cutoff token shortfall ({shortfall}/{n_pre_tokens}, {rep_ratio:.1%}) "
+                    f"Pre-cutoff token shortfall ({pre_shortfall}/{n_pre_tokens}, {rep_ratio:.1%}) "
                     f"exceeds tolerance ({max_repetition_ratio:.1%}). Insufficient corpus tokens."
                 )
             repeats = (n_pre_tokens // max(1, len(pre_tokens))) + 1
@@ -381,6 +382,7 @@ def create_exact_token_dose_stream(
     post_token_doc_ids: List[str] = []
     post_unique_toks = set()
     post_repeated_count = 0
+    post_shortfall = 0
 
     if n_post_tokens > 0:
         if len(post_corpus) == 0:
@@ -405,11 +407,11 @@ def create_exact_token_dose_stream(
                 break
 
         if len(post_tokens) < n_post_tokens:
-            shortfall = n_post_tokens - len(post_tokens)
-            rep_ratio = float(shortfall) / float(n_post_tokens)
+            post_shortfall = n_post_tokens - len(post_tokens)
+            rep_ratio = float(post_shortfall) / float(n_post_tokens)
             if max_repetition_ratio is not None and rep_ratio > max_repetition_ratio:
                 raise CausalIntegrityError(
-                    f"Post-cutoff token shortfall ({shortfall}/{n_post_tokens}, {rep_ratio:.1%}) "
+                    f"Post-cutoff token shortfall ({post_shortfall}/{n_post_tokens}, {rep_ratio:.1%}) "
                     f"exceeds tolerance ({max_repetition_ratio:.1%}). Insufficient corpus tokens."
                 )
             repeats = (n_post_tokens // max(1, len(post_tokens))) + 1
@@ -488,7 +490,10 @@ def create_exact_token_dose_stream(
 
     unique_source_tokens = len(pre_unique_toks | post_unique_toks)
     total_unique_sampled = len(set(all_tokens))
-    repetition_ratio = 1.0 - (float(total_unique_sampled) / float(total_tokens_needed))
+    token_type_diversity = float(total_unique_sampled) / float(total_tokens_needed)
+    forced_repetition_tokens = pre_shortfall + post_shortfall
+    forced_repetition_ratio = float(forced_repetition_tokens) / float(total_tokens_needed)
+    unique_doc_ids = sorted(list(set(all_doc_ids)))
 
     return {
         "dataset": dataset,
@@ -501,7 +506,12 @@ def create_exact_token_dose_stream(
         "block_length": block_length,
         "corpus_hash": c_hash,
         "unique_source_tokens": unique_source_tokens,
-        "repetition_ratio": repetition_ratio,
+        "unique_token_id_count": total_unique_sampled,
+        "token_type_diversity": token_type_diversity,
+        "forced_repetition_tokens": forced_repetition_tokens,
+        "forced_repetition_ratio": forced_repetition_ratio,
+        "repetition_ratio": forced_repetition_ratio,  # backward compatibility alias
+        "unique_source_document_count": len(unique_doc_ids),
         "treatment_block_manifest": treatment_block_manifest,
     }
 

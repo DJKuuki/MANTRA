@@ -4,7 +4,7 @@
 
 This directory contains the frozen, point-in-time verified **Post-Cutoff Contamination Corpus** for Phase 4 of the MANTRA causal evaluation framework.
 
-- **Corpus Period**: 2020-01-01 to 2022-12-31 (3 full calendar years of monetary policy decisions).
+- **Corpus Information Availability Window**: `2020-01-29T19:00:00Z` to `2023-01-04T19:00:00Z` (covering 2020–2022 FOMC meetings, with the final meeting minutes publicly released in January 2023).
 - **Temporal Cutoff ($T_{\text{cutoff}}$)**: `2019-12-31T23:59:59Z`.
 - **Earliest Contamination Availability**: `2020-01-29T19:00:00Z` (January 2020 FOMC Statement).
 - **Latest Document Availability**: `2023-01-04T19:00:00Z` (Minutes for December 2022 meeting).
@@ -24,8 +24,8 @@ The corpus consists of 50 official Federal Reserve documents structured to refle
 | **Strategy Statements** | `policy_strategy_statement` | 1 | Formal Statement on Longer-Run Goals and Monetary Policy Strategy (August 27, 2020). |
 | **Meeting Minutes** | `meeting_minutes` | 24 | **Secondary Contamination Corpus**: Full analytical deliberations released 3 weeks post-meeting (~12,000–18,000 words each). |
 
-**Total Word Count**: > 440,000 words (> 550,000 BPE/WordPiece tokens).  
-**Total Unique Tokens**: Sufficient to support the 256,000-token continued pre-training budget at $D=1.00$ with zero forced repetition (`repetition_ratio < 0.05`).
+**Total Word Count**: 237,273 words (> 308,000 subword tokens).  
+**Total Unique Tokens**: Sufficient to support the 256,000-token continued pre-training budget at $D=1.00$ with zero forced repetition (`forced_repetition_ratio = 0.00`).
 
 ---
 

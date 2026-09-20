@@ -103,16 +103,18 @@ def derive_future_action(
 
     next_meeting = df.iloc[curr_idx + 1]
     future_act = int(next_meeting["action"])
+    future_rate_change = round(float(next_meeting["target_upper_after"]) - float(next_meeting["target_upper_before"]), 4)
     future_time = str(next_meeting["decision_time"])
 
     horizon = "next_fomc_decision_any" if include_unscheduled else "next_scheduled_fomc_decision"
     definition = (
-        f"Policy rate action at next {'any' if include_unscheduled else 'scheduled'} FOMC meeting: "
-        "-1=cut, 0=hold, +1=hike"
+        f"Policy rate change (upper bound after - before) at next {'any' if include_unscheduled else 'scheduled'} FOMC meeting in percentage points; "
+        f"future_action encodes directional categorical move (-1=cut, 0=hold, +1=hike)"
     )
 
     return {
         "future_action": future_act,
+        "future_rate_change": future_rate_change,
         "future_action_time": future_time,
         "target_horizon": horizon,
         "target_source": "OFFICIAL_FOMC_POLICY_HISTORY",

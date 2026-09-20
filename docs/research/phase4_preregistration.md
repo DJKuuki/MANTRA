@@ -1,15 +1,22 @@
-# Formal Preregistration: Phase 4 Confirmatory Temporal Leakage Study (v1.1.0)
+# Formal Preregistration: Phase 4 Confirmatory Temporal Leakage Study (v1.2.0)
 
 **Protocol Title**: Machine-Verifiable Point-in-Time Evaluation of Representational and Behavioral Temporal Contamination in Financial Central Bank Language Models  
 **Preregistration Status**: LOCKED PRIOR TO CONFIRMATORY COMPUTE  
-**Preregistration Specification Version**: 1.1.0 (Pre-Compute Amendment)  
+**Preregistration Specification Version**: 1.2.0 (Protocol Closure Finalization)  
 **Repository**: `RubiscoYHY/MANTRA`  
 **Git Base Revision**: `4556d13015211d73dccd3fdd39d39232506f3e43`  
 **Date of Lock**: 2026-09-20  
 
 > [!IMPORTANT]
-> **Pre-Compute Amendment Declaration**:
-> This version (v1.1.0) incorporates protocol corrections approved during the Phase 4A Gate Audit prior to any Phase 4B confirmatory compute. No Phase 4B confirmatory model was trained before this amendment. Full-scale model training remains strictly locked pending external human authorization.
+> **Protocol Closure Declaration**:
+> This version (v1.2.0) incorporates protocol corrections approved during the Phase 4A Protocol Closure audit prior to any Phase 4B confirmatory compute:
+> 1. Enforces strict information availability (`available_time <= 2019-12-31T23:59:59Z`) for clean sham corpus eligibility, excluding `fomc-minutes-2019-12-11` (released 2020-01-01).
+> 2. Sets contamination availability window to `2020-01-29T19:00:00Z` to `2023-01-04T19:00:00Z`, reflecting the January 2023 release of the December 2022 meeting minutes.
+> 3. Completes 50/50 raw source verification for all contamination documents with deterministic canonical HTML reconstruction.
+> 4. Explicitly derives true continuous future rate change ($y_e = \Delta r_e$) from `policy_history.csv` before/after rate bounds.
+> 5. Separates forced repetition ratio from token vocabulary diversity.
+> 6. Enforces source-tree code freeze via `source_tree_hash` and strict human authorization gate.
+> Full-scale model training remains strictly locked pending external human authorization.
 
 ---
 
@@ -19,7 +26,7 @@ This document formalizes the preregistered hypotheses, sample specification, sta
 
 In accordance with confirmatory empirical standards:
 1. All evaluation samples, targets, market outcomes, contamination documents, and statistical routines are frozen prior to model execution.
-2. Full-scale Phase 4B model training is locked until this document's SHA-256 hash and all controlled protocol artifacts are verified by automated CI gates.
+2. Full-scale Phase 4B model training is locked until this document's SHA-256 hash, all controlled protocol artifacts, and the source tree hash are verified by automated CI gates.
 3. No subjective or exploratory alterations to metric definitions, target horizons, or exclusion filters are permitted post-hoc.
 
 ---
@@ -38,19 +45,20 @@ In accordance with confirmatory empirical standards:
 
 ### 2.2 Pre-Cutoff Sham Treatment Corpus
 - **Dataset Path**: `data/research/fomc/phase4_pre_cutoff/documents.jsonl`
-- **Document Count**: 64 official Federal Reserve documents (40 scheduled statements 2015–2019, 24 meeting minutes 2017–2019).
-- **Total Words**: 251,649 words (~327,143 tokens).
-- **Temporal Range**: `2015-01-28T19:00:00Z` to `2020-01-01T19:00:00Z`.
-- **Repetition Ratio Feasibility**: Repetition ratio = 0.00 <= 0.20 for 256k token budget at D0.
+- **Document Count**: 63 official Federal Reserve documents (40 scheduled statements 2015–2019, 23 meeting minutes 2017–2019).
+- **Total Words**: 243,001 words (~315,901 tokens).
+- **Temporal Availability Range**: `2015-01-28T19:00:00Z` to `2019-12-11T19:00:00Z`.
+- **Eligibility Invariant**: Strictly `available_time <= 2019-12-31T23:59:59Z` (information availability, not meeting date, determines eligibility).
+- **Repetition Ratio Feasibility**: Forced repetition ratio = 0.00 <= 0.20 for 256k token budget at D0.
 
 ### 2.3 Contamination Treatment Corpus (Post-Cutoff Population)
 - **Dataset Path**: `data/research/fomc/phase4_contamination/documents.jsonl`
-- **Document Count**: 50 official Federal Reserve post-cutoff documents.
+- **Document Count**: 50 official Federal Reserve post-cutoff documents (100% raw source and canonical text verified).
   - Primary: 23 scheduled monetary policy statements, 2 unscheduled emergency statements, 1 policy strategy statement (Jackson Hole 2020).
   - Secondary: 24 official meeting minutes.
 - **Total Words**: 237,273 words (~308,454 tokens).
 - **Earliest Contamination Release Time**: `2020-01-29T19:00:00Z`.
-- **Latest Contamination Release Time**: `2022-12-14T19:00:00Z`.
+- **Latest Contamination Release Time**: `2023-01-04T19:00:00Z` (reflecting actual release of December 2022 meeting minutes).
 - **Temporal Gap Buffer**: Strict 48 calendar days ($\max(T_{\text{anchors}}) < \min(T_{\text{contamination}})$).
 - **Document & Text Isolation**: Zero overlap with historical anchor document IDs ($0 / 50$) and zero exact text hash collisions ($0 / 50$).
 
@@ -144,8 +152,9 @@ When the Phase 4A Preregistration Gate is approved and Phase 4B execution commen
 | **Classifier Probes** | Exactly 25 downstream runs with identical initial heads |
 | **Downstream Training Recipe** | Epochs: 3, Batch: 16, LR: $2 \times 10^{-5}$, Warmup: $10\%$, SeqLen: 128 |
 | **Same-Seed Causal Symmetry** | Shared base hash, shared head init hash, shared mask schedule |
-| **Max Repetition Ratio** | $\le 0.20$ across all doses |
-| **Compute Execution Guard** | Blocked until CI checks verify preregistration YAML and protocol lock |
+| **Max Forced Repetition Ratio** | $\le 0.20$ across all doses (measured as shortfall cycling) |
+| **Code Freeze Invariant** | Bound to `source_tree_hash` and clean git state |
+| **Compute Execution Guard** | Blocked until human authorization manifest `configs/phase4_execution_authorization.json` is signed |
 
 ---
 

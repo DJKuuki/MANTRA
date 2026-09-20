@@ -23,6 +23,8 @@
   "anchor_max_time": "2019-12-11T19:00:00Z",
   "contamination_min_time": "2020-01-29T19:00:00Z",
   "contamination_max_time": "2023-01-04T19:00:00Z",
+  "temporal_min": "2020-01-29T19:00:00Z",
+  "temporal_max": "2023-01-04T19:00:00Z",
   "strict_future_separation": true,
   "temporal_gap_days": 48,
   "temporal_gap_seconds": 4147200,

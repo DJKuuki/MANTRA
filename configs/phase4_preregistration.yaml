@@ -1,14 +1,14 @@
-# Phase 4 Confirmatory Study Preregistration Specification (v1.1.0)
+# Phase 4 Confirmatory Study Preregistration Specification (v1.2.0)
 # Machine-verifiable locked contract for confirmatory evaluation.
 
-version: "1.1.0"
+version: "1.2.0"
 locked: true
-locked_at: "2026-09-20T12:00:00Z"
-base_commit: "d439c256b4e29b9abe05f93f9085edb7639cce66"
+locked_at: "2026-09-20T14:30:00Z"
+base_commit: "fee82a2c059d486b8f0cde7b067d686cfcf39dd0"
 amendment_status: "PRE-COMPUTE CORRECTION (NO PHASE 4B CONFIRMATORY MODEL RESULTS EXISTED)"
 
 preregistration_doc_path: "docs/research/phase4_preregistration.md"
-preregistration_doc_sha256: "15911b1766af0d861fc215eb2e9e949ef4f75af9546cce9cf9ba426533e8637b"
+preregistration_doc_sha256: "9aaa7780e5c6ef61f40087da8c87bb325b3ac1e8fd4bde5a8befb21531ed020e"
 
 dataset:
   name: "fomc_scheduled_statements_2015_2019"
@@ -31,7 +31,7 @@ contamination_dataset:
   dataset_sha256: "54b3e84e8ef958e78032815a6cc76e1ca68cb0428afe71b390a583ee60e25c58"
   document_count: 50
   min_available_time: "2020-01-29T19:00:00Z"
-  max_available_time: "2022-12-14T19:00:00Z"
+  max_available_time: "2023-01-04T19:00:00Z"
   allowed_document_types:
     - "scheduled_statement"
     - "unscheduled_statement"
@@ -41,8 +41,10 @@ contamination_dataset:
 pre_cutoff_sham_dataset:
   documents_path: "data/research/fomc/phase4_pre_cutoff/documents.jsonl"
   manifest_path: "data/research/fomc/phase4_pre_cutoff/manifest.json"
-  dataset_sha256: "8ecc63f3475e18850dd758b4db5d64c7834a98d557139715b337820cd78e88b2"
-  document_count: 64
+  dataset_sha256: "5202f14b340c3212dc48c13e1ba7a8a814cb472a4c25df072bed14b7a3f19e4c"
+  document_count: 63
+  min_available_time: "2015-01-28T19:00:00Z"
+  max_available_time: "2019-12-11T19:00:00Z"
 
 statistical_design:
   temporal_cv_folds: 4
