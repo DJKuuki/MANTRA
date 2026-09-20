@@ -1,14 +1,14 @@
 {
-  "protocol_version": "1.2.2",
-  "created_at": "2026-09-20T16:05:00Z",
+  "protocol_version": "1.2.3",
+  "created_at": "2026-09-20T20:15:00Z",
   "status": "LOCKED",
   "base_revision": "4556d13015211d73dccd3fdd39d39232506f3e43",
-  "source_tree_hash": "5263ef39d39ba343c7f677beb8e969ed7ae74525509cd5c0be1cf081271c0bf4",
-  "scientific_code_commit": "580d5806aea88eb83ac514c1538695898055ed44",
-  "code_commit": "580d5806aea88eb83ac514c1538695898055ed44",
+  "source_tree_hash": "04389535d0c60b5e615cb8fe64b6c3c595789f959ed9e33ae89d6990342dd0d2",
+  "scientific_code_commit": "e8426ec82ca3895a6b55a1e93cabbe235ddee6ad",
+  "code_commit": "e8426ec82ca3895a6b55a1e93cabbe235ddee6ad",
   "files": {
-    "phase4_preregistration.yaml": "8996a2ab16ab37917e55d56e3aad6f82d106abda98c2d2cce8ff6c4cfb5f6e0d",
-    "phase4_confirmatory.yaml": "427dc55d93d0181c531d4a8bef6826024f427755e0cc5be99285c7dc2d7015ad",
+    "phase4_preregistration.yaml": "35b109a72acfc2ce3b3b18f5b802897d1d52a9e274d47b55c32063921cebeb6e",
+    "phase4_confirmatory.yaml": "91aae324b911455aef07b4736680bdbacfb857eeda19d6d567d2a296d1cb69d0",
     "events.jsonl": "981ad9f483e0518d1601f3391231e532458ca71e379404ef83795132693381e4",
     "anchors.jsonl": "b03a2262f2222e8e28a29c903247682501244652f5a958d093d2109714e5c8ae",
     "policy_history.csv": "51f233d3e957a54a7b87ecaf073c1d9906fb9e02bc45a68945910ec693b04fc2",
@@ -20,4 +20,4 @@
     "clean_sham_documents.jsonl": "5202f14b340c3212dc48c13e1ba7a8a814cb472a4c25df072bed14b7a3f19e4c",
     "clean_sham_manifest.json": "8e85378df1d68b0917990a7c1ed89b80fe75e00fe156854b3f13c9ac1bbece9a"
   }
-}
+}

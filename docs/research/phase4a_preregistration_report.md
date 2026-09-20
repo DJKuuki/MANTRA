@@ -1,12 +1,12 @@
-# Phase 4A Confirmatory Data & Phase 4B Runtime Binding & Metrics Closure Report (v1.2.2)
+# Phase 4 Confirmatory Protocol Lock & Final Gate Patch Closure Report (v1.2.3)
 
-**Stage**: Phase 4B — Runtime Binding & Metrics Closure & Cryptographic Protocol Lock  
+**Stage**: Phase 4B — Final Gate Patch & Protocol v1.2.3 Cryptographic Lock  
 **Repository**: `DJKuuki/MANTRA`  
 **Evaluation Date**: 2026-09-20  
-**Specification Version**: 1.2.2  
-**Scientific Code Freeze Commit (Commit G)**: `580d5806aea88eb83ac514c1538695898055ed44`  
-**Protocol Lock Source Tree SHA**: `5263ef39d39ba343c7f677beb8e969ed7ae74525509cd5c0be1cf081271c0bf4`  
-**Gate Verdict**: **PHASE 4B RUNTIME BINDING & METRICS CLOSURE PASSED / ALL 53 GATE TESTS GREEN / PROTOCOL v1.2.2 LOCKED / REAL PHASE 4B COMPUTE STRICTLY BLOCKED / AWAITING HUMAN AUTHORIZATION**
+**Specification Version**: 1.2.3  
+**Scientific Code Freeze Commit (Commit I)**: `e8426ec82ca3895a6b55a1e93cabbe235ddee6ad`  
+**Protocol Lock Source Tree SHA**: `04389535d0c60b5e615cb8fe64b6c3c595789f959ed9e33ae89d6990342dd0d2`  
+**Gate Verdict**: **PHASE 4B FINAL GATE PASSED / ALL 54 GATE TESTS GREEN / 187 UNIT TESTS GREEN / PROTOCOL v1.2.3 LOCKED / SHALLOW-CLONE CI RESOLVED / BEHAVIORAL SECONDARY ENDPOINT RECONCILED / REAL PHASE 4B COMPUTE STRICTLY BLOCKED / AWAITING HUMAN AUTHORIZATION**
 
 ---
 
@@ -18,45 +18,32 @@
 
 ## 1. Executive Summary & Audit Resolution
 
-The Phase 4B Runtime Binding & Metrics Closure hardens the execution backend to eliminate all discrepancies between the frozen scientific protocol and runtime behavior:
+The Phase 4B Final Gate Patch (v1.2.3) resolves the final two operational and statistical preregistration issues prior to confirmatory execution authorization:
 
-1. **Protocol Lock Manifest & Cryptographic Bindings (v1.2.2)**:
-   - `verify_phase4_protocol_lock` verifies all 12 controlled files and returns full cryptographic provenance: `scientific_code_commit`, `code_commit`, `source_tree_hash`, and `protocol_version`.
-   - `verify_phase4b_authorization` strictly enforces all 4 cryptographic bindings against the protocol lock manifest.
-   - `verify_phase4_code_freeze` binds against the locked commit and source tree hash.
+1. **GitHub Actions Shallow-Clone CI Blocker Resolution**:
+   - Added `fetch-depth: 0` to `actions/checkout@v4` in `.github/workflows/tests.yml`.
+   - Ensures full Git history is fetched during CI workflows, allowing `git merge-base --is-ancestor <locked_commit> <head_commit>` to succeed without shallow-clone ancestry errors.
+   - Added regression test `test_bb_ancestry_verification_allows_doc_only_descendants` proving that non-controlled commits (such as documentation and protocol lock reports) correctly pass code freeze verification.
 
-2. **Strict Event-Level Economic Endpoint Mappings**:
-   - `ProductionConfirmatoryBackend` and the confirmatory orchestrator extract market outcomes strictly from `market_outcomes.treasury_2y_yield_change` (primary) and `market_outcomes.spy_1d_return` (secondary).
-   - Missing fields fail closed immediately with `PreregistrationLockError`, prohibiting silent random or zero fallbacks.
-   - Economic endpoints are evaluated using event-level Information Coefficients with stationary block bootstrap confidence intervals (`evaluate_economic_effect_event_level`).
+2. **Secondary Behavioral Leakage Preregistration Alignment**:
+   - Fully reconciled `configs/phase4_preregistration.yaml`, `configs/phase4_confirmatory.yaml`, and `docs/research/phase4_preregistration.md`.
+   - Behavioral keyword stance sensitivity shift is formally established as a **descriptive secondary endpoint** without confirmatory p-value, hypothesis test rejection threshold, or Benjamini-Hochberg FDR multiplicity adjustment.
+   - `evaluate_behavioral_leakage_event_level` outputs event-level descriptive metrics:
+     - `l_behavior_mean`, `l_behavior_median`, `l_behavior_std`, `l_behavior_event`
+     - `mask_sensitivity_leak_event`, `mask_sensitivity_clean_event`
+     - `event_deltas`: full list of per-event sensitivities and deltas across all independent FOMC meetings
+     - Explicit metadata: `behavioral_inference: "DESCRIPTIVE_ONLY"`, `behavioral_statistical_unit: "independent_fomc_event"`, `behavioral_multiple_testing: "NOT_APPLICABLE"`, `behavioral_significance_testing: False`
+   - Omitted any spurious p-value or underspecified FDR markers.
 
-3. **Centralized Metric Evaluator Single Source of Truth**:
-   - The confirmatory orchestrator reuses `evaluate_representational_leakage_grouped` for continuous rate-change primary inference, passing the resolved `probe_alpha: 1.0` through to Ridge regression without hardcoded defaults.
-   - The binary directional co-primary `next_scheduled_change_vs_hold` is evaluated using `RidgeClassifier(alpha=probe_alpha)` outputting macro F1.
-   - Behavioral leakage is evaluated at the event level via `evaluate_behavioral_leakage_event_level`, marking FDR correction as `NOT_EVALUATED_PROTOCOL_UNDERSPECIFIED`.
-   - Competence provenance is recorded as `NOT_EVALUATED_NO_EVAL_SPLIT` when `eval_samples` is None.
-
-4. **Runtime Contract Reconciliation & Strict Parameter Locking**:
-   - Implemented `resolve_phase4_runtime_contract(conf_cfg, prereg_cfg)` verifying semantic equality across all hyperparameters:
-     - `mlm_training.max_steps`: exactly 100
-     - `mlm_training.scheduler`: "none"
-     - `mlm_training.warmup_ratio`: 0.0
-     - `downstream_evaluation.random_seed`: 42
-     - `downstream_evaluation.probe_alpha`: 1.0
-     - `token_budget`: 256,000 tokens
-     - `dose_ladder`: [0.0, 0.25, 0.5, 0.75, 1.0]
-     - `seeds`: [13, 42, 87, 123, 2024]
-   - Discrepancies fail closed with `PreregistrationLockError`.
-
-5. **Artifact Writer Separation & Provenance Tracking**:
-   - `Phase4ArtifactWriter.write_confirmatory_results` strictly rejects non-`EMPIRICAL` data modes when `allow_mock=False`.
-   - Branch manifests record all required cryptographic provenance fields: `scientific_code_commit`, `execution_repository_head`, `source_tree_hash`, `protocol_lock_sha256`, and `protocol_version`.
+3. **Protocol Lock Manifest & Cryptographic Bindings (v1.2.3)**:
+   - Updated `configs/phase4_protocol_lock.json` binding to Scientific Code Freeze Commit I (`e8426ec82ca3895a6b55a1e93cabbe235ddee6ad`) and Source Tree Hash (`04389535d0c60b5e615cb8fe64b6c3c595789f959ed9e33ae89d6990342dd0d2`).
+   - All 12 controlled protocol files verified and locked.
 
 ---
 
-## 2. Complete Phase 4 Gate Verification Matrix (Tests A through AZ)
+## 2. Complete Phase 4 Gate Verification Matrix (Tests A through BB)
 
-All 53 Gate tests (`tests/test_phase4a_gate.py` Tests A through AZ + Metric Integration) and all 186 repository unit tests pass with 100% green status:
+All 54 Gate tests (`tests/test_phase4a_gate.py` Tests A through BB + Metric Integration) and all 187 repository unit tests pass with 100% green status:
 
 | Check / Test ID | Target Specification | Realized Implementation | Verification Status |
 |:---|:---|:---|:---|
@@ -105,7 +92,7 @@ All 53 Gate tests (`tests/test_phase4a_gate.py` Tests A through AZ + Metric Inte
 | **Test AQ: Economic Bootstrap** | Event-level Information Coefficient CI | Verified | PASSED |
 | **Test AR: Evaluator Probe Alpha** | Uses `evaluate_representational_leakage_grouped` | `probe_alpha: 1.0` | PASSED |
 | **Test AS: Competence Provenance** | `NOT_EVALUATED_NO_EVAL_SPLIT` | No fake numbers | PASSED |
-| **Test AT: Behavioral Analysis** | Event-level sensitivity contrast | FDR marked | PASSED |
+| **Test AT: Behavioral Analysis** | Descriptive secondary endpoint deltas | Descriptive only | PASSED |
 | **Test AU: Binary Direction Co-Primary**| RidgeClassifier on rate change vs hold | Macro F1 | PASSED |
 | **Test AV: Runtime Contract** | `resolve_phase4_runtime_contract` | Full reconciliation | PASSED |
 | **Test AW: MLM Hyperparameters** | `max_steps: 100`, `scheduler: none` | Locked in configs | PASSED |
@@ -113,19 +100,20 @@ All 53 Gate tests (`tests/test_phase4a_gate.py` Tests A through AZ + Metric Inte
 | **Test AY: Provenance Completeness** | Manifest records all 5 bindings | Verified | PASSED |
 | **Test AZ: Mock Data Mode Rejection**| `allow_mock=False` rejects mock data | Fail-closed | PASSED |
 | **Integration: Deterministic Metrics**| End-to-end evaluation on 40 events | Deterministic | PASSED |
+| **Test BB: Ancestry Verification** | Allows doc-only descendant commits | Verified | PASSED |
 
 ---
 
-## 3. Cryptographic Protocol Lock Manifest (v1.2.2)
+## 3. Cryptographic Protocol Lock Manifest (v1.2.3)
 
 - **Protocol Lock Manifest**: `configs/phase4_protocol_lock.json`
-- **Protocol Version**: `1.2.2`
-- **Source Tree Hash**: `5263ef39d39ba343c7f677beb8e969ed7ae74525509cd5c0be1cf081271c0bf4`
-- **Scientific Code Freeze Commit (Commit G)**: `580d5806aea88eb83ac514c1538695898055ed44`
+- **Protocol Version**: `1.2.3`
+- **Source Tree Hash**: `04389535d0c60b5e615cb8fe64b6c3c595789f959ed9e33ae89d6990342dd0d2`
+- **Scientific Code Freeze Commit (Commit I)**: `e8426ec82ca3895a6b55a1e93cabbe235ddee6ad`
 - **Base Model Revision**: Locked to `ProsusAI/finbert` commit `4556d13015211d73dccd3fdd39d39232506f3e43`.
 - **Controlled Files (12 Artifacts)**:
-  1. `configs/phase4_preregistration.yaml` (`8996a2ab16ab37917e55d56e3aad6f82d106abda98c2d2cce8ff6c4cfb5f6e0d`)
-  2. `configs/phase4_confirmatory.yaml` (`427dc55d93d0181c531d4a8bef6826024f427755e0cc5be99285c7dc2d7015ad`)
+  1. `configs/phase4_preregistration.yaml` (`35b109a72acfc2ce3b3b18f5b802897d1d52a9e274d47b55c32063921cebeb6e`)
+  2. `configs/phase4_confirmatory.yaml` (`91aae324b911455aef07b4736680bdbacfb857eeda19d6d567d2a296d1cb69d0`)
   3. `data/research/fomc/events/events.jsonl` (`981ad9f483e0518d1601f3391231e532458ca71e379404ef83795132693381e4`)
   4. `data/research/fomc/confirmatory_anchors/anchors.jsonl` (`b03a2262f2222e8e28a29c903247682501244652f5a958d093d2109714e5c8ae`)
   5. `data/research/fomc/policy_history.csv` (`51f233d3e957a54a7b87ecaf073c1d9906fb9e02bc45a68945910ec693b04fc2`)
@@ -152,5 +140,6 @@ All 53 Gate tests (`tests/test_phase4a_gate.py` Tests A through AZ + Metric Inte
 - **Primary Estimator**: Ridge Regression ($\alpha = 1.0$) on continuous future rate change $y_e = \Delta r_e$
 - **Primary Inferential Test**: Sign-flip permutation test on event-level absolute error improvement ($B = 2,000$, $N = 32$)
 - **Co-Primary Estimator**: Ridge Classifier ($\alpha = 1.0$) on binary direction vs hold ($B = 2,000$, $N = 32$)
-- **Economic Endpoints**: 2Y Treasury yield change (primary) and SPY 1D return (secondary) evaluated via event-level IC with stationary block bootstrap
-- **Authorization Guard**: Requires external signed authorization manifest at `configs/phase4_execution_authorization.json` binding protocol version `1.2.2`, lock SHA, freeze commit, and tree hash to initiate compute.
+- **Secondary Behavioral Endpoint**: Descriptive stance sensitivity shift across 40 independent FOMC events (mean, median, std, per-event deltas; no confirmatory p-value/FDR claim)
+- **Secondary Economic Endpoints**: 2Y Treasury yield change (primary) and SPY 1D return (secondary) evaluated via event-level IC with stationary block bootstrap
+- **Authorization Guard**: Requires external signed authorization manifest at `configs/phase4_execution_authorization.json` binding protocol version `1.2.3`, lock SHA, freeze commit, and tree hash to initiate compute.
