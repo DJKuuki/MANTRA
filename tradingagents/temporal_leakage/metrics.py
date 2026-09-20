@@ -191,7 +191,7 @@ def compute_masking_sensitivity(
 
     anon_fn = anonymizer_fn or default_anonymize
 
-    def js_divergence(P: np.ndarray, Q: np.ndarray) -> float:
+    def js_divergence(P: np.ndarray, Q: np.ndarray) -> Tuple[float, np.ndarray]:
         p = np.clip(P, 1e-9, 1.0)
         q = np.clip(Q, 1e-9, 1.0)
         p = p / np.sum(p, axis=1, keepdims=True)
@@ -199,18 +199,23 @@ def compute_masking_sensitivity(
         m = 0.5 * (p + q)
         kl_pm = np.sum(p * np.log(p / m), axis=1)
         kl_qm = np.sum(q * np.log(q / m), axis=1)
-        return float(np.mean(0.5 * (kl_pm + kl_qm)))
+        per_sample = 0.5 * (kl_pm + kl_qm)
+        return float(np.mean(per_sample)), per_sample
 
     sens_by_level = {}
+    sample_sens_by_level = {}
     for lvl in [1, 2, 3]:
         masked_texts = [anon_fn(t, lvl) for t in raw_texts]
         _, masked_probs = model.predict_task(masked_texts, future_signals=future_signals)
-        sens_by_level[f"level_{lvl}"] = js_divergence(orig_probs, masked_probs)
+        mean_js, per_sample_js = js_divergence(orig_probs, masked_probs)
+        sens_by_level[f"level_{lvl}"] = mean_js
+        sample_sens_by_level[f"level_{lvl}"] = per_sample_js
 
     s_entity = sens_by_level["level_1"]
     s_person = max(0.0, sens_by_level["level_2"] - sens_by_level["level_1"])
     s_date = max(0.0, sens_by_level["level_3"] - sens_by_level["level_2"])
     s_total = sens_by_level["level_3"]
+    per_sample_s_total = sample_sens_by_level["level_3"].tolist() if hasattr(sample_sens_by_level["level_3"], "tolist") else list(sample_sens_by_level["level_3"])
 
     return {
         "mask_sensitivity": s_total,
@@ -218,6 +223,7 @@ def compute_masking_sensitivity(
         "sensitivity_person": s_person,
         "sensitivity_date": s_date,
         "sensitivities_by_level": sens_by_level,
+        "per_sample_sensitivities": per_sample_s_total,
     }
 
 
@@ -665,6 +671,7 @@ def evaluate_representational_leakage_grouped(
     aggregation_rule: str = "mean",
     target_type: str = "continuous",
     loss_metric: str = "mae",
+    probe_alpha: float = 1.0,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Calculate Representational Leakage with Event as the Primary Statistical Unit.
@@ -755,6 +762,8 @@ def evaluate_representational_leakage_grouped(
             "insufficient_samples": True,
         }
 
+    probe_alpha = float(kwargs.get("probe_alpha", probe_alpha))
+
     # 3. Gather Out-of-Sample Predictions per Event
     oos_records: List[Dict[str, Any]] = []
 
@@ -764,11 +773,11 @@ def evaluate_representational_leakage_grouped(
             continue
 
         if is_regression:
-            reg_l = Ridge(alpha=1.0, random_state=random_seed)
+            reg_l = Ridge(alpha=probe_alpha, random_state=random_seed)
             reg_l.fit(h_leak_ev[train_idx], y_train)
             pred_l = reg_l.predict(h_leak_ev[test_idx])
 
-            reg_c = Ridge(alpha=1.0, random_state=random_seed)
+            reg_c = Ridge(alpha=probe_alpha, random_state=random_seed)
             reg_c.fit(h_clean_ev[train_idx], y_train)
             pred_c = reg_c.predict(h_clean_ev[test_idx])
 
@@ -799,11 +808,11 @@ def evaluate_representational_leakage_grouped(
                 })
         else:
             # Classification
-            clf_l = RidgeClassifier(alpha=1.0, random_state=random_seed)
+            clf_l = RidgeClassifier(alpha=probe_alpha, random_state=random_seed)
             clf_l.fit(h_leak_ev[train_idx], y_train)
             pred_l = clf_l.predict(h_leak_ev[test_idx])
 
-            clf_c = RidgeClassifier(alpha=1.0, random_state=random_seed)
+            clf_c = RidgeClassifier(alpha=probe_alpha, random_state=random_seed)
             clf_c.fit(h_clean_ev[train_idx], y_train)
             pred_c = clf_c.predict(h_clean_ev[test_idx])
 
@@ -911,6 +920,7 @@ def evaluate_representational_leakage_grouped(
         "event_deltas": event_deltas.tolist(),
         "oos_event_table": oos_records,
         "n_splits": len(folds),
+        "probe_alpha": probe_alpha,
         "insufficient_samples": False,
     }
 

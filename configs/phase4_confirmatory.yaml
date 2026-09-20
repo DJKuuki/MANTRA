@@ -1,4 +1,4 @@
-# Phase 4 Confirmatory Execution Configuration (v1.2.0)
+# Phase 4 Confirmatory Execution Configuration (v1.2.2)
 # Governed strictly by configs/phase4_preregistration.yaml
 
 experiment_id: "phase4_confirmatory_evaluation"
@@ -51,6 +51,9 @@ mlm_training:
   mask_ratio: 0.15
   optimizer: "AdamW"
   max_repetition_ratio: 0.20
+  max_steps: 100
+  scheduler: "none"
+  warmup_ratio: 0.0
 
 downstream_evaluation:
   statistical_unit: "independent_fomc_event"
@@ -58,6 +61,7 @@ downstream_evaluation:
   target_type: "continuous"
   model_type: "ridge_regression"
   probe_alpha: 1.0
+  random_seed: 42
   aggregation_rule: "mean"
   cv_folds: 4
   min_train_events: 8

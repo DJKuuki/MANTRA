@@ -55,6 +55,8 @@ from tradingagents.temporal_leakage.datasets.policy_history import (
 from tradingagents.temporal_leakage.fomc_benchmark import verify_file_sha256
 from tradingagents.temporal_leakage.metrics import (
     aggregate_event_representations,
+    evaluate_behavioral_leakage_event_level,
+    evaluate_competence,
     evaluate_economic_effect_event_level,
     evaluate_representational_leakage_grouped,
     event_clustered_bootstrap_indices,
@@ -75,6 +77,7 @@ from tradingagents.temporal_leakage.phase4_confirmatory import (
     compute_file_sha256,
     compute_source_tree_hash,
     execute_phase4b_confirmatory,
+    resolve_phase4_runtime_contract,
     run_phase4_confirmatory,
     run_phase4_mock_orchestration,
     verify_phase4_code_freeze,
@@ -1084,14 +1087,16 @@ def test_ac_default_full_run_is_never_mock(monkeypatch):
         auth_file = Path(td) / "auth.json"
         tree_hash = compute_source_tree_hash(PROJECT_ROOT)
         with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
-            proto_ver = json.load(f).get("protocol_version", "1.2.1")
+            lock_meta = json.load(f)
+            proto_ver = lock_meta.get("protocol_version", "1.2.2")
+            locked_commit = lock_meta.get("code_commit") or lock_meta.get("scientific_code_commit", "unknown")
         lock_sha = compute_file_sha256(PROTOCOL_LOCK_PATH, normalize_newlines=True)
         with open(auth_file, "w", encoding="utf-8") as f:
             json.dump({
                 "protocol_version": proto_ver,
                 "human_authorized": True,
                 "protocol_lock_sha256": lock_sha,
-                "locked_scientific_code_commit": "db048133e81055ba1f937c234a0677f8ed6061ea",
+                "locked_scientific_code_commit": locked_commit,
                 "locked_source_tree_hash": tree_hash,
             }, f)
 
@@ -1134,14 +1139,16 @@ def test_ad_mock_rejected_in_full_empirical_mode(monkeypatch):
         auth_file = Path(td) / "auth.json"
         tree_hash = compute_source_tree_hash(PROJECT_ROOT)
         with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
-            proto_ver = json.load(f).get("protocol_version", "1.2.1")
+            lock_meta = json.load(f)
+            proto_ver = lock_meta.get("protocol_version", "1.2.2")
+            locked_commit = lock_meta.get("code_commit") or lock_meta.get("scientific_code_commit", "unknown")
         lock_sha = compute_file_sha256(PROTOCOL_LOCK_PATH, normalize_newlines=True)
         with open(auth_file, "w", encoding="utf-8") as f:
             json.dump({
                 "protocol_version": proto_ver,
                 "human_authorized": True,
                 "protocol_lock_sha256": lock_sha,
-                "locked_scientific_code_commit": "db048133e81055ba1f937c234a0677f8ed6061ea",
+                "locked_scientific_code_commit": locked_commit,
                 "locked_source_tree_hash": tree_hash,
             }, f)
 
@@ -1457,7 +1464,7 @@ def test_aj_artifact_writer():
         env_info = {"python_version": "3.10", "platform": "windows"}
         lock_info = {"protocol_version": "1.2.0", "locked": True}
 
-        summary = writer.write_all(results, env_info=env_info, lock_info=lock_info)
+        summary = writer.write_all(results, env_info=env_info, lock_info=lock_info, allow_mock=True)
 
         assert len(summary["manifest_paths"]) == 25
         assert len(summary["metrics_paths"]) == 25
@@ -1538,5 +1545,567 @@ def test_al_production_execution_still_blocked():
             prereg_path=PREREG_CONFIG_PATH,
             smoke_mode=False,
         )
+
+
+# ---------------------------------------------------------------------------
+# Test AM: Protocol Lock Manifest Verification & Integrity
+# ---------------------------------------------------------------------------
+def test_am_protocol_lock_manifest_verification_and_integrity():
+    """Verify verify_phase4_protocol_lock returns complete cryptographic bindings
+    and enforces version >= 1.2.1 invariants (source_tree_hash, scientific_code_commit)."""
+    lock_meta = verify_phase4_protocol_lock(
+        protocol_lock_path=PROTOCOL_LOCK_PATH,
+        project_root=PROJECT_ROOT,
+        prereg_config_path=PREREG_CONFIG_PATH,
+        conf_config_path=CONF_CONFIG_PATH,
+    )
+    assert lock_meta["status"] == "PROTOCOL_LOCKED_AND_VERIFIED"
+    assert lock_meta["protocol_version"] == "1.2.2"
+    assert "source_tree_hash" in lock_meta
+    assert "scientific_code_commit" in lock_meta
+    assert "code_commit" in lock_meta
+    assert len(lock_meta["source_tree_hash"]) == 64
+    assert len(lock_meta["scientific_code_commit"]) == 40
+
+    # Tamper test: missing source_tree_hash in v1.2.2 must fail closed
+    with tempfile.TemporaryDirectory() as td:
+        tampered_lock = Path(td) / "lock.json"
+        with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        del data["source_tree_hash"]
+        with open(tampered_lock, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+
+        with pytest.raises(PreregistrationLockError, match="source_tree_hash"):
+            verify_phase4_protocol_lock(
+                protocol_lock_path=tampered_lock,
+                project_root=PROJECT_ROOT,
+            )
+
+    # Tamper test: missing commit bindings in v1.2.2 must fail closed
+    with tempfile.TemporaryDirectory() as td:
+        tampered_lock = Path(td) / "lock.json"
+        with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        del data["scientific_code_commit"]
+        del data["code_commit"]
+        with open(tampered_lock, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+
+        with pytest.raises(PreregistrationLockError, match="scientific_code_commit"):
+            verify_phase4_protocol_lock(
+                protocol_lock_path=tampered_lock,
+                project_root=PROJECT_ROOT,
+            )
+
+
+# ---------------------------------------------------------------------------
+# Test AN: Authorization Binding Validation
+# ---------------------------------------------------------------------------
+def test_an_authorization_binding_validation():
+    """Verify verify_phase4b_authorization validates locked commit, source tree hash,
+    protocol lock hash, and protocol version against expected lock manifest."""
+    with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
+        lock_manifest = json.load(f)
+    lock_sha = compute_file_sha256(PROTOCOL_LOCK_PATH, normalize_newlines=True)
+
+    with tempfile.TemporaryDirectory() as td:
+        auth_file = Path(td) / "auth.json"
+
+        # 1. Mismatched locked_scientific_code_commit
+        with open(auth_file, "w", encoding="utf-8") as f:
+            json.dump({
+                "protocol_version": "1.2.2",
+                "human_authorized": True,
+                "protocol_lock_sha256": lock_sha,
+                "locked_scientific_code_commit": "0" * 40,
+                "locked_source_tree_hash": lock_manifest["source_tree_hash"],
+            }, f)
+
+        with pytest.raises(Phase4BAuthorizationError, match="locked_scientific_code_commit"):
+            verify_phase4b_authorization(
+                auth_file,
+                protocol_version="1.2.2",
+                expected_lock_hash=lock_sha,
+                expected_lock_manifest=lock_manifest,
+            )
+
+        # 2. Mismatched locked_source_tree_hash
+        with open(auth_file, "w", encoding="utf-8") as f:
+            json.dump({
+                "protocol_version": "1.2.2",
+                "human_authorized": True,
+                "protocol_lock_sha256": lock_sha,
+                "locked_scientific_code_commit": lock_manifest["scientific_code_commit"],
+                "locked_source_tree_hash": "f" * 64,
+            }, f)
+
+        with pytest.raises(Phase4BAuthorizationError, match="locked_source_tree_hash"):
+            verify_phase4b_authorization(
+                auth_file,
+                protocol_version="1.2.2",
+                expected_lock_hash=lock_sha,
+                expected_lock_manifest=lock_manifest,
+            )
+
+        # 3. Mismatched protocol_lock_sha256
+        with open(auth_file, "w", encoding="utf-8") as f:
+            json.dump({
+                "protocol_version": "1.2.2",
+                "human_authorized": True,
+                "protocol_lock_sha256": "e" * 64,
+                "locked_scientific_code_commit": lock_manifest["scientific_code_commit"],
+                "locked_source_tree_hash": lock_manifest["source_tree_hash"],
+            }, f)
+
+        with pytest.raises(Phase4BAuthorizationError, match="protocol_lock_sha256"):
+            verify_phase4b_authorization(
+                auth_file,
+                protocol_version="1.2.2",
+                expected_lock_hash=lock_sha,
+                expected_lock_manifest=lock_manifest,
+            )
+
+
+# ---------------------------------------------------------------------------
+# Test AO: Code Freeze Consumption of Lock Manifest
+# ---------------------------------------------------------------------------
+def test_ao_code_freeze_consumption_of_lock_manifest():
+    """Verify verify_phase4_code_freeze consumes lock manifest and verifies source tree hash."""
+    with open(PROTOCOL_LOCK_PATH, "r", encoding="utf-8") as f:
+        lock_manifest = json.load(f)
+
+    # Valid lock manifest verification
+    res = verify_phase4_code_freeze(
+        project_root=PROJECT_ROOT,
+        locked_git_commit=lock_manifest.get("code_commit") or lock_manifest.get("scientific_code_commit"),
+        locked_source_tree_hash=lock_manifest["source_tree_hash"],
+        enforce_git_clean=False,
+    )
+    assert res["status"] == "CODE_FROZEN_AND_VERIFIED"
+    assert res["source_tree_hash"] == lock_manifest["source_tree_hash"]
+
+    # Tampered tree hash fails closed
+    with pytest.raises(CodeFreezeError, match="Source tree hash mismatch"):
+        verify_phase4_code_freeze(
+            project_root=PROJECT_ROOT,
+            locked_git_commit=lock_manifest.get("code_commit"),
+            locked_source_tree_hash="deadbeef" * 8,
+            enforce_git_clean=False,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Test AP: Economic Field Mappings Fail On Missing
+# ---------------------------------------------------------------------------
+def test_ap_economic_field_mappings_fail_on_missing():
+    """Verify backend and orchestrator strictly require market_outcomes.treasury_2y_yield_change
+    and market_outcomes.spy_1d_return without silent fallback."""
+    events = load_events()
+    tampered_events = copy.deepcopy(events)
+    # Remove 2y yield change from first event
+    del tampered_events[0]["market_outcomes"]["treasury_2y_yield_change"]
+
+    prod_backend = ProductionConfirmatoryBackend()
+    anchors = [{"anchor_id": "a1", "event_id": events[0]["event_id"], "text": "Fed rate cut announcement."}]
+    with open(CONF_CONFIG_PATH, "r", encoding="utf-8") as f:
+        conf_cfg = yaml.safe_load(f)
+
+    with pytest.raises((PreregistrationLockError, KeyError, ProductionBackendValidationError)):
+        prod_backend.execute_branch(
+            seed=42,
+            dose=0.0,
+            pre_docs=[],
+            post_docs=[],
+            anchors=anchors,
+            events=tampered_events,
+            conf_cfg=conf_cfg,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Test AQ: Economic Effect Event-Level Inference
+# ---------------------------------------------------------------------------
+def test_aq_economic_effect_event_level_inference():
+    """Verify evaluate_economic_effect_event_level generates bootstrap confidence interval
+    and paired event-level economic effect metrics."""
+    rng = np.random.RandomState(42)
+    events = load_events()
+    event_ids = [e["event_id"] for e in events]
+    market_returns = np.array([float(e["market_outcomes"]["treasury_2y_yield_change"]) for e in events])
+    clean_stances = rng.randn(len(events))
+    leak_stances = clean_stances + rng.randn(len(events)) * 0.2
+
+    res = evaluate_economic_effect_event_level(
+        stance_scores_leak=leak_stances,
+        stance_scores_clean=clean_stances,
+        market_returns=market_returns,
+        event_ids=event_ids,
+        aggregation_rule="mean",
+        n_bootstrap=100,
+        random_seed=42,
+    )
+
+    assert "delta_ic" in res
+    assert "delta_ic_ci_95" in res
+    assert "p_value" in res
+    assert len(res["delta_ic_ci_95"]) == 2
+    ci_l, ci_u = res["delta_ic_ci_95"]
+    assert ci_l <= ci_u
+
+
+# ---------------------------------------------------------------------------
+# Test AR: Representational Evaluator Probe Alpha Single Source of Truth
+# ---------------------------------------------------------------------------
+def test_ar_repr_evaluator_probe_alpha_single_source_of_truth():
+    """Verify evaluate_representational_leakage_grouped accepts probe_alpha and passes
+    it to Ridge/RidgeClassifier without hardcoded alpha."""
+    rng = np.random.RandomState(42)
+    events = load_events()
+    event_ids = [e["event_id"] for e in events]
+    event_times = [e["event_time"] for e in events]
+    targets = [float(e.get("future_rate_change", 0.0)) for e in events]
+
+    rep_clean = rng.randn(40, 16)
+    rep_leak = rep_clean + rng.randn(40, 16) * 0.1
+
+    res_alpha_1 = evaluate_representational_leakage_grouped(
+        representations_leak=rep_leak,
+        representations_clean=rep_clean,
+        y=targets,
+        event_ids=event_ids,
+        event_times=event_times,
+        target_type="continuous",
+        n_splits=4,
+        min_train_events=8,
+        n_permutations=20,
+        probe_alpha=1.0,
+        random_seed=42,
+    )
+    assert res_alpha_1["probe_alpha"] == 1.0
+
+    res_alpha_10 = evaluate_representational_leakage_grouped(
+        representations_leak=rep_leak,
+        representations_clean=rep_clean,
+        y=targets,
+        event_ids=event_ids,
+        event_times=event_times,
+        target_type="continuous",
+        n_splits=4,
+        min_train_events=8,
+        n_permutations=20,
+        probe_alpha=10.0,
+        random_seed=42,
+    )
+    assert res_alpha_10["probe_alpha"] == 10.0
+    # Different regularization alphas must produce different evaluation metrics
+    assert res_alpha_1["observed_statistic"] != res_alpha_10["observed_statistic"]
+
+
+# ---------------------------------------------------------------------------
+# Test AS: Competence Metric Provenance
+# ---------------------------------------------------------------------------
+def test_as_competence_metric_provenance():
+    """Verify competence metric provenance: evaluate_competence calculates genuine
+    metrics and Production backend documents competence provenance."""
+    res = evaluate_competence(y_true=[0, 1, -1], y_pred=[0, 1, -1], n_bootstrap=10)
+    assert "macro_f1" in res
+    assert res["macro_f1"] == 1.0
+
+    prod_backend = ProductionConfirmatoryBackend()
+    assert prod_backend.__doc__ is not None
+    assert "NOT_EVALUATED" in prod_backend.__doc__
+
+
+# ---------------------------------------------------------------------------
+# Test AT: Behavioral Metric Event-Level Analysis
+# ---------------------------------------------------------------------------
+def test_at_behavioral_metric_event_level_analysis():
+    """Verify evaluate_behavioral_leakage_event_level computes event-level sensitivities
+    and preserves protocol marking for FDR correction."""
+    events = load_events()
+    event_ids = [e["event_id"] for e in events]
+    rng = np.random.RandomState(42)
+    clean_sens = rng.uniform(0.05, 0.25, size=len(events)).tolist()
+    leak_sens = [s + rng.uniform(0.01, 0.05) for s in clean_sens]
+
+    res = evaluate_behavioral_leakage_event_level(
+        sensitivities_leak=leak_sens,
+        sensitivities_clean=clean_sens,
+        event_ids=event_ids,
+        aggregation_rule="mean",
+    )
+    assert "l_behavior_event" in res
+    assert "mask_sensitivity_leak_event" in res
+    assert "mask_sensitivity_clean_event" in res
+    assert res["l_behavior_event"] > 0
+
+
+# ---------------------------------------------------------------------------
+# Test AU: Binary Directional Classification Co-Primary
+# ---------------------------------------------------------------------------
+def test_au_binary_directional_classification_co_primary():
+    """Verify binary co-primary next_scheduled_change_vs_hold uses RidgeClassifier
+    and outputs macro F1 metrics."""
+    rng = np.random.RandomState(42)
+    events = load_events()
+    event_ids = [e["event_id"] for e in events]
+    event_times = [e["event_time"] for e in events]
+    binary_targets = [1 if abs(float(e.get("future_rate_change", 0.0))) > 1e-6 else 0 for e in events]
+
+    rep_clean = rng.randn(40, 16)
+    rep_leak = rep_clean + rng.randn(40, 16) * 0.1
+
+    res = evaluate_representational_leakage_grouped(
+        representations_leak=rep_leak,
+        representations_clean=rep_clean,
+        y=binary_targets,
+        event_ids=event_ids,
+        event_times=event_times,
+        target_type="binary",
+        n_splits=4,
+        min_train_events=8,
+        n_permutations=20,
+        probe_alpha=1.0,
+        random_seed=42,
+    )
+    assert res["model_type"] == "ridge_classifier"
+    assert "delta_macro_f1" in res
+    assert "macro_f1_leak" in res
+    assert "macro_f1_clean" in res
+
+
+# ---------------------------------------------------------------------------
+# Test AV: Runtime Contract Reconciliation
+# ---------------------------------------------------------------------------
+def test_av_runtime_contract_reconciliation():
+    """Verify resolve_phase4_runtime_contract reconciles all locked parameters
+    and fails closed on any discrepancy between confirmatory and preregistration configs."""
+    with open(CONF_CONFIG_PATH, "r", encoding="utf-8") as f:
+        conf_cfg = yaml.safe_load(f)
+    with open(PREREG_CONFIG_PATH, "r", encoding="utf-8") as f:
+        prereg_cfg = yaml.safe_load(f)
+
+    contract = resolve_phase4_runtime_contract(conf_cfg, prereg_cfg)
+    assert contract["protocol_version"] == "1.2.2"
+    assert contract["mlm_max_steps"] == 100
+    assert contract["mlm_scheduler"] == "none"
+    assert contract["mlm_warmup_ratio"] == 0.0
+    assert contract["probe_alpha"] == 1.0
+    assert contract["random_seed"] == 42
+    assert contract["token_budget"] == 256000
+
+    # Discrepancy test: mismatch in max_steps must fail closed
+    tampered_conf = copy.deepcopy(conf_cfg)
+    tampered_conf["mlm_training"]["max_steps"] = 200
+    with pytest.raises(PreregistrationLockError, match="max_steps mismatch"):
+        resolve_phase4_runtime_contract(tampered_conf, prereg_cfg)
+
+
+# ---------------------------------------------------------------------------
+# Test AW: MLM Hyperparameters Locked
+# ---------------------------------------------------------------------------
+def test_aw_mlm_hyperparameters_locked():
+    """Verify that max_steps=100, scheduler='none', warmup_ratio=0.0 are locked in configs."""
+    with open(CONF_CONFIG_PATH, "r", encoding="utf-8") as f:
+        conf_cfg = yaml.safe_load(f)
+    with open(PREREG_CONFIG_PATH, "r", encoding="utf-8") as f:
+        prereg_cfg = yaml.safe_load(f)
+
+    assert conf_cfg["mlm_training"]["max_steps"] == 100
+    assert conf_cfg["mlm_training"]["scheduler"] == "none"
+    assert conf_cfg["mlm_training"]["warmup_ratio"] == 0.0
+    assert conf_cfg["downstream_evaluation"]["random_seed"] == 42
+
+    assert prereg_cfg["compute_bounds"]["max_steps"] == 100
+    assert prereg_cfg["compute_bounds"]["scheduler"] == "none"
+    assert prereg_cfg["compute_bounds"]["warmup_ratio"] == 0.0
+    assert prereg_cfg["statistical_design"]["random_seed"] == 42
+
+
+# ---------------------------------------------------------------------------
+# Test AX: Statistical Unit and Sample Size Invariants
+# ---------------------------------------------------------------------------
+def test_ax_statistical_unit_and_sample_size_invariants():
+    """Verify 40 events total, 32 OOS events, 8 fold 0 in-sample events, and 181 anchors."""
+    events = load_events()
+    assert len(events) == 40
+
+    with open(ANCHORS_PATH, "r", encoding="utf-8") as f:
+        anchors = [json.loads(line) for line in f if line.strip()]
+    assert len(anchors) == 181
+
+    event_ids = [e["event_id"] for e in events]
+    event_times = [e["event_time"] for e in events]
+    splits = grouped_temporal_split(event_ids, event_times, n_splits=4)
+    assert len(splits) == 4
+
+    total_test_events = 0
+    for tr, ts in splits:
+        total_test_events += len(ts)
+        assert len(ts) == 8
+    assert total_test_events == 32
+    assert len(splits[0][0]) == 8
+
+
+# ---------------------------------------------------------------------------
+# Test AY: Branch Manifest Provenance Completeness
+# ---------------------------------------------------------------------------
+def test_ay_branch_manifest_provenance_completeness():
+    """Verify branch manifests record cryptographic provenance bindings."""
+    required_provenance = [
+        "scientific_code_commit",
+        "execution_repository_head",
+        "source_tree_hash",
+        "protocol_lock_sha256",
+        "protocol_version",
+    ]
+
+    mock_backend = MockConfirmatoryBackend()
+    events = load_events()
+    anchors = [{"anchor_id": "a1", "event_id": events[0]["event_id"], "text": "FOMC policy stance statement."}]
+    with open(CONF_CONFIG_PATH, "r", encoding="utf-8") as f:
+        conf_cfg = yaml.safe_load(f)
+
+    b_res = mock_backend.execute_branch(
+        seed=13,
+        dose=0.5,
+        pre_docs=[],
+        post_docs=[],
+        anchors=anchors,
+        events=events,
+        conf_cfg=conf_cfg,
+    )
+    # Inject provenance as orchestrator does
+    b_res["scientific_code_commit"] = "a" * 40
+    b_res["execution_repository_head"] = "a" * 40
+    b_res["source_tree_hash"] = "b" * 64
+    b_res["protocol_lock_sha256"] = "c" * 64
+    b_res["protocol_version"] = "1.2.2"
+
+    with tempfile.TemporaryDirectory() as td:
+        writer = Phase4ArtifactWriter(output_root=td)
+        mf_path = writer.write_branch_manifest(b_res)
+        with open(mf_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+
+        for p_key in required_provenance:
+            assert p_key in manifest, f"Missing provenance key '{p_key}' in manifest"
+
+
+# ---------------------------------------------------------------------------
+# Test AZ: Artifact Writer Rejects Mock Data Mode
+# ---------------------------------------------------------------------------
+def test_az_artifact_writer_rejects_mock_data_mode():
+    """Verify Phase4ArtifactWriter strictly rejects data_mode='MOCK' when allow_mock=False."""
+    with tempfile.TemporaryDirectory() as td:
+        writer = Phase4ArtifactWriter(output_root=td)
+        results = {
+            "status": "COMPLETED",
+            "branches": {
+                "branch_1": {"data_mode": "MOCK"},
+            },
+        }
+        with pytest.raises(ProductionBackendValidationError, match="data_mode='MOCK'"):
+            writer.write_confirmatory_results(results, allow_mock=False)
+
+        # allow_mock=True succeeds
+        p = writer.write_confirmatory_results(results, allow_mock=True)
+        assert p.exists()
+
+
+# ---------------------------------------------------------------------------
+# Deterministic Metric Integration Test
+# ---------------------------------------------------------------------------
+def test_deterministic_metric_integration_on_40_event_fixture():
+    """Deterministic end-to-end evaluation verifying continuous regression primary,
+    binary classification co-primary, behavioral event-level sensitivity, and economic effect."""
+    rng = np.random.RandomState(42)
+    events = load_events()
+    event_ids = [e["event_id"] for e in events]
+    event_times = [e["event_time"] for e in events]
+
+    y_continuous = np.array([float(e.get("future_rate_change", 0.0)) for e in events])
+    y_binary = np.array([1 if abs(val) > 1e-6 else 0 for val in y_continuous])
+    y_2y = np.array([float(e["market_outcomes"]["treasury_2y_yield_change"]) for e in events])
+    y_spy = np.array([float(e["market_outcomes"]["spy_1d_return"]) for e in events])
+
+    clean_repr = rng.randn(40, 16)
+    leak_repr = clean_repr + rng.randn(40, 16) * 0.05
+    clean_stances = rng.randn(40)
+    leak_stances = clean_stances + rng.randn(40) * 0.05
+    clean_sens = rng.uniform(0.1, 0.3, 40).tolist()
+    leak_sens = [s + 0.02 for s in clean_sens]
+
+    # 1. Continuous primary
+    res_reg = evaluate_representational_leakage_grouped(
+        representations_leak=leak_repr,
+        representations_clean=clean_repr,
+        y=y_continuous,
+        event_ids=event_ids,
+        event_times=event_times,
+        target_type="continuous",
+        n_splits=4,
+        min_train_events=8,
+        n_permutations=20,
+        probe_alpha=1.0,
+        random_seed=42,
+    )
+    assert res_reg["model_type"] == "ridge_regression"
+    assert res_reg["n_oos_events"] == 32
+    assert "observed_statistic" in res_reg
+    assert "delta_spearman" in res_reg
+    assert np.isfinite(res_reg["p_value"])
+
+    # 2. Binary co-primary
+    res_bin = evaluate_representational_leakage_grouped(
+        representations_leak=leak_repr,
+        representations_clean=clean_repr,
+        y=y_binary,
+        event_ids=event_ids,
+        event_times=event_times,
+        target_type="binary",
+        n_splits=4,
+        n_permutations=20,
+        probe_alpha=1.0,
+        random_seed=42,
+    )
+    assert res_bin["model_type"] == "ridge_classifier"
+    assert "delta_macro_f1" in res_bin
+    assert np.isfinite(res_bin["p_value"])
+
+    # 3. Behavioral leakage
+    res_beh = evaluate_behavioral_leakage_event_level(
+        sensitivities_leak=leak_sens,
+        sensitivities_clean=clean_sens,
+        event_ids=event_ids,
+    )
+    assert np.isfinite(res_beh["l_behavior_event"])
+
+    # 4. Economic effect
+    res_econ_2y = evaluate_economic_effect_event_level(
+        stance_scores_leak=leak_stances,
+        stance_scores_clean=clean_stances,
+        market_returns=y_2y,
+        event_ids=event_ids,
+        n_bootstrap=50,
+        random_seed=42,
+    )
+    assert np.isfinite(res_econ_2y["delta_ic"])
+    ci_l_2y, ci_u_2y = res_econ_2y["delta_ic_ci_95"]
+    assert ci_l_2y <= ci_u_2y
+
+    res_econ_spy = evaluate_economic_effect_event_level(
+        stance_scores_leak=leak_stances,
+        stance_scores_clean=clean_stances,
+        market_returns=y_spy,
+        event_ids=event_ids,
+        n_bootstrap=50,
+        random_seed=42,
+    )
+    assert np.isfinite(res_econ_spy["delta_ic"])
+    ci_l_spy, ci_u_spy = res_econ_spy["delta_ic_ci_95"]
+    assert ci_l_spy <= ci_u_spy
+
 
 

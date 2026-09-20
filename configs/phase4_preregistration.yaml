@@ -1,7 +1,7 @@
-# Phase 4 Confirmatory Study Preregistration Specification (v1.2.0)
+# Phase 4 Confirmatory Study Preregistration Specification (v1.2.2)
 # Machine-verifiable locked contract for confirmatory evaluation.
 
-version: "1.2.0"
+version: "1.2.2"
 locked: true
 locked_at: "2026-09-20T14:30:00Z"
 base_commit: "fee82a2c059d486b8f0cde7b067d686cfcf39dd0"
@@ -56,6 +56,7 @@ statistical_design:
   bootstrap_draws: 1000
   bootstrap_unit: "event_clustered"
   alpha: 0.05
+  random_seed: 42
   simulated_power_at_d050: 0.864
 
 representation_targets:
@@ -112,6 +113,9 @@ compute_bounds:
   max_mlm_runs: 25
   max_probe_runs: 25
   max_repetition_ratio: 0.20
+  max_steps: 100
+  scheduler: "none"
+  warmup_ratio: 0.0
 
 downstream_training:
   epochs: 3

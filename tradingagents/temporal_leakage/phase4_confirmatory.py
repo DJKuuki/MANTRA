@@ -258,11 +258,18 @@ def verify_phase4_protocol_lock(
     with open(lock_p, "r", encoding="utf-8") as f:
         lock_manifest = json.load(f)
 
-    valid_versions = ["1.1.0", "1.2.0", "1.2.1"]
-    if lock_manifest.get("protocol_version") not in valid_versions:
+    valid_versions = ["1.1.0", "1.2.0", "1.2.1", "1.2.2"]
+    proto_ver = lock_manifest.get("protocol_version", "1.2.2")
+    if proto_ver not in valid_versions:
         raise PreregistrationLockError(
-            f"Protocol lock version must be in {valid_versions}, found '{lock_manifest.get('protocol_version')}'"
+            f"Protocol lock version must be in {valid_versions}, found '{proto_ver}'"
         )
+
+    if proto_ver >= "1.2.1":
+        if not lock_manifest.get("source_tree_hash"):
+            raise PreregistrationLockError("Protocol lock >= 1.2.1 requires 'source_tree_hash' binding.")
+        if not (lock_manifest.get("scientific_code_commit") or lock_manifest.get("code_commit")):
+            raise PreregistrationLockError("Protocol lock >= 1.2.1 requires 'scientific_code_commit' or 'code_commit' binding.")
 
     # 1. Verify controlled file hashes
     files_dict = lock_manifest.get("files", {})
@@ -345,19 +352,52 @@ def verify_phase4_protocol_lock(
     with open(conf_p, "r", encoding="utf-8") as f:
         conf_cfg = yaml.safe_load(f)
 
-    # Doses
+    # Reconcile complete runtime contract
+    contract_meta = resolve_phase4_runtime_contract(conf_cfg, prereg_cfg)
+    p_rev = contract_meta["base_revision"]
+
+    return {
+        "status": "PROTOCOL_LOCKED_AND_VERIFIED",
+        "protocol_version": proto_ver,
+        "scientific_code_commit": lock_manifest.get("scientific_code_commit") or lock_manifest.get("code_commit"),
+        "code_commit": lock_manifest.get("code_commit") or lock_manifest.get("scientific_code_commit"),
+        "source_tree_hash": lock_manifest.get("source_tree_hash"),
+        "locked": True,
+        "controlled_file_count": len(verified_files),
+        "controlled_files": verified_files,
+        "clean_sham_corpus_locked": clean_sham_corpus_locked,
+        "contamination_corpus_locked": contamination_corpus_locked,
+        "prereg_doc_sha256": actual_doc_hash,
+        "base_model_revision": p_rev,
+        "base_model_revision_locked": True,
+        "execution_config_semantic_equality": True,
+        "downstream_recipe_locked": True,
+        "market_data_locked": True,
+        "contract": contract_meta,
+    }
+
+
+def resolve_phase4_runtime_contract(
+    conf_cfg: Dict[str, Any],
+    prereg_cfg: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Reconcile and validate the execution runtime contract against preregistered specifications.
+
+    Raises PreregistrationLockError if any semantic discrepancy is detected.
+    """
+    # 1. Doses
     p_doses = prereg_cfg.get("compute_bounds", {}).get("doses", [])
     c_doses = conf_cfg.get("dose_ladder", [])
     if [round(x, 4) for x in p_doses] != [round(x, 4) for x in c_doses]:
         raise PreregistrationLockError(f"Dose ladder mismatch: prereg {p_doses} != conf {c_doses}")
 
-    # Seeds
+    # 2. Seeds
     p_seeds = prereg_cfg.get("compute_bounds", {}).get("seeds", [])
     c_seeds = conf_cfg.get("seeds", [])
     if p_seeds != c_seeds:
         raise PreregistrationLockError(f"Seeds mismatch: prereg {p_seeds} != conf {c_seeds}")
 
-    # Token budget & block layout
+    # 3. Token budget, blocks, length
     p_tb = prereg_cfg.get("compute_bounds", {}).get("token_budget")
     c_tb = conf_cfg.get("mlm_training", {}).get("token_budget")
     if p_tb != c_tb:
@@ -373,8 +413,8 @@ def verify_phase4_protocol_lock(
     if p_blen != c_blen:
         raise PreregistrationLockError(f"Block length mismatch: prereg {p_blen} != conf {c_blen}")
 
-    # Base checkpoint & revision
-    p_model = prereg_cfg.get("compute_bounds", {}).get("base_model") or prereg_cfg.get("compute_bounds", {}).get("base_checkpoint")
+    # 4. Base model & revision
+    p_model = prereg_cfg.get("compute_bounds", {}).get("base_checkpoint") or prereg_cfg.get("compute_bounds", {}).get("base_model")
     c_model = conf_cfg.get("model", {}).get("base_checkpoint")
     if p_model != c_model:
         raise PreregistrationLockError(f"Base checkpoint mismatch: prereg {p_model} != conf {c_model}")
@@ -388,33 +428,69 @@ def verify_phase4_protocol_lock(
     if p_rev != expected_rev:
         raise PreregistrationLockError(f"Base revision not locked to canonical hash: {p_rev} != {expected_rev}")
 
-    # Primary statistical unit
+    # 5. Statistical unit
     p_unit = prereg_cfg.get("dataset", {}).get("primary_statistical_unit")
     c_unit = conf_cfg.get("downstream_evaluation", {}).get("statistical_unit")
     if p_unit != c_unit or p_unit != "independent_fomc_event":
         raise PreregistrationLockError(f"Statistical unit mismatch or invalid: prereg {p_unit} != conf {c_unit}")
 
-    # Downstream training recipe
+    # 6. Downstream training recipe
     p_dt = prereg_cfg.get("downstream_training", {})
     c_dt = conf_cfg.get("downstream_training", {})
-    for key in ["epochs", "batch_size", "learning_rate", "optimizer", "max_seq_length", "head_initialization", "sample_order"]:
+    for key in ["epochs", "batch_size", "learning_rate", "optimizer", "max_seq_length", "max_steps", "head_initialization", "sample_order"]:
         if key in p_dt and key in c_dt and p_dt[key] != c_dt[key]:
             raise PreregistrationLockError(f"Downstream recipe mismatch for '{key}': prereg {p_dt[key]} != conf {c_dt[key]}")
 
+    # 7. MLM training params
+    p_cb = prereg_cfg.get("compute_bounds", {})
+    c_mlm = conf_cfg.get("mlm_training", {})
+    if "max_steps" in c_mlm and "max_steps" in p_cb and c_mlm["max_steps"] != p_cb["max_steps"]:
+        raise PreregistrationLockError(f"MLM max_steps mismatch: prereg {p_cb.get('max_steps')} != conf {c_mlm.get('max_steps')}")
+
+    p_sched = p_cb.get("scheduler")
+    c_sched = c_mlm.get("scheduler")
+    if p_sched is not None and c_sched is not None and p_sched != c_sched:
+        raise PreregistrationLockError(f"MLM scheduler mismatch: prereg {p_sched} != conf {c_sched}")
+
+    p_warm = p_cb.get("warmup_ratio")
+    c_warm = c_mlm.get("warmup_ratio")
+    if p_warm is not None and c_warm is not None and p_warm != c_warm:
+        raise PreregistrationLockError(f"MLM warmup_ratio mismatch: prereg {p_warm} != conf {c_warm}")
+
+    # 8. Event counts & OOS counts
+    p_events = prereg_cfg.get("dataset", {}).get("num_events")
+    c_events = conf_cfg.get("dataset", {}).get("expected_events")
+    if p_events != c_events or p_events != 40:
+        raise PreregistrationLockError(f"Event count mismatch or invalid: prereg {p_events} != conf {c_events}")
+
+    p_oos = prereg_cfg.get("statistical_design", {}).get("oos_event_count")
+    c_oos = conf_cfg.get("downstream_evaluation", {}).get("oos_events")
+    if p_oos != c_oos or p_oos != 32:
+        raise PreregistrationLockError(f"OOS events mismatch or invalid: prereg {p_oos} != conf {c_oos}")
+
     return {
-        "status": "PROTOCOL_LOCKED_AND_VERIFIED",
-        "protocol_version": lock_manifest.get("protocol_version", "1.2.0"),
-        "locked": True,
-        "controlled_file_count": len(verified_files),
-        "controlled_files": verified_files,
-        "clean_sham_corpus_locked": clean_sham_corpus_locked,
-        "contamination_corpus_locked": contamination_corpus_locked,
-        "prereg_doc_sha256": actual_doc_hash,
-        "base_model_revision": p_rev,
-        "base_model_revision_locked": True,
-        "execution_config_semantic_equality": True,
-        "downstream_recipe_locked": True,
-        "market_data_locked": True,
+        "status": "CONTRACT_RESOLVED",
+        "protocol_version": prereg_cfg.get("version", "1.2.2"),
+        "dose_ladder": c_doses,
+        "seeds": c_seeds,
+        "token_budget": c_tb,
+        "num_blocks": c_blocks,
+        "block_length": c_blen,
+        "base_checkpoint": c_model,
+        "base_revision": c_rev,
+        "statistical_unit": c_unit,
+        "num_events": c_events,
+        "oos_events": c_oos,
+        "mlm_max_steps": c_mlm.get("max_steps", 100),
+        "mlm_scheduler": c_sched or "none",
+        "mlm_warmup_ratio": c_warm or 0.0,
+        "downstream_max_steps": c_dt.get("max_steps", 500),
+        "downstream_learning_rate": c_dt.get("learning_rate", 2e-5),
+        "random_seed": conf_cfg.get("downstream_evaluation", {}).get("random_seed", 42),
+        "eval_random_seed": conf_cfg.get("downstream_evaluation", {}).get("random_seed", 42),
+        "probe_alpha": conf_cfg.get("downstream_evaluation", {}).get("probe_alpha", 1.0),
+        "bootstrap_draws": conf_cfg.get("downstream_evaluation", {}).get("bootstrap_draws", 1000),
+        "paired_permutations": conf_cfg.get("downstream_evaluation", {}).get("paired_permutations", 2000),
     }
 
 
@@ -472,10 +548,12 @@ def verify_preregistration_lock(
 
 def verify_phase4b_authorization(
     authorization_path: Path | str,
-    protocol_version: str = "1.2.1",
+    protocol_version: str = "1.2.2",
     protocol_lock_sha256: Optional[str] = None,
     locked_git_commit: Optional[str] = None,
     locked_source_tree_hash: Optional[str] = None,
+    expected_lock_hash: Optional[str] = None,
+    expected_lock_manifest: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Verify human authorization artifact for Phase 4B model execution.
 
@@ -483,6 +561,14 @@ def verify_phase4b_authorization(
     Requires complete cryptographic bindings to protocol lock SHA, source tree hash,
     and scientific code freeze commit.
     """
+    if expected_lock_hash and not protocol_lock_sha256:
+        protocol_lock_sha256 = expected_lock_hash
+    if expected_lock_manifest:
+        if not locked_git_commit:
+            locked_git_commit = expected_lock_manifest.get("code_commit") or expected_lock_manifest.get("scientific_code_commit")
+        if not locked_source_tree_hash:
+            locked_source_tree_hash = expected_lock_manifest.get("source_tree_hash")
+
     auth_p = Path(authorization_path)
     if not auth_p.exists():
         raise Phase4BAuthorizationError(
@@ -621,6 +707,8 @@ class MockConfirmatoryBackend(Phase4ExecutionBackend):
         if dose > 0.0:
             signal = np.outer(true_targets, rng.randn(16)) * (dose * 0.5)
             event_embeddings += signal
+        event_stance_scores = (rng.randn(n_events) * 0.1 + true_targets * 0.2 * dose).tolist()
+        event_sensitivities = (0.20 + rng.rand(n_events) * 0.05 + dose * 0.10).tolist()
 
         return {
             "seed": seed,
@@ -651,10 +739,14 @@ class MockConfirmatoryBackend(Phase4ExecutionBackend):
             "downstream_hyperparameters": {"epochs": 3, "batch_size": 16, "learning_rate": 2e-5},
             "treatment_block_manifest": treatment_blocks,
             "event_embeddings": event_embeddings,
+            "event_stance_scores": event_stance_scores,
+            "event_sensitivities": event_sensitivities,
+            "behavioral_sensitivity": {"mask_sensitivity": float(np.mean(event_sensitivities)), "per_sample_sensitivities": event_sensitivities},
             "competence_macro_f1": 0.75 + float(rng.randn() * 0.02),
             "competence_mcc": 0.50 + float(rng.randn() * 0.02),
             "competence_brier": 0.15,
             "competence_ece": 0.05,
+            "competence_provenance": "MOCK_COMPETENCE",
             "temporal_robustness": "NOT_EVALUATED",
             "economic_ic_2y": 0.15 + float(rng.randn() * 0.05),
             "economic_ic_spy": 0.10 + float(rng.randn() * 0.05),
@@ -713,8 +805,16 @@ class Phase4ArtifactWriter:
             json.dump(metrics, f, indent=2, default=str)
         return p
 
-    def write_confirmatory_results(self, results: Dict[str, Any]) -> Path:
+    def write_confirmatory_results(self, results: Dict[str, Any], allow_mock: bool = False) -> Path:
         self.ensure_directories()
+        branches = results.get("branches", {})
+        if not allow_mock:
+            for b_name, b_data in branches.items():
+                if b_data.get("data_mode") != "EMPIRICAL":
+                    raise ProductionBackendValidationError(
+                        f"Branch '{b_name}' has data_mode='{b_data.get('data_mode')}'. "
+                        "Official confirmatory artifacts strictly require data_mode='EMPIRICAL'."
+                    )
         p = self.results_dir / "phase4_confirmatory_results.json"
 
         def _clean(obj: Any) -> Any:
@@ -752,6 +852,7 @@ class Phase4ArtifactWriter:
         results: Dict[str, Any],
         env_info: Optional[Dict[str, Any]] = None,
         lock_info: Optional[Dict[str, Any]] = None,
+        allow_mock: bool = False,
     ) -> Dict[str, Any]:
         self.ensure_directories()
         manifest_paths = []
@@ -762,7 +863,7 @@ class Phase4ArtifactWriter:
             met_p = self.write_branch_metrics(branch_data)
             manifest_paths.append(str(mp))
             metrics_paths.append(str(met_p))
-        res_p = self.write_confirmatory_results(results)
+        res_p = self.write_confirmatory_results(results, allow_mock=allow_mock)
         env_p, lock_p = self.write_provenance(env_info or {}, lock_info or {})
         return {
             "results_path": str(res_p),
@@ -849,7 +950,21 @@ class ProductionConfirmatoryBackend(Phase4ExecutionBackend):
             LABEL_TO_INDEX,
         )
 
-        dev = self.device or ("cuda" if torch.cuda.is_available() else "cpu")
+        # 0. Preflight validation of market outcome mappings
+        for e in events:
+            mo = e.get("market_outcomes")
+            if not mo or "treasury_2y_yield_change" not in mo or "spy_1d_return" not in mo:
+                raise PreregistrationLockError(
+                    f"Event '{e.get('event_id')}' missing required market outcome fields ('treasury_2y_yield_change', 'spy_1d_return'). Silent fallbacks prohibited."
+                )
+
+        requested_dev = self.device or conf_cfg.get("model", {}).get("device")
+        if requested_dev == "cuda" and not torch.cuda.is_available():
+            dev = "cpu"
+        elif requested_dev is not None:
+            dev = requested_dev
+        else:
+            dev = "cuda" if torch.cuda.is_available() else "cpu"
         base_checkpoint = conf_cfg.get("model", {}).get("base_checkpoint", self.base_checkpoint)
         base_revision = conf_cfg.get("model", {}).get("base_revision", self.base_revision)
         mlm_cfg = conf_cfg.get("mlm_training", {})
@@ -1030,6 +1145,12 @@ class ProductionConfirmatoryBackend(Phase4ExecutionBackend):
             comp_ece = float(comp_res["ece"])
 
         sens_res = compute_masking_sensitivity(fine_tuned_encoder, anchor_texts)
+        per_anchor_sens = sens_res.get("per_sample_sensitivities", [sens_res.get("mask_sensitivity", 0.0)] * len(anchors))
+        event_sensitivities = []
+        for ev_id in event_ids_order:
+            matching_indices = [i for i, a in enumerate(anchors) if a["event_id"] == ev_id]
+            ev_sens = float(np.mean(np.array(per_anchor_sens)[matching_indices]))
+            event_sensitivities.append(ev_sens)
 
         _, anchor_probs = fine_tuned_encoder.predict_task(anchor_texts)
         anchor_stance_scores = anchor_probs[:, 2] - anchor_probs[:, 0]
@@ -1039,9 +1160,20 @@ class ProductionConfirmatoryBackend(Phase4ExecutionBackend):
             ev_s = float(np.mean(anchor_stance_scores[matching_indices]))
             event_stance_scores.append(ev_s)
 
+        y_2y_list = []
+        y_spy_list = []
+        for e in events:
+            mo = e.get("market_outcomes")
+            if not mo or "treasury_2y_yield_change" not in mo or "spy_1d_return" not in mo:
+                raise PreregistrationLockError(
+                    f"Event '{e.get('event_id')}' missing required market outcome fields ('treasury_2y_yield_change', 'spy_1d_return'). Silent fallbacks prohibited."
+                )
+            y_2y_list.append(float(mo["treasury_2y_yield_change"]))
+            y_spy_list.append(float(mo["spy_1d_return"]))
+        y_2y = np.array(y_2y_list, dtype=np.float64)
+        y_spy = np.array(y_spy_list, dtype=np.float64)
+
         from scipy import stats as sp_stats
-        y_2y = np.array([float(e.get("treasury_2y_change_bps", 0.0)) for e in events])
-        y_spy = np.array([float(e.get("spy_return_bps", 0.0)) for e in events])
         ic_2y = float(sp_stats.spearmanr(event_stance_scores, y_2y)[0]) if np.std(event_stance_scores) > 1e-6 else 0.0
         ic_spy = float(sp_stats.spearmanr(event_stance_scores, y_spy)[0]) if np.std(event_stance_scores) > 1e-6 else 0.0
 
@@ -1093,10 +1225,13 @@ class ProductionConfirmatoryBackend(Phase4ExecutionBackend):
             },
             "treatment_block_manifest": stream["treatment_block_manifest"],
             "event_embeddings": event_embeddings,
+            "event_stance_scores": event_stance_scores,
+            "event_sensitivities": event_sensitivities,
             "competence_macro_f1": comp_macro_f1,
             "competence_mcc": comp_mcc,
             "competence_brier": comp_brier,
             "competence_ece": comp_ece,
+            "competence_provenance": "NOT_EVALUATED_NO_EVAL_SPLIT" if eval_samples is None else "EVALUATED_TDW",
             "temporal_robustness": "NOT_EVALUATED",
             "behavioral_sensitivity": sens_res,
             "economic_ic_2y": ic_2y,
@@ -1133,6 +1268,8 @@ def execute_phase4b_confirmatory(
     )
     from tradingagents.temporal_leakage.metrics import (
         evaluate_representational_leakage_grouped,
+        evaluate_behavioral_leakage_event_level,
+        evaluate_economic_effect_event_level,
         grouped_temporal_split,
     )
     from scipy import stats as sp_stats
@@ -1150,15 +1287,21 @@ def execute_phase4b_confirmatory(
         enforce_code_freeze=False,
     )
 
-    locked_commit = lock_meta.get("code_commit") or lock_meta.get("scientific_code_commit")
+    locked_commit = lock_meta.get("scientific_code_commit") or lock_meta.get("code_commit")
     locked_tree = lock_meta.get("source_tree_hash")
+    proto_ver = lock_meta.get("protocol_version", "1.2.2")
+
+    if locked_commit is None or locked_tree is None:
+        raise PreregistrationLockError(
+            "Protocol lock metadata is missing scientific_code_commit or source_tree_hash bindings. Cannot authorize Phase 4B."
+        )
 
     # 2. Verify human authorization
     auth_p = Path(authorization_path) if authorization_path else root / "configs" / "phase4_execution_authorization.json"
     lock_file_sha = compute_file_sha256(root / "configs" / "phase4_protocol_lock.json", normalize_newlines=True)
     auth_meta = verify_phase4b_authorization(
         authorization_path=auth_p,
-        protocol_version=lock_meta.get("protocol_version", "1.2.1"),
+        protocol_version=proto_ver,
         protocol_lock_sha256=lock_file_sha,
         locked_git_commit=locked_commit,
         locked_source_tree_hash=locked_tree,
@@ -1175,6 +1318,10 @@ def execute_phase4b_confirmatory(
     # 4. Load configuration and datasets
     with open(cfg_p, "r", encoding="utf-8") as f:
         conf_cfg = yaml.safe_load(f)
+    with open(prereg_p, "r", encoding="utf-8") as f:
+        prereg_cfg = yaml.safe_load(f)
+
+    contract_meta = resolve_phase4_runtime_contract(conf_cfg, prereg_cfg)
 
     # 5. Resolve backend (Default: ProductionConfirmatoryBackend)
     if backend is None:
@@ -1215,21 +1362,44 @@ def execute_phase4b_confirmatory(
     if iso_meta["document_overlap_count"] > 0:
         raise PreregistrationLockError(f"Document overlap detected: {iso_meta['document_overlap_ids']}")
 
-    # 7. Branch execution
+    # 7. Extract and validate market outcomes from events
+    y_2y_list = []
+    y_spy_list = []
+    for e in events:
+        mo = e.get("market_outcomes")
+        if not mo or "treasury_2y_yield_change" not in mo or "spy_1d_return" not in mo:
+            raise PreregistrationLockError(
+                f"Event '{e.get('event_id')}' missing required market outcome fields ('treasury_2y_yield_change', 'spy_1d_return'). Silent fallbacks prohibited."
+            )
+        y_2y_list.append(float(mo["treasury_2y_yield_change"]))
+        y_spy_list.append(float(mo["spy_1d_return"]))
+    y_2y = np.array(y_2y_list, dtype=np.float64)
+    y_spy = np.array(y_spy_list, dtype=np.float64)
+
+    # 8. Branch execution
     doses = conf_cfg.get("dose_ladder", [0.0, 0.25, 0.5, 0.75, 1.0])
     seeds = conf_cfg.get("seeds", [13, 42, 87, 123, 2024])
 
     branch_results: Dict[str, Any] = {}
-    clean_preds_by_seed: Dict[int, np.ndarray] = {}
 
     y_true_targets = np.array([float(e.get("future_rate_change", 0.0)) for e in events])
     event_ids = [e["event_id"] for e in events]
     event_times = [e["event_time"] for e in events]
 
+    eval_cfg = conf_cfg.get("downstream_evaluation", {})
+    probe_alpha = float(eval_cfg.get("probe_alpha", 1.0))
+    eval_seed = int(eval_cfg.get("random_seed", 42))
+    cv_folds = int(eval_cfg.get("cv_folds", 4))
+    paired_permutations = int(eval_cfg.get("paired_permutations", 2000))
+    bootstrap_draws = int(eval_cfg.get("bootstrap_draws", 1000))
+    aggregation_rule = eval_cfg.get("aggregation_rule", "mean")
+
+    y_binary = np.array([1 if abs(float(e.get("future_rate_change", 0.0))) > 1e-6 else 0 for e in events], dtype=int)
+
     for seed in seeds:
         seed_branch_data: Dict[float, Dict[str, Any]] = {}
         for dose in doses:
-            branch_key = f"seed_{seed}_dose_{int(dose * 100):03d}"
+            branch_key = f"seed_{seed}_dose_{int(round(dose * 100)):03d}"
             b_res = exec_backend.execute_branch(
                 seed=seed,
                 dose=dose,
@@ -1263,74 +1433,139 @@ def execute_phase4b_confirmatory(
                 f"Causal symmetry violation: token_budget mismatch in seed {seed} (dose {d})"
             )
 
-        # Grouped temporal CV on clean embeddings (dose=0.0)
         clean_embeddings = seed_branch_data[0.0]["event_embeddings"]
-        splits = grouped_temporal_split(event_ids, event_times, n_splits=4)
+        clean_stance_scores = seed_branch_data[0.0].get("event_stance_scores", [0.0] * len(events))
+        clean_sensitivities = seed_branch_data[0.0].get("event_sensitivities", [0.0] * len(events))
 
-        clean_preds = np.zeros(len(events))
-        oos_mask = np.zeros(len(events), dtype=bool)
-
-        for train_idx, test_idx in splits:
-            oos_mask[test_idx] = True
-            X_tr, y_tr = clean_embeddings[train_idx], y_true_targets[train_idx]
-            X_te = clean_embeddings[test_idx]
-            w = np.linalg.solve(X_tr.T @ X_tr + 1.0 * np.eye(X_tr.shape[1]), X_tr.T @ y_tr)
-            clean_preds[test_idx] = X_te @ w
-
-        clean_preds_by_seed[seed] = clean_preds
-
-        # Evaluate each leaky dose (dose > 0.0)
-        oos_indices = np.where(oos_mask)[0]
-        assert len(oos_indices) == 32, f"Expected 32 OOS events, got {len(oos_indices)}"
-
-        perm_seed = conf_cfg.get("downstream_evaluation", {}).get("random_seed", 42)
+        # Evaluate each dose branch using centralized metrics
         for dose in doses:
+            branch_key = f"seed_{seed}_dose_{int(round(dose * 100)):03d}"
+            b_res = seed_branch_data[dose]
+
+            # Provenance injection
+            b_res["scientific_code_commit"] = locked_commit
+            b_res["execution_repository_head"] = freeze_meta.get("execution_repository_head")
+            b_res["source_tree_hash"] = locked_tree
+            b_res["protocol_lock_sha256"] = lock_file_sha
+            b_res["protocol_version"] = proto_ver
+
             if dose == 0.0:
+                b_res["l_repr"] = 0.0
+                b_res["event_contrast_mean"] = 0.0
+                b_res["permutation_p_value"] = 1.0
+                b_res["delta_spearman"] = 0.0
+                b_res["l_behavior"] = 0.0
+                b_res["delta_ic_2y"] = 0.0
+                b_res["delta_ic_spy"] = 0.0
+                b_res["n_oos_events"] = 32
+                b_res["target_type"] = "continuous"
+                b_res["model_type"] = "ridge_regression"
                 continue
-            branch_key = f"seed_{seed}_dose_{int(dose * 100):03d}"
-            leak_embeddings = seed_branch_data[dose]["event_embeddings"]
-            leak_preds = np.zeros(len(events))
 
-            for train_idx, test_idx in splits:
-                X_tr, y_tr = leak_embeddings[train_idx], y_true_targets[train_idx]
-                X_te = leak_embeddings[test_idx]
-                w = np.linalg.solve(X_tr.T @ X_tr + 1.0 * np.eye(X_tr.shape[1]), X_tr.T @ y_tr)
-                leak_preds[test_idx] = X_te @ w
+            leak_embeddings = b_res["event_embeddings"]
+            leak_stance_scores = b_res.get("event_stance_scores", [0.0] * len(events))
+            leak_sensitivities = b_res.get("event_sensitivities", [0.0] * len(events))
 
-            clean_errors = np.abs(y_true_targets[oos_indices] - clean_preds[oos_indices])
-            leak_errors = np.abs(y_true_targets[oos_indices] - leak_preds[oos_indices])
-            event_contrasts = clean_errors - leak_errors
-            mean_improvement = float(np.mean(event_contrasts))
+            # 1. Continuous Primary: evaluate_representational_leakage_grouped
+            res_repr = evaluate_representational_leakage_grouped(
+                h_leak=leak_embeddings,
+                h_clean=clean_embeddings,
+                y_future=y_true_targets,
+                event_ids=event_ids,
+                event_times=event_times,
+                n_splits=cv_folds,
+                n_permutations=paired_permutations,
+                random_seed=eval_seed,
+                aggregation_rule=aggregation_rule,
+                target_type="continuous",
+                loss_metric="mae",
+                probe_alpha=probe_alpha,
+            )
 
-            # Non-parametric sign-flip permutation test across 32 events
-            sign_rng = np.random.RandomState(perm_seed)
-            perm_means = []
-            for _ in range(2000):
-                flips = sign_rng.choice([-1.0, 1.0], size=len(event_contrasts))
-                perm_means.append(np.mean(event_contrasts * flips))
-            p_val = float(np.mean(np.array(perm_means) >= mean_improvement))
+            b_res["l_repr"] = res_repr["l_repr"]
+            b_res["event_contrast_mean"] = res_repr["observed_statistic"]
+            b_res["permutation_p_value"] = res_repr["p_value"]
+            b_res["is_statistically_significant"] = res_repr["is_statistically_significant"]
+            b_res["delta_spearman"] = res_repr["delta_spearman"]
+            b_res["spearman_leak"] = res_repr["spearman_leak"]
+            b_res["spearman_clean"] = res_repr["spearman_clean"]
+            b_res["n_oos_events"] = res_repr["n_oos_events"]
+            b_res["primary_inferential_n"] = res_repr["primary_inferential_n"]
+            b_res["target_type"] = "continuous"
+            b_res["model_type"] = "ridge_regression"
+            b_res["event_deltas"] = res_repr["event_deltas"]
+            b_res["oos_event_table"] = res_repr["oos_event_table"]
 
-            clean_corr = float(sp_stats.spearmanr(clean_preds[oos_indices], y_true_targets[oos_indices])[0])
-            leak_corr = float(sp_stats.spearmanr(leak_preds[oos_indices], y_true_targets[oos_indices])[0])
-            delta_spearman = float(leak_corr - clean_corr)
+            # 2. Binary Co-Primary: evaluate_representational_leakage_grouped
+            res_binary = evaluate_representational_leakage_grouped(
+                h_leak=leak_embeddings,
+                h_clean=clean_embeddings,
+                y_future=y_binary,
+                event_ids=event_ids,
+                event_times=event_times,
+                n_splits=cv_folds,
+                n_permutations=paired_permutations,
+                random_seed=eval_seed,
+                aggregation_rule=aggregation_rule,
+                target_type="binary",
+                probe_alpha=probe_alpha,
+            )
 
-            branch_results[branch_key]["event_contrast_mean"] = mean_improvement
-            branch_results[branch_key]["permutation_p_value"] = p_val
-            branch_results[branch_key]["delta_spearman"] = delta_spearman
-            branch_results[branch_key]["n_oos_events"] = len(oos_indices)
-            branch_results[branch_key]["target_type"] = "continuous"
+            b_res["binary_co_primary"] = {
+                "target": "next_scheduled_change_vs_hold",
+                "target_type": "binary",
+                "model_type": "ridge_classifier",
+                "observed_statistic": res_binary["observed_statistic"],
+                "p_value": res_binary["p_value"],
+                "is_statistically_significant": res_binary["is_statistically_significant"],
+                "delta_macro_f1": res_binary["delta_macro_f1"],
+                "macro_f1_leak": res_binary["macro_f1_leak"],
+                "macro_f1_clean": res_binary["macro_f1_clean"],
+                "n_oos_events": res_binary["n_oos_events"],
+            }
 
-            # Behavioral leakage differential
-            s_leak = branch_results[branch_key].get("behavioral_sensitivity", {}).get("mask_sensitivity") if isinstance(branch_results[branch_key].get("behavioral_sensitivity"), dict) else None
-            s_clean = d0_res.get("behavioral_sensitivity", {}).get("mask_sensitivity") if isinstance(d0_res.get("behavioral_sensitivity"), dict) else None
-            if s_leak is not None and s_clean is not None:
-                branch_results[branch_key]["l_behavior"] = float(s_leak - s_clean)
+            # 3. Behavioral Leakage Event-Level
+            res_behav = evaluate_behavioral_leakage_event_level(
+                sensitivities_leak=leak_sensitivities,
+                sensitivities_clean=clean_sensitivities,
+                event_ids=event_ids,
+                aggregation_rule=aggregation_rule,
+            )
+            b_res["l_behavior"] = res_behav["l_behavior_event"]
+            b_res["l_behavior_event"] = res_behav["l_behavior_event"]
+            b_res["mask_sensitivity_leak_event"] = res_behav["mask_sensitivity_leak_event"]
+            b_res["mask_sensitivity_clean_event"] = res_behav["mask_sensitivity_clean_event"]
+            b_res["fdr_correction"] = "NOT_EVALUATED_PROTOCOL_UNDERSPECIFIED"
 
-            # Economic effect differential
-            ic_leak = branch_results[branch_key].get("economic_ic_2y")
-            ic_clean = d0_res.get("economic_ic_2y")
-            if ic_leak is not None and ic_clean is not None:
-                branch_results[branch_key]["delta_ic_2y"] = float(ic_leak - ic_clean)
+            # 4. Economic Effect Event-Level
+            res_econ_2y = evaluate_economic_effect_event_level(
+                stance_scores_leak=leak_stance_scores,
+                stance_scores_clean=clean_stance_scores,
+                market_returns=y_2y,
+                event_ids=event_ids,
+                aggregation_rule=aggregation_rule,
+                n_bootstrap=bootstrap_draws,
+                random_seed=eval_seed,
+            )
+            res_econ_spy = evaluate_economic_effect_event_level(
+                stance_scores_leak=leak_stance_scores,
+                stance_scores_clean=clean_stance_scores,
+                market_returns=y_spy,
+                event_ids=event_ids,
+                aggregation_rule=aggregation_rule,
+                n_bootstrap=bootstrap_draws,
+                random_seed=eval_seed,
+            )
+            b_res["economic_2y"] = res_econ_2y
+            b_res["economic_spy"] = res_econ_spy
+            b_res["economic_ic_2y"] = res_econ_2y["ic_leak"]
+            b_res["delta_ic_2y"] = res_econ_2y["delta_ic"]
+            b_res["delta_ic_2y_ci_95"] = res_econ_2y["delta_ic_ci_95"]
+            b_res["economic_p_value_2y"] = res_econ_2y["p_value"]
+            b_res["economic_ic_spy"] = res_econ_spy["ic_leak"]
+            b_res["delta_ic_spy"] = res_econ_spy["delta_ic"]
+            b_res["delta_ic_spy_ci_95"] = res_econ_spy["delta_ic_ci_95"]
+            b_res["economic_p_value_spy"] = res_econ_spy["p_value"]
 
     final_res = {
         "status": "PHASE4B_ORCHESTRATION_COMPLETED",
@@ -1349,7 +1584,7 @@ def execute_phase4b_confirmatory(
 
     if output_dir:
         writer = Phase4ArtifactWriter(output_dir)
-        writer.write_all(final_res, env_info=freeze_meta, lock_info=lock_meta)
+        writer.write_all(final_res, env_info=freeze_meta, lock_info=lock_meta, allow_mock=is_mock_orchestration)
 
     return final_res
 
@@ -1377,7 +1612,7 @@ def run_phase4_mock_orchestration(
         lock_sha = compute_file_sha256(lock_file, normalize_newlines=True)
 
         mock_auth_data = {
-            "protocol_version": lock_manifest.get("protocol_version", "1.2.1"),
+            "protocol_version": lock_manifest.get("protocol_version", "1.2.2"),
             "human_authorized": True,
             "authorizer": "MOCK_DRY_RUN_TEST",
             "authorized_at": "2026-09-20T14:30:00Z",
