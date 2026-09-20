@@ -146,9 +146,12 @@ def recompute_market_outcomes(
 
     return {
         "spy_1d_return": spy_1d_ret,
+        "spy_next_close_return_from_event_close": spy_1d_ret,
         "spy_5d_return": spy_5d_ret,
         "treasury_2y_change": t2y_change,
         "treasury_2y_yield_change": t2y_yield_change,
+        "treasury_2y_next_day_yield_change_bps": round(t2y_yield_change * 100.0, 2) if t2y_yield_change is not None else None,
         "market_resolution": "daily_post_event",
         "market_source": "raw_market_tables_verified",
+        "market_timestamp_convention": "daily_close_t_to_close_t_plus_1_not_intraday",
     }

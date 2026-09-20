@@ -31,4 +31,5 @@ jobs:
 
       - name: Run research and unit test suite
         run: |
+          pytest -v tests/test_phase4a_gate.py
           pytest -q tests/

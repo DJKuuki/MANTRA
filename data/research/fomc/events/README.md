@@ -7,7 +7,7 @@ This directory contains the machine-verifiable, point-in-time (PiT) verified off
 - **Source**: Federal Reserve Board of Governors Official Press Releases (Monetary Policy Statements).
 - **Temporal Window**: January 28, 2015 through December 11, 2019 (5 full calendar years).
 - **Independent Events**: Exactly 40 scheduled FOMC meetings ($N = 40$).
-- **Total Anchors**: 147 substantive paragraph anchors linked to the 40 events.
+- **Total Anchors**: 181 substantive paragraph anchors linked to the 40 events.
 - **Document Type Homogeneity**: Strictly scheduled FOMC statements only (no speeches, testimony, minutes, or press conference transcripts mixed into primary events).
 - **Publication Timestamp Verification**:
   - Scheduled release time: 14:00 America/New_York (converted to UTC ISO timestamp).

@@ -11,6 +11,7 @@
 *.txt text eol=lf
 *.csv text eol=lf
 *.sh text eol=lf
+*.html text eol=lf
 
 # Explicit binary files
 *.bin binary

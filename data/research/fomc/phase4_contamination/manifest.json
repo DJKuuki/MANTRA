@@ -1,0 +1,31 @@
+{
+  "dataset_name": "phase4_fomc_contamination_corpus",
+  "version": "1.0.0",
+  "generated_at": "2026-09-20T12:50:00Z",
+  "document_count": 50,
+  "dataset_sha256": "54b3e84e8ef958e78032815a6cc76e1ca68cb0428afe71b390a583ee60e25c58",
+  "total_words": 237273,
+  "document_type_distribution": {
+    "scheduled_statement": 23,
+    "unscheduled_statement": 2,
+    "policy_strategy_statement": 1,
+    "meeting_minutes": 24
+  },
+  "primary_document_types": [
+    "scheduled_statement"
+  ],
+  "allowed_document_types": [
+    "meeting_minutes",
+    "policy_strategy_statement",
+    "scheduled_statement",
+    "unscheduled_statement"
+  ],
+  "anchor_max_time": "2019-12-11T19:00:00Z",
+  "contamination_min_time": "2020-01-29T19:00:00Z",
+  "contamination_max_time": "2023-01-04T19:00:00Z",
+  "strict_future_separation": true,
+  "temporal_gap_days": 48,
+  "temporal_gap_seconds": 4147200,
+  "document_overlap_count": 0,
+  "canonical_text_overlap_count": 0
+}

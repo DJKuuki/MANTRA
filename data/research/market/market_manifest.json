@@ -1,31 +1,53 @@
 {
   "dataset_name": "fomc_phase4_market_data",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "created_at": "2026-09-20T01:21:43.721961+00:00",
+  "updated_at": "2026-09-20T12:00:00.000000+00:00",
   "temporal_coverage": {
     "start_date": "2014-12-01",
     "end_date": "2020-01-31"
   },
+  "timezone": "America/New_York",
+  "market_timestamp_convention": "daily_close_t_to_close_t_plus_1_not_intraday",
+  "provenance_resolution": "daily_resolution_post_event_response",
+  "intraday_data_status": "NOT_EVALUATED",
   "files": {
     "spy_daily_raw.csv": {
+      "symbol": "SPY",
+      "series_id": "SPY",
       "source": "Yahoo Finance (SPY)",
+      "source_type": "yahoo_finance_eod",
+      "source_url": "https://finance.yahoo.com/quote/SPY",
+      "retrieval_date": "2026-09-20",
       "sha256": "11f7d6f3bfb171b70f0de96e0f74d5d8954c139050e61646d140a7052ece143e",
       "rows": 1300,
-      "description": "Daily OHLCV bars for SPDR S&P 500 ETF Trust"
+      "description": "Daily OHLCV bars for SPDR S&P 500 ETF Trust (America/New_York 16:00 Close)",
+      "observation_convention": "Close_t is 16:00 ET close on event date t. Close_{t+1} is 16:00 ET close on next trading day."
     },
     "treasury_2y_raw.csv": {
+      "symbol": "ZT=F",
+      "series_id": "DGS2",
       "source": "Yahoo Finance (ZT=F, 2-Year T-Note Futures) and Federal Reserve Bank of St. Louis FRED (DGS2, 2-Year Treasury Constant Maturity Yield)",
+      "source_type": "fred_and_cme_daily",
+      "source_url": "https://fred.stlouisfed.org/series/DGS2",
+      "retrieval_date": "2026-09-20",
       "sha256": "337d5863a73e91d7418a5fa04c58482c206aacf492de55ae12b47b823a9dfca8",
       "rows": 1350,
-      "description": "Daily 2-Year Treasury Note Futures prices and FRED constant maturity yield"
+      "description": "Daily 2-Year Treasury Note Futures prices and FRED constant maturity yield (DGS2)",
+      "observation_convention": "DGS2_{t+1} - DGS2_t represents daily constant maturity yield difference; ZT_Close_{t+1} - ZT_Close_t is price points difference."
     }
   },
   "formulas": {
-    "spy_1d_return": "(Close_{t+1} - Close_t) / Close_t",
+    "spy_next_close_return_from_event_close": "(Close_{t+1} - Close_t) / Close_t (canonical name)",
+    "spy_1d_return": "Alias for spy_next_close_return_from_event_close",
     "spy_5d_return": "(Close_{t+5} - Close_t) / Close_t",
     "treasury_2y_change": "ZT_Close_{t+1} - ZT_Close_t (price points difference)",
-    "treasury_2y_yield_change": "DGS2_{t+1} - DGS2_t (yield percentage difference)"
+    "treasury_2y_yield_change": "DGS2_{t+1} - DGS2_t (yield percentage difference)",
+    "treasury_2y_next_day_yield_change_bps": "(DGS2_{t+1} - DGS2_t) * 100 (basis points)"
   },
-  "provenance_resolution": "daily_resolution_post_event_response",
-  "intraday_data_status": "NOT_EVALUATED"
+  "caveats": [
+    "NOT a full event-day reaction from pre-statement baseline",
+    "NOT an intraday monetary policy surprise (e.g. 14:00 to 14:30 window)",
+    "Measures return/yield change from event day market close (16:00 ET) to next trading day close"
+  ]
 }

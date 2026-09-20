@@ -1,0 +1,15 @@
+{
+  "dataset_name": "fomc_phase4_pre_cutoff_corpus",
+  "version": "1.0.0",
+  "created_at": "2026-09-20T12:00:00Z",
+  "dataset_sha256": "8ecc63f3475e18850dd758b4db5d64c7834a98d557139715b337820cd78e88b2",
+  "document_count": 64,
+  "total_words": 251649,
+  "approx_subword_tokens": 327143,
+  "document_type_distribution": {
+    "scheduled_statement": 40,
+    "meeting_minutes": 24
+  },
+  "temporal_min": "2015-01-28T19:00:00Z",
+  "temporal_max": "2020-01-01T19:00:00Z"
+}

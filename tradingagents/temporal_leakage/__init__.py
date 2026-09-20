@@ -70,6 +70,11 @@ from .phase4_confirmatory import (
     verify_preregistration_lock,
     run_phase4_confirmatory,
 )
+from .datasets.contamination import (
+    load_phase4_contamination_documents,
+    derive_contamination_temporal_range,
+    audit_anchor_contamination_isolation,
+)
 
 __all__ = [
     "TemporalModel",
@@ -128,4 +133,7 @@ __all__ = [
     "compute_file_sha256",
     "verify_preregistration_lock",
     "run_phase4_confirmatory",
+    "load_phase4_contamination_documents",
+    "derive_contamination_temporal_range",
+    "audit_anchor_contamination_isolation",
 ]

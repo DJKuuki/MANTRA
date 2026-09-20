@@ -654,26 +654,52 @@ def aggregate_event_representations(
 
 
 def evaluate_representational_leakage_grouped(
-    h_leak: np.ndarray,
-    h_clean: np.ndarray,
-    y_future: Sequence[Any],
-    event_ids: Sequence[str],
-    event_times: Sequence[str],
-    n_splits: int = 3,
-    n_permutations: int = 200,
+    h_leak: Optional[np.ndarray] = None,
+    h_clean: Optional[np.ndarray] = None,
+    y_future: Optional[Sequence[Any]] = None,
+    event_ids: Optional[Sequence[str]] = None,
+    event_times: Optional[Sequence[str]] = None,
+    n_splits: int = 4,
+    n_permutations: int = 2000,
     random_seed: int = 42,
     aggregation_rule: str = "mean",
+    target_type: str = "continuous",
+    loss_metric: str = "mae",
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     """Calculate Representational Leakage with Event as the Primary Statistical Unit.
 
-    Primary Method:
+    Confirmatory Invariants:
     1. Aggregates paragraph representations h to event representation:
        h_event = mean(h_paragraphs_in_event).
     2. Performs strictly expanding-window grouped temporal cross-validation:
-       Train_Events ∩ Test_Events = ∅.
-    3. Evaluates paired differences: Delta_k = FoldScore_leak(k) - FoldScore_clean(k).
-    4. Evaluates paired event-level sign-flip permutation test.
+       Train_Events ∩ Test_Events = ∅, max(Train_Time) < min(Test_Time).
+    3. Gathers out-of-sample (OOS) predictions for each evaluated test event:
+       one row per evaluated event.
+    4. Primary Confirmatory Statistic:
+       d_e = Loss_Clean(e) - Loss_Leak(e) across each evaluated OOS event e.
+       For continuous regression: Loss(e) = |y_e - yhat_e| (Absolute Error).
+       If d_e > 0, the contaminated model predicts future policy with lower error.
+    5. Primary Inferential Test:
+       Paired sign-flip permutation test across event-level differences {d_e}_{e=1}^{N_OOS}.
+       The permutation unit is strictly EVENT, with sample size N = N_OOS events.
+    6. Interpretable Effect Metric:
+       Delta Spearman correlation between yhat and y_true across all OOS events.
     """
+    if h_leak is None:
+        h_leak = kwargs.get("representations_leak")
+    if h_clean is None:
+        h_clean = kwargs.get("representations_clean")
+    if y_future is None:
+        y_future = kwargs.get("y")
+    if event_ids is None:
+        event_ids = kwargs.get("event_ids")
+    if event_times is None:
+        event_times = kwargs.get("event_times")
+
+    if h_leak is None or h_clean is None or y_future is None or event_ids is None or event_times is None:
+        raise ValueError("Missing required arguments for evaluate_representational_leakage_grouped")
+
     # 1. Aggregate to Event Level
     h_leak_ev, unique_events = aggregate_event_representations(h_leak, event_ids, rule=aggregation_rule)
     h_clean_ev, _ = aggregate_event_representations(h_clean, event_ids, rule=aggregation_rule)
@@ -691,18 +717,22 @@ def evaluate_representational_leakage_grouped(
     n_events = len(unique_events)
     unique_y = np.unique(y_ev)
 
+    is_regression = target_type in ("continuous", "regression", "rate_change")
+
     if n_events < 4 or len(unique_y) < 2:
         return {
-            "probe_score_leak": float(np.nan),
-            "probe_score_clean": float(np.nan),
+            "primary_inferential_statistic": "paired_event_absolute_error_improvement",
+            "inferential_metric": "mean_paired_loss_improvement",
+            "observed_statistic": 0.0,
+            "mean_paired_loss_improvement": 0.0,
             "l_repr": 0.0,
-            "statistical_unit": "event",
-            "n_events": n_events,
-            "fold_scores_leak": [],
-            "fold_scores_clean": [],
-            "paired_fold_deltas": [],
             "p_value": 1.0,
             "is_statistically_significant": False,
+            "statistical_unit": "event",
+            "permutation_unit": "event",
+            "n_total_events": n_events,
+            "n_oos_events": 0,
+            "target_type": target_type,
             "insufficient_samples": True,
         }
 
@@ -710,89 +740,213 @@ def evaluate_representational_leakage_grouped(
     folds = grouped_temporal_split(unique_events, times_ev, n_splits=n_splits)
     if not folds:
         return {
-            "probe_score_leak": float(np.nan),
-            "probe_score_clean": float(np.nan),
+            "primary_inferential_statistic": "paired_event_absolute_error_improvement",
+            "inferential_metric": "mean_paired_loss_improvement",
+            "observed_statistic": 0.0,
+            "mean_paired_loss_improvement": 0.0,
             "l_repr": 0.0,
+            "p_value": 1.0,
+            "is_statistically_significant": False,
             "statistical_unit": "event",
-            "n_events": n_events,
+            "permutation_unit": "event",
+            "n_total_events": n_events,
+            "n_oos_events": 0,
+            "target_type": target_type,
             "insufficient_samples": True,
         }
 
-    is_classification = (y_ev.dtype.kind in "iub") or len(unique_y) <= 5
+    # 3. Gather Out-of-Sample Predictions per Event
+    oos_records: List[Dict[str, Any]] = []
 
-    fold_scores_l = []
-    fold_scores_c = []
-    paired_deltas = []
-
-    for train_idx, test_idx in folds:
+    for fold_idx, (train_idx, test_idx) in enumerate(folds):
         y_train, y_test = y_ev[train_idx], y_ev[test_idx]
         if len(np.unique(y_train)) < 2 or len(np.unique(y_test)) < 1:
             continue
 
-        if is_classification:
-            clf_l = RidgeClassifier(alpha=1.0, random_state=random_seed)
-            clf_l.fit(h_leak_ev[train_idx], y_train)
-            score_l = float(f1_score(y_test, clf_l.predict(h_leak_ev[test_idx]), average="macro", zero_division=0))
-
-            clf_c = RidgeClassifier(alpha=1.0, random_state=random_seed)
-            clf_c.fit(h_clean_ev[train_idx], y_train)
-            score_c = float(f1_score(y_test, clf_c.predict(h_clean_ev[test_idx]), average="macro", zero_division=0))
-        else:
+        if is_regression:
             reg_l = Ridge(alpha=1.0, random_state=random_seed)
             reg_l.fit(h_leak_ev[train_idx], y_train)
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=stats.ConstantInputWarning)
-                corr_l, _ = stats.spearmanr(reg_l.predict(h_leak_ev[test_idx]), y_test)
-            score_l = float(corr_l if not np.isnan(corr_l) else 0.0)
+            pred_l = reg_l.predict(h_leak_ev[test_idx])
 
             reg_c = Ridge(alpha=1.0, random_state=random_seed)
             reg_c.fit(h_clean_ev[train_idx], y_train)
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=stats.ConstantInputWarning)
-                corr_c, _ = stats.spearmanr(reg_c.predict(h_clean_ev[test_idx]), y_test)
-            score_c = float(corr_c if not np.isnan(corr_c) else 0.0)
+            pred_c = reg_c.predict(h_clean_ev[test_idx])
 
-        fold_scores_l.append(score_l)
-        fold_scores_c.append(score_c)
-        paired_deltas.append(score_l - score_c)
+            for local_idx, ev_idx in enumerate(test_idx):
+                y_true_val = float(y_test[local_idx])
+                yhat_l = float(pred_l[local_idx])
+                yhat_c = float(pred_c[local_idx])
 
-    if not paired_deltas:
+                if loss_metric == "squared":
+                    loss_c = (y_true_val - yhat_c) ** 2
+                    loss_l = (y_true_val - yhat_l) ** 2
+                else:  # default MAE
+                    loss_c = abs(y_true_val - yhat_c)
+                    loss_l = abs(y_true_val - yhat_l)
+
+                d_e = loss_c - loss_l  # positive means leak model has lower error
+
+                oos_records.append({
+                    "event_id": unique_events[ev_idx],
+                    "event_time": times_ev[ev_idx],
+                    "fold": fold_idx,
+                    "y_true": y_true_val,
+                    "yhat_clean": yhat_c,
+                    "yhat_leak": yhat_l,
+                    "loss_clean": loss_c,
+                    "loss_leak": loss_l,
+                    "paired_delta": d_e,
+                })
+        else:
+            # Classification
+            clf_l = RidgeClassifier(alpha=1.0, random_state=random_seed)
+            clf_l.fit(h_leak_ev[train_idx], y_train)
+            pred_l = clf_l.predict(h_leak_ev[test_idx])
+
+            clf_c = RidgeClassifier(alpha=1.0, random_state=random_seed)
+            clf_c.fit(h_clean_ev[train_idx], y_train)
+            pred_c = clf_c.predict(h_clean_ev[test_idx])
+
+            for local_idx, ev_idx in enumerate(test_idx):
+                y_true_val = y_test[local_idx]
+                yhat_l = pred_l[local_idx]
+                yhat_c = pred_c[local_idx]
+
+                loss_c = 1.0 if yhat_c != y_true_val else 0.0
+                loss_l = 1.0 if yhat_l != y_true_val else 0.0
+                d_e = loss_c - loss_l  # positive means clean made error and leak was correct
+
+                oos_records.append({
+                    "event_id": unique_events[ev_idx],
+                    "event_time": times_ev[ev_idx],
+                    "fold": fold_idx,
+                    "y_true": y_true_val,
+                    "yhat_clean": yhat_c,
+                    "yhat_leak": yhat_l,
+                    "loss_clean": loss_c,
+                    "loss_leak": loss_l,
+                    "paired_delta": d_e,
+                })
+
+    if not oos_records:
         return {
-            "probe_score_leak": float(np.nan),
-            "probe_score_clean": float(np.nan),
+            "primary_inferential_statistic": "paired_event_absolute_error_improvement",
+            "inferential_metric": "mean_paired_loss_improvement",
+            "observed_statistic": 0.0,
+            "mean_paired_loss_improvement": 0.0,
             "l_repr": 0.0,
+            "p_value": 1.0,
+            "is_statistically_significant": False,
             "statistical_unit": "event",
-            "n_events": n_events,
+            "permutation_unit": "event",
+            "n_total_events": n_events,
+            "n_oos_events": 0,
+            "target_type": target_type,
             "insufficient_samples": True,
         }
 
-    mean_leak = float(np.mean(fold_scores_l))
-    mean_clean = float(np.mean(fold_scores_c))
-    l_repr = float(np.mean(paired_deltas))
+    # 4. Event-Level Primary Inferential Contrast
+    # Deduplicate in case any event appeared in multiple test splits (by definition disjoint)
+    oos_df = pd.DataFrame(oos_records).drop_duplicates(subset=["event_id"])
+    n_oos = len(oos_df)
+    event_deltas = oos_df["paired_delta"].to_numpy()
+    obs_mean_d = float(np.mean(event_deltas))
 
-    # Event-level Paired Sign-Flip Permutation Test
+    # Event-Level Paired Sign-Flip Permutation Test over OOS Events
     rng = np.random.RandomState(random_seed)
-    deltas_arr = np.array(paired_deltas)
     perm_means = []
     for _ in range(n_permutations):
-        signs = rng.choice([-1.0, 1.0], size=len(deltas_arr))
-        perm_means.append(float(np.mean(deltas_arr * signs)))
+        signs = rng.choice([-1.0, 1.0], size=n_oos)
+        perm_means.append(float(np.mean(event_deltas * signs)))
 
-    p_val = float(np.mean(np.array(perm_means) >= l_repr))
+    p_val = float(np.mean(np.array(perm_means) >= obs_mean_d))
+
+    # 5. Interpretable Effect Metrics Across All OOS Events
+    y_all = oos_df["y_true"].to_numpy()
+    yhat_l_all = oos_df["yhat_leak"].to_numpy()
+    yhat_c_all = oos_df["yhat_clean"].to_numpy()
+
+    if is_regression:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=stats.ConstantInputWarning)
+            corr_l, _ = stats.spearmanr(yhat_l_all, y_all)
+            corr_c, _ = stats.spearmanr(yhat_c_all, y_all)
+        spearman_l = float(corr_l if not np.isnan(corr_l) else 0.0)
+        spearman_c = float(corr_c if not np.isnan(corr_c) else 0.0)
+        delta_spearman = spearman_l - spearman_c
+        macro_f1_l = None
+        macro_f1_c = None
+        delta_f1 = None
+    else:
+        spearman_l = None
+        spearman_c = None
+        delta_spearman = None
+        macro_f1_l = float(f1_score(y_all, yhat_l_all, average="macro", zero_division=0))
+        macro_f1_c = float(f1_score(y_all, yhat_c_all, average="macro", zero_division=0))
+        delta_f1 = macro_f1_l - macro_f1_c
 
     return {
-        "probe_score_leak": mean_leak,
-        "probe_score_clean": mean_clean,
-        "l_repr": l_repr,
-        "statistical_unit": "event",
-        "n_events": n_events,
-        "aggregation_rule": aggregation_rule,
-        "fold_scores_leak": fold_scores_l,
-        "fold_scores_clean": fold_scores_c,
-        "paired_fold_deltas": paired_deltas,
+        "primary_inferential_statistic": "paired_event_absolute_error_improvement" if is_regression else "paired_event_01_accuracy_improvement",
+        "inferential_statistic": "paired_event_absolute_error_improvement" if is_regression else "paired_event_01_accuracy_improvement",
+        "model_type": "ridge_regression" if is_regression else "ridge_classifier",
+        "inferential_metric": "mean_paired_loss_improvement",
+        "observed_statistic": obs_mean_d,
+        "mean_paired_loss_improvement": obs_mean_d,
+        "l_repr": obs_mean_d,
         "p_value": p_val,
-        "is_statistically_significant": bool(p_val < 0.05 and l_repr > 0.0),
+        "is_statistically_significant": bool(p_val < 0.05 and obs_mean_d > 0.0),
+        "statistical_unit": "event",
+        "permutation_unit": "event",
+        "n_total_events": n_events,
+        "n_oos_events": n_oos,
+        "primary_inferential_n": n_oos,
+        "target_type": target_type,
+        "effect_metric": "delta_spearman" if is_regression else "delta_macro_f1",
+        "delta_spearman": delta_spearman,
+        "spearman_leak": spearman_l,
+        "spearman_clean": spearman_c,
+        "macro_f1_leak": macro_f1_l,
+        "macro_f1_clean": macro_f1_c,
+        "delta_macro_f1": delta_f1,
+        "event_deltas": event_deltas.tolist(),
+        "oos_event_table": oos_records,
+        "n_splits": len(folds),
         "insufficient_samples": False,
+    }
+
+
+def simulate_phase4_primary_power(
+    n_oos_events: int = 32,
+    effect_size_d: float = 0.50,
+    alpha: float = 0.05,
+    n_simulations: int = 1000,
+    n_permutations: int = 1000,
+    random_seed: int = 42,
+) -> Dict[str, Any]:
+    """Simulate empirical statistical power of event-level paired sign-flip permutation test.
+
+    Simulates event-level differences d_e ~ N(d * sigma, sigma^2), runs exact sign-flip
+    permutation on each realization, and calculates empirical rejection frequency.
+    """
+    rng = np.random.RandomState(random_seed)
+    rejections = 0
+    for _ in range(n_simulations):
+        diffs = rng.normal(loc=effect_size_d, scale=1.0, size=n_oos_events)
+        obs_mean = float(np.mean(diffs))
+        perm_means = [float(np.mean(diffs * rng.choice([-1.0, 1.0], size=n_oos_events))) for _ in range(n_permutations)]
+        p_val = float(np.mean(np.array(perm_means) >= obs_mean))
+        if p_val < alpha and obs_mean > 0:
+            rejections += 1
+
+    achieved_power = float(rejections) / float(n_simulations)
+    return {
+        "n_oos_events": n_oos_events,
+        "effect_size_cohen_d": effect_size_d,
+        "alpha": alpha,
+        "n_simulations": n_simulations,
+        "n_permutations": n_permutations,
+        "achieved_power": achieved_power,
+        "power_percent": f"{achieved_power * 100:.1f}%",
     }
 
 
