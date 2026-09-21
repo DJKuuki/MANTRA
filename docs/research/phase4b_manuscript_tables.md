@@ -24,12 +24,12 @@ The following table reports the aggregate empirical outcomes across the five exp
 | **1.00** | +0.00291 | +0.00090 | 0.00455 | 2 / 5 (40.0%) | +0.0649 | +0.0058 | +0.00000 | -0.0186 | -0.0149 |
 
 ### Table 1 Explanatory Notes:
-1. **$L_{\mathrm{repr}}$ (Continuous Representational Leakage)**: Primary endpoint measuring the paired out-of-sample absolute error reduction $d_e = |y_e - \hat{y}_{\mathrm{clean},e}| - |y_e - \hat{y}_{\mathrm{leak},e}|$ across $N_{\mathrm{OOS}} = 32$ independent FOMC events under 4-fold grouped temporal CV. Positive values denote lower prediction error for representations exposed to post-cutoff contamination.
+1. **$L_{\mathrm{repr}}$ (Continuous Representational Leakage)**: Primary endpoint measuring the paired out-of-sample absolute error reduction $d_e = |y_e - \hat{y}_{\mathrm{clean},e}| - |y_e - \hat{y}_{\mathrm{leak},e}|$ across $N_{\mathrm{OOS}} = 32$ independent out-of-sample FOMC events under 4-fold grouped expanding-window temporal cross-validation (spanning 2016–2019 prior to the global 2019-12-31 cutoff). Positive values denote lower prediction error for representations exposed to post-cutoff contamination. "Future" refers to the next scheduled policy outcome relative to each anchor event, not to events occurring after the global cutoff.
 2. **Non-Monotonicity**: Across doses, mean $L_{\mathrm{repr}}$ increases from $+0.00368$ at $D=0.25$ to an aggregate peak of $+0.00507$ at $D=0.75$, before decreasing to $+0.00291$ at $D=1.00$.
-3. **Nominal Significance Fraction**: Fraction of branches within the dose level yielding nominal branch-level $p < 0.05$ under the frozen 2,000-draw sign-flip permutation test.
+3. **Nominal Significance Fraction**: Fraction of branches within the dose level yielding nominal branch-level $p < 0.05$ under the preregistered one-sided right-tailed paired event-level sign-flip permutation test ($B=2,000$ draws).
 4. **Binary $\Delta\mathrm{Macro\text{-}F1}$**: Co-primary discrete classification endpoint (`next_scheduled_change_vs_hold`). All individual branch tests yielded $p > 0.05$.
 5. **$L_{\mathrm{behavior}}$**: Behavioral masking sensitivity shift across 40 FOMC events. Shift is of negligible magnitude ($\sim 10^{-4}$) and descriptive only.
-6. **$\Delta\mathrm{IC}_{2\mathrm{Y}}$ and $\Delta\mathrm{IC}_{\mathrm{SPY}}$**: Economic Information Coefficient deltas against 2-year Treasury yields (primary economic) and SPY equity returns (exploratory economic). All 95% bootstrap confidence intervals cross zero or exhibit negative shifts.
+6. **$\Delta\mathrm{IC}_{2\mathrm{Y}}$ and $\Delta\mathrm{IC}_{\mathrm{SPY}}$**: Economic Information Coefficient deltas against 2-year Treasury yields (primary economic) and SPY equity returns (exploratory economic). No branch provided support for the preregistered positive economic alternative ($H_1^{\mathrm{econ}}: \Delta\mathrm{IC} > 0$). Most intervals included zero, while a small number of Treasury branches (Seed 42 at $D=0.25$ and $D=0.50$) showed significant negative shifts opposite to the preregistered positive alternative.
 
 ---
 
@@ -37,33 +37,33 @@ The following table reports the aggregate empirical outcomes across the five exp
 
 This table reports complete, unaggregated metrics for all 20 contaminated branches ($D > 0$). Clean baseline branches ($D = 0.00$) serve as the paired reference within each seed ($L_{\mathrm{repr}} = 0$, $\Delta\mathrm{IC} = 0$, $p = 1.000$).
 
-| Seed | Dose ($D$) | $L_{\mathrm{repr}}$ | Frozen Perm $p$ | Post-Exec Sens $p$ | Nominal Sig. ($\alpha=0.05$) | $\Delta\mathrm{Spearman}$ | Binary $\Delta\mathrm{Macro\text{-}F1}$ | Binary $p$ | $L_{\mathrm{behavior}}$ | $\Delta\mathrm{IC}_{2\mathrm{Y}}$ | 95% Bootstrap CI (2Y) | $p_{2\mathrm{Y}}$ | $\Delta\mathrm{IC}_{\mathrm{SPY}}$ | 95% Bootstrap CI (SPY) | $p_{\mathrm{SPY}}$ |
+| Seed | Dose ($D$) | $L_{\mathrm{repr}}$ | Frozen Perm $p$ | Finite-MC Reporting Note | Nominal Sig. ($\alpha=0.05$) | $\Delta\mathrm{Spearman}$ | Binary $\Delta\mathrm{Macro\text{-}F1}$ | Binary $p$ | $L_{\mathrm{behavior}}$ | $\Delta\mathrm{IC}_{2\mathrm{Y}}$ | 95% Bootstrap CI (2Y) | $p_{2\mathrm{Y}}$ | $\Delta\mathrm{IC}_{\mathrm{SPY}}$ | 95% Bootstrap CI (SPY) | $p_{\mathrm{SPY}}$ |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **13** | 0.25 | +0.00245 | 0.0800 | 0.0800 | False | +0.0906 | +0.0000 | 1.0000 | +0.00000 | +0.0081 | [-0.0461, +0.0659] | 0.284 | +0.0124 | [-0.0145, +0.0515] | 0.215 |
-| **13** | 0.50 | +0.00545 | 0.0255 | 0.0255 | **True** | +0.2685 | +0.0116 | 0.4990 | +0.00015 | +0.0173 | [-0.0580, +0.0717] | 0.241 | +0.0170 | [-0.0167, +0.0710] | 0.114 |
-| **13** | 0.75 | +0.00313 | 0.1425 | 0.1425 | False | +0.0011 | +0.0000 | 1.0000 | -0.00027 | +0.0177 | [-0.0533, +0.0955] | 0.253 | +0.0060 | [-0.0275, +0.0554] | 0.281 |
-| **13** | 1.00 | +0.00090 | 0.3685 | 0.3685 | False | +0.0182 | +0.0000 | 1.0000 | -0.00039 | +0.0028 | [-0.0603, +0.0626] | 0.409 | -0.0148 | [-0.0606, +0.0034] | 0.066 |
-| **42** | 0.25 | +0.00402 | 0.0090 | 0.0090 | **True** | +0.0698 | -0.0523 | 0.7435 | +0.00105 | -0.0966 | [-0.1775, -0.0147] | 0.009* | -0.0655 | [-0.1561, +0.0367] | 0.106 |
-| **42** | 0.50 | +0.00173 | 0.0870 | 0.0870 | False | +0.0000 | +0.0174 | 0.5040 | +0.00207 | -0.0938 | [-0.1798, -0.0246] | 0.000* | -0.0455 | [-0.1176, +0.0375] | 0.111 |
-| **42** | 0.75 | +0.00195 | 0.0980 | 0.0980 | False | -0.0317 | +0.0174 | 0.5040 | -0.00042 | -0.0502 | [-0.1221, +0.0087] | 0.057 | -0.0201 | [-0.0824, +0.0532] | 0.216 |
-| **42** | 1.00 | +0.00061 | 0.3710 | 0.3710 | False | +0.0265 | +0.0174 | 0.5040 | -0.00119 | -0.0788 | [-0.1804, +0.0144] | 0.047 | -0.0475 | [-0.1345, +0.0028] | 0.033 |
-| **87** | 0.25 | +0.00304 | 0.0600 | 0.0600 | False | -0.0328 | +0.0174 | 0.5045 | +0.00025 | +0.0244 | [-0.0438, +0.0931] | 0.221 | -0.0094 | [-0.1099, +0.0625] | 0.333 |
-| **87** | 0.50 | +0.00528 | 0.0060 | 0.0060 | **True** | +0.1223 | +0.0174 | 0.5045 | -0.00014 | +0.0135 | [-0.0414, +0.0729] | 0.323 | -0.0039 | [-0.0902, +0.0795] | 0.380 |
-| **87** | 0.75 | +0.00964 | 0.0005 | 0.0005 | **True** | +0.2602 | +0.0351 | 0.2510 | -0.00038 | +0.0013 | [-0.0601, +0.0669] | 0.510 | -0.0146 | [-0.0643, +0.0250] | 0.195 |
-| **87** | 1.00 | +0.00632 | 0.0000 | < 1/2000 (~0.0005) | **True** | +0.1339 | +0.0174 | 0.4990 | +0.00044 | +0.0121 | [-0.0840, +0.1581] | 0.440 | -0.0518 | [-0.2169, +0.0330] | 0.137 |
-| **123** | 0.25 | +0.00640 | 0.0075 | 0.0075 | **True** | +0.0462 | -0.0494 | 0.4955 | -0.00061 | -0.0392 | [-0.1896, +0.0686] | 0.267 | +0.0701 | [-0.0230, +0.1680] | 0.065 |
-| **123** | 0.50 | -0.00024 | 0.5400 | 0.5400 | False | -0.0118 | -0.0615 | 0.7510 | +0.00032 | -0.0255 | [-0.1029, +0.0521] | 0.293 | +0.0434 | [-0.0049, +0.1075] | 0.036 |
-| **123** | 0.75 | +0.00385 | 0.0395 | 0.0395 | **True** | +0.0777 | +0.0174 | 0.5120 | +0.00032 | -0.0367 | [-0.1469, +0.0611] | 0.308 | +0.0607 | [-0.0092, +0.1716] | 0.039 |
-| **123** | 1.00 | -0.00218 | 0.8955 | 0.8955 | False | -0.0094 | -0.0173 | 1.0000 | +0.00188 | -0.0312 | [-0.1632, +0.0674] | 0.290 | +0.0540 | [-0.0273, +0.1256] | 0.088 |
-| **2024** | 0.25 | +0.00247 | 0.1290 | 0.1290 | False | +0.0593 | +0.0000 | 1.0000 | -0.00093 | -0.0085 | [-0.0818, +0.0551] | 0.346 | +0.0370 | [-0.0206, +0.1171] | 0.121 |
-| **2024** | 0.50 | +0.00643 | 0.0205 | 0.0205 | **True** | +0.1733 | +0.0000 | 1.0000 | -0.00012 | -0.0025 | [-0.1220, +0.1448] | 0.514 | +0.0390 | [-0.0449, +0.1492] | 0.206 |
-| **2024** | 0.75 | +0.00680 | 0.0135 | 0.0135 | **True** | +0.2144 | +0.0668 | 0.7740 | -0.00077 | -0.0307 | [-0.1271, +0.0662] | 0.273 | +0.0219 | [-0.0274, +0.0839] | 0.218 |
-| **2024** | 1.00 | +0.00889 | 0.0005 | 0.0005 | **True** | +0.1551 | +0.0116 | 0.4990 | -0.00073 | +0.0019 | [-0.0756, +0.0760] | 0.505 | -0.0145 | [-0.1306, +0.0710] | 0.393 |
+| **13** | 0.25 | +0.00245 | 0.0800 | — | False | +0.0906 | +0.0000 | 1.0000 | +0.00000 | +0.0081 | [-0.0461, +0.0659] | 0.284 | +0.0124 | [-0.0145, +0.0515] | 0.215 |
+| **13** | 0.50 | +0.00545 | 0.0255 | — | **True** | +0.2685 | +0.0116 | 0.4990 | +0.00015 | +0.0173 | [-0.0580, +0.0717] | 0.241 | +0.0170 | [-0.0167, +0.0710] | 0.114 |
+| **13** | 0.75 | +0.00313 | 0.1425 | — | False | +0.0011 | +0.0000 | 1.0000 | -0.00027 | +0.0177 | [-0.0533, +0.0955] | 0.253 | +0.0060 | [-0.0275, +0.0554] | 0.281 |
+| **13** | 1.00 | +0.00090 | 0.3685 | — | False | +0.0182 | +0.0000 | 1.0000 | -0.00039 | +0.0028 | [-0.0603, +0.0626] | 0.409 | -0.0148 | [-0.0606, +0.0034] | 0.066 |
+| **42** | 0.25 | +0.00402 | 0.0090 | — | **True** | +0.0698 | -0.0523 | 0.7435 | +0.00105 | -0.0966 | [-0.1775, -0.0147] | 0.009* | -0.0655 | [-0.1561, +0.0367] | 0.106 |
+| **42** | 0.50 | +0.00173 | 0.0870 | — | False | +0.0000 | +0.0174 | 0.5040 | +0.00207 | -0.0938 | [-0.1798, -0.0246] | 0.000* | -0.0455 | [-0.1176, +0.0375] | 0.111 |
+| **42** | 0.75 | +0.00195 | 0.0980 | — | False | -0.0317 | +0.0174 | 0.5040 | -0.00042 | -0.0502 | [-0.1221, +0.0087] | 0.057 | -0.0201 | [-0.0824, +0.0532] | 0.216 |
+| **42** | 1.00 | +0.00061 | 0.3710 | — | False | +0.0265 | +0.0174 | 0.5040 | -0.00119 | -0.0788 | [-0.1804, +0.0144] | 0.047 | -0.0475 | [-0.1345, +0.0028] | 0.033 |
+| **87** | 0.25 | +0.00304 | 0.0600 | — | False | -0.0328 | +0.0174 | 0.5045 | +0.00025 | +0.0244 | [-0.0438, +0.0931] | 0.221 | -0.0094 | [-0.1099, +0.0625] | 0.333 |
+| **87** | 0.50 | +0.00528 | 0.0060 | — | **True** | +0.1223 | +0.0174 | 0.5045 | -0.00014 | +0.0135 | [-0.0414, +0.0729] | 0.323 | -0.0039 | [-0.0902, +0.0795] | 0.380 |
+| **87** | 0.75 | +0.00964 | 0.0005 | — | **True** | +0.2602 | +0.0351 | 0.2510 | -0.00038 | +0.0013 | [-0.0601, +0.0669] | 0.510 | -0.0146 | [-0.0643, +0.0250] | 0.195 |
+| **87** | 1.00 | +0.00632 | 0.0000 | k=0/2000; finite-MC resolution ≈ 1/2001 = 0.00050 | **True** | +0.1339 | +0.0174 | 0.4990 | +0.00044 | +0.0121 | [-0.0840, +0.1581] | 0.440 | -0.0518 | [-0.2169, +0.0330] | 0.137 |
+| **123** | 0.25 | +0.00640 | 0.0075 | — | **True** | +0.0462 | -0.0494 | 0.4955 | -0.00061 | -0.0392 | [-0.1896, +0.0686] | 0.267 | +0.0701 | [-0.0230, +0.1680] | 0.065 |
+| **123** | 0.50 | -0.00024 | 0.5400 | — | False | -0.0118 | -0.0615 | 0.7510 | +0.00032 | -0.0255 | [-0.1029, +0.0521] | 0.293 | +0.0434 | [-0.0049, +0.1075] | 0.036 |
+| **123** | 0.75 | +0.00385 | 0.0395 | — | **True** | +0.0777 | +0.0174 | 0.5120 | +0.00032 | -0.0367 | [-0.1469, +0.0611] | 0.308 | +0.0607 | [-0.0092, +0.1716] | 0.039 |
+| **123** | 1.00 | -0.00218 | 0.8955 | — | False | -0.0094 | -0.0173 | 1.0000 | +0.00188 | -0.0312 | [-0.1632, +0.0674] | 0.290 | +0.0540 | [-0.0273, +0.1256] | 0.088 |
+| **2024** | 0.25 | +0.00247 | 0.1290 | — | False | +0.0593 | +0.0000 | 1.0000 | -0.00093 | -0.0085 | [-0.0818, +0.0551] | 0.346 | +0.0370 | [-0.0206, +0.1171] | 0.121 |
+| **2024** | 0.50 | +0.00643 | 0.0205 | — | **True** | +0.1733 | +0.0000 | 1.0000 | -0.00012 | -0.0025 | [-0.1220, +0.1448] | 0.514 | +0.0390 | [-0.0449, +0.1492] | 0.206 |
+| **2024** | 0.75 | +0.00680 | 0.0135 | — | **True** | +0.2144 | +0.0668 | 0.7740 | -0.00077 | -0.0307 | [-0.1271, +0.0662] | 0.273 | +0.0219 | [-0.0274, +0.0839] | 0.218 |
+| **2024** | 1.00 | +0.00889 | 0.0005 | — | **True** | +0.1551 | +0.0116 | 0.4990 | -0.00073 | +0.0019 | [-0.0756, +0.0760] | 0.505 | -0.0145 | [-0.1306, +0.0710] | 0.393 |
 
 ### Table 2 Explanatory Notes:
-1. **Nominal Significance Definition**: A branch is marked **True** if and only if its sign-flip permutation $p$-value satisfies $p < 0.05$ on the directional hypothesis $L_{\mathrm{repr}} > 0$. Ten of the twenty branches (50.0%) reach nominal significance.
-2. **Post-Execution Reporting Sensitivity for $p=0.0000$**: In Seed 87 at Dose 1.00, the frozen evaluator computed $p = \frac{1}{B} \sum_{b=1}^B \mathbb{I}(\text{stat}_b \ge \text{stat}_{\mathrm{obs}}) = 0.0000$ because $0$ of $B=2,000$ permutation draws exceeded the observed statistic ($k=0$). Under finite-sample Monte-Carlo reporting sensitivity $\frac{k+1}{B+1}$, this corresponds to $p < 1/2000 \approx 0.00050$. The nominal significance status ($\alpha = 0.05$) is invariant to this reporting convention.
-3. **Directional Economic Invalidation (\*)**: In Seed 42 at Doses 0.25 and 0.50, the bootstrap two-sided $p$-values are small ($0.009$ and $0.000$), but the observed shifts are **negative** ($\Delta\mathrm{IC}_{2\mathrm{Y}} = -0.0966$ and $-0.0938$). Under the directional hypothesis of economic leakage ($\Delta\mathrm{IC} > 0$), these shifts represent degradation of predictive performance, not positive leakage; hence `is_statistically_significant` evaluates to `False`.
+1. **Nominal Significance Definition**: A branch is marked **True** if and only if its sign-flip permutation $p$-value satisfies $p < 0.05$ under the preregistered one-sided right-tailed paired event-level sign-flip permutation test ($B=2,000$, $\alpha = 0.05$) on the directional hypothesis $H_1^{\mathrm{repr}}: L_{\mathrm{repr}} > 0$. Ten of the twenty branches (50.0%) reach nominal significance.
+2. **Finite-Monte-Carlo Reporting Note for $p=0.0000$**: In Seed 87 at Dose 1.00, the frozen evaluator computed $p = \frac{1}{B} \sum_{b=1}^B \mathbb{I}(\text{stat}_b \ge \text{stat}_{\mathrm{obs}}) = 0.0000$ because $0$ of $B=2,000$ permutation draws exceeded the observed statistic ($k=0$). Under finite-sample Monte-Carlo reporting sensitivity $\frac{k+1}{B+1}$, this corresponds to $p < 1/2000 \approx 0.00050$. For all other branches where $k > 0$, the historical permutation $p$-value is reported without modification.
+3. **Directional Economic Invalidation (\*)**: In Seed 42 at Doses 0.25 and 0.50, the bootstrap $p$-values are small ($0.009$ and $0.000$), but the observed shifts are **negative** ($\Delta\mathrm{IC}_{2\mathrm{Y}} = -0.0966$ and $-0.0938$, with 95% CIs entirely below zero). Under the preregistered directional alternative hypothesis $H_1^{\mathrm{econ}}: \Delta\mathrm{IC} > 0$, these negative shifts represent performance degradation opposite to the positive economic alternative; hence they do not provide support for $H_1^{\mathrm{econ}}$.
 
 ---
 

@@ -148,7 +148,11 @@ def generate_figure1_dose_response(data, fig_dir):
     ax.set_ylim(-0.0045, 0.0130)
     ax.legend(loc='upper left', framealpha=0.92, fontsize=9.0, ncol=2)
 
-    plt.tight_layout()
+    fig.text(0.5, 0.01,
+             "Note: The SEM band is descriptive across five optimization seeds and is not a preregistered confidence interval or confirmatory inferential band.",
+             ha='center', fontsize=8.0, style='italic', color='#333333')
+
+    plt.tight_layout(rect=[0, 0.03, 1, 1])
     png_path = os.path.join(fig_dir, "figure1_l_repr_dose_response.png")
     pdf_path = os.path.join(fig_dir, "figure1_l_repr_dose_response.pdf")
     plt.savefig(png_path, dpi=300)
@@ -223,9 +227,9 @@ def generate_figure2_significance_heatmap(data, fig_dir):
 
     # Sub-caption / footnote
     fig.text(0.5, 0.01,
-             "* Denotes uncorrected nominal branch-level p < 0.05 (sign-flip permutation test, B=2000).\n"
+             "* Denotes uncorrected nominal branch-level p < 0.05 (one-sided right-tailed paired sign-flip permutation test, B=2000).\n"
              "Note: Protocol v1.2.4 did not preregister an omnibus global test; significance is nominal branch-level only.",
-             ha='center', fontsize=8.5, style='italic', color='#333333')
+             ha='center', fontsize=8.0, style='italic', color='#333333')
 
     plt.tight_layout(rect=[0, 0.05, 1, 1])
     png_path = os.path.join(fig_dir, "figure2_branch_significance_map.png")
@@ -288,7 +292,7 @@ def generate_figure3_event_level_deltas(data, fig_dir):
                  bbox=dict(boxstyle='square,pad=0.2', facecolor='white', alpha=0.8, edgecolor='#cccccc'))
 
     ax1.axhline(0, color='black', linestyle='--', linewidth=1.0, alpha=0.8)
-    ax1.set_xticklabels([f"D = {d:.2f}\n(N=160)" for d in doses], fontweight='bold')
+    ax1.set_xticklabels([f"D = {d:.2f}\n(160 branch-events)" for d in doses], fontweight='bold')
     ax1.set_xlabel('Contamination Dose Level', fontweight='bold')
     ax1.set_ylabel(r'Paired Absolute Error Reduction ($d_e$)', fontweight='bold')
     ax1.set_title(r'(A) Event Error Reductions by Contamination Dose' + '\n' +
@@ -309,18 +313,23 @@ def generate_figure3_event_level_deltas(data, fig_dir):
     ax2.axvline(0, color='black', linestyle='-', linewidth=1.0)
     ax2.set_yticks(range(len(sorted_events)))
     ax2.set_yticklabels(short_names, fontsize=7.5)
-    ax2.set_xlabel('Median Paired Error Reduction ($d_e$)', fontweight='bold')
+    ax2.set_xlabel(r'Median Paired Error Reduction ($d_e$)', fontweight='bold')
     ax2.set_ylabel('Out-of-Sample FOMC Event Date', fontweight='bold')
     ax2.set_title('(B) Event Heterogeneity Across 32 OOS Meetings\n'
-                  f'({sum(1 for m in median_vals if m > 0)} / 32 Meetings Show Median $d_e > 0$)',
-                  fontsize=11, fontweight='bold')
+                  f'(Post-Hoc Breadth Check: {sum(1 for m in median_vals if m > 0)} / 32 Meetings Show Median ' + r'$d_e > 0$)',
+                  fontsize=10.5, fontweight='bold')
     ax2.xaxis.set_major_formatter(ticker.FormatStrFormatter('%+.3f'))
 
     # Add descriptive note
     fig.suptitle('Figure 3: Distribution and Heterogeneity of Out-of-Sample Event-Level Effects (Post-Hoc Descriptive)',
                  fontsize=13, fontweight='bold', y=0.99)
 
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    fig.text(0.5, 0.01,
+             "Each dose panel contains 160 branch-event observations (32 OOS events x 5 seeds). These observations are not independent and are displayed for post-hoc descriptive visualization only.\n"
+             "The preregistered inferential unit remains the independent FOMC event. Breadth check illustrates that gains were not concentrated in an isolated meeting.",
+             ha='center', fontsize=7.5, style='italic', color='#333333')
+
+    plt.tight_layout(rect=[0, 0.05, 1, 0.96])
     png_path = os.path.join(fig_dir, "figure3_event_level_deltas.png")
     pdf_path = os.path.join(fig_dir, "figure3_event_level_deltas.pdf")
     plt.savefig(png_path, dpi=300)
@@ -451,7 +460,11 @@ def generate_figure4_layered_comparison(data, fig_dir):
                  'Signal is Concentrated at Representational Layer and Decouples from Downstream Task & Market Behavior',
                  fontsize=13, fontweight='bold', y=1.02)
 
-    plt.tight_layout()
+    fig.text(0.5, 0.01,
+             "Note: Evaluated endpoints use distinct native units and are not on a common numerical scale; visual alignment only. No composite leakage score is defined.",
+             ha='center', fontsize=8.0, style='italic', color='#333333')
+
+    plt.tight_layout(rect=[0, 0.04, 1, 0.96])
     png_path = os.path.join(fig_dir, "figure4_layered_outcome_comparison.png")
     pdf_path = os.path.join(fig_dir, "figure4_layered_outcome_comparison.pdf")
     plt.savefig(png_path, dpi=300, bbox_inches='tight')
@@ -486,7 +499,7 @@ def print_table_summaries(data):
     print("\n" + "="*80)
     print("FULL 20-BRANCH CONTAMINATED RESULTS TABLE (SUPPLEMENT)")
     print("="*80)
-    print("| Seed | Dose | $L_{\\mathrm{repr}}$ | Frozen Perm $p$ | Post-Exec Sens $p$ | Nom. Sig. ($\\alpha=0.05$) | $\\Delta\\mathrm{Spearman}$ | Binary $\\Delta\\mathrm{Macro\\text{-}F1}$ | Binary $p$ | $L_{\\mathrm{behavior}}$ | $\\Delta\\mathrm{IC}_{2\\mathrm{Y}}$ | 95% CI (2Y) | $p_{2\\mathrm{Y}}$ | $\\Delta\\mathrm{IC}_{\\mathrm{SPY}}$ | 95% CI (SPY) | $p_{\\mathrm{SPY}}$ |")
+    print("| Seed | Dose | $L_{\\mathrm{repr}}$ | Frozen Perm $p$ | Finite-MC Reporting Note | Nom. Sig. ($\\alpha=0.05$) | $\\Delta\\mathrm{Spearman}$ | Binary $\\Delta\\mathrm{Macro\\text{-}F1}$ | Binary $p$ | $L_{\\mathrm{behavior}}$ | $\\Delta\\mathrm{IC}_{2\\mathrm{Y}}$ | 95% CI (2Y) | $p_{2\\mathrm{Y}}$ | $\\Delta\\mathrm{IC}_{\\mathrm{SPY}}$ | 95% CI (SPY) | $p_{\\mathrm{SPY}}$ |")
     print("| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |")
 
     for s in seeds:
@@ -495,7 +508,7 @@ def print_table_summaries(data):
             b = data['branches'][b_key]
             l_r = b['l_repr']
             p_perm = b['permutation_p_value']
-            p_sens = "< 1/2000 (~0.0005)" if p_perm == 0.0 else f"{p_perm:.4f}"
+            p_sens = "k=0/2000; res. ~ 1/2001 = 0.00050" if p_perm == 0.0 else "--"
             p_perm_str = f"{p_perm:.4f}"
             is_sig = b['is_statistically_significant']
             sig_str = "**True**" if is_sig else "False"
@@ -510,13 +523,14 @@ def print_table_summaries(data):
             ci_2y = b['economic_2y']['delta_ic_ci_95']
             ci_2y_str = f"[{ci_2y[0]:+.4f}, {ci_2y[1]:+.4f}]"
             p_2y = b['economic_2y']['p_value']
+            p_2y_str = f"{p_2y:.3f}*" if (s == 42 and d in [0.25, 0.50]) else f"{p_2y:.3f}"
             
             ic_spy = b['economic_spy']['delta_ic']
             ci_spy = b['economic_spy']['delta_ic_ci_95']
             ci_spy_str = f"[{ci_spy[0]:+.4f}, {ci_spy[1]:+.4f}]"
             p_spy = b['economic_spy']['p_value']
             
-            print(f"| **{s}** | {d:.2f} | {l_r:+.5f} | {p_perm_str} | {p_sens} | {sig_str} | {d_sp:+.4f} | {bin_f1:+.4f} | {bin_p:.4f} | {l_beh:+.5f} | {ic_2y:+.4f} | {ci_2y_str} | {p_2y:.3f} | {ic_spy:+.4f} | {ci_spy_str} | {p_spy:.3f} |")
+            print(f"| **{s}** | {d:.2f} | {l_r:+.5f} | {p_perm_str} | {p_sens} | {sig_str} | {d_sp:+.4f} | {bin_f1:+.4f} | {bin_p:.4f} | {l_beh:+.5f} | {ic_2y:+.4f} | {ci_2y_str} | {p_2y_str} | {ic_spy:+.4f} | {ci_spy_str} | {p_spy:.3f} |")
 
 
 def main():

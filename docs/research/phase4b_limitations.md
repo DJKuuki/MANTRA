@@ -10,7 +10,7 @@
 
 ## 6.1 Global Confirmatory Decision Rule Under-Specification
 
-The most prominent methodological limitation of Phase 4B concerns the preregistration of its omnibus inferential procedure. Protocol v1.2.4 formally preregistered paired sign-flip permutation tests ($\alpha = 0.05, B = 2,000$) for individual branch-level contrasts. However, the preregistration specification omitted a formal global decision rule defining how to combine the 20 contaminated seed-dose contrasts into a single omnibus confirmatory test (such as an explicit Fisher or Stouffer combination, a hierarchical mixed-effects model, or a preregistered Bonferroni-Holm family-wise error rate correction).
+The most prominent methodological limitation of Phase 4B concerns the preregistration of its omnibus inferential procedure. Protocol v1.2.4 formally preregistered one-sided right-tailed paired event-level sign-flip permutation tests ($\alpha = 0.05, B = 2,000$) for individual branch-level contrasts. However, the preregistration specification omitted a formal global decision rule defining how to combine the 20 contaminated seed-dose contrasts into a single omnibus confirmatory test (such as an explicit Fisher or Stouffer combination, a hierarchical mixed-effects model, or a preregistered Bonferroni-Holm family-wise error rate correction).
 
 Because post-hoc specification of an omnibus test statistic would violate confirmatory protocol integrity, we report the branch-level outcomes descriptively and nominally (18/20 branches $L_{\mathrm{repr}} > 0$; 10/20 nominal $p < 0.05$) while explicitly refraining from claiming a formal global confirmatory rejection of $H_0^{\mathrm{repr}}$. Future preregistered protocols must define both branch-level and global omnibus test statistics prior to protocol lock.
 
@@ -18,7 +18,7 @@ Because post-hoc specification of an omnibus test statistic would violate confir
 
 ## 6.2 Optimization Seed Heterogeneity
 
-Empirical outcomes exhibit substantial sensitivity to the random initialization seed used during continued pretraining and classifier transfer ([Table 2](file:///e:/MANTRA/docs/research/phase4b_manuscript_tables.md#2-table-2-complete-20-branch-contaminated-empirical-results-supplementary-material)). Across the five seeds, representational leakage estimates range from $+0.00964$ ($p = 0.0005$ in Seed 87 at $D=0.75$) to $-0.00218$ ($p = 0.8955$ in Seed 123 at $D=1.00$).
+Empirical outcomes exhibit substantial sensitivity to the random initialization seed used during continued pretraining and classifier transfer (Table 2). Across the five seeds, representational leakage estimates range from $+0.00964$ ($p = 0.0005$ in Seed 87 at $D=0.75$) to $-0.00218$ ($p = 0.8955$ in Seed 123 at $D=1.00$).
 
 This dispersion underscores that temporal leakage susceptibility is not a deterministic property of model architecture or corpus composition alone, but is modulated by stochastic optimization dynamics (batch order, token masking patterns, gradient paths). Consequently, reporting across-seed averages without documenting seed-level variance obscures meaningful scientific uncertainty. Auditing pipelines must account for seed-level variance through multi-seed designs.
 
@@ -48,17 +48,17 @@ The mechanics of token retention, feature decodability, and memorization may dif
 
 The empirical evaluation focused specifically on Federal Open Market Committee (FOMC) monetary policy communication. Central bank communication is characterized by a specialized, highly formal vocabulary, institutional conventions, and scheduled policy decision cycles.
 
-Furthermore, the post-cutoff contamination period (2020–2022) coincided with unprecedented macroeconomic shocks (the COVID-19 pandemic, zero lower bound rate policies, supply-chain dislocations, and subsequent aggressive inflation tightening). Whether similar representational leakage patterns emerge in less institutionalized domains (e.g., earnings call transcripts, financial news feeds, social media discourse) or under stationary macroeconomic regimes remains an open empirical question.
+Furthermore, the post-cutoff contamination period (2020–2022) coincided with unprecedented macroeconomic shocks (the COVID-19 pandemic, zero lower bound rate policies, supply-chain dislocations, and subsequent aggressive inflation tightening). Although the clean-twin design rigorously controls for compute budget and broad central-bank genre exposure, it cannot completely eliminate subdomain, regime, topic, or rhetorical shifts introduced by post-2020 documents. Whether similar representational leakage patterns emerge in less institutionalized domains (e.g., earnings call transcripts, financial news feeds, social media discourse) or under stationary macroeconomic regimes remains an open empirical question.
 
 ---
 
 ## 6.6 Statistical Power for Downstream Economic Endpoints
 
-Economic leakage effects ($E_L$) were evaluated by correlating model stance predictions with 2-year Treasury yields and SPY equity returns across 40 FOMC events. While this event count provided substantial statistical power to identify representational shifts ($L_{\mathrm{repr}}$) across $N_{\mathrm{OOS}} = 32$ out-of-sample meetings, financial market returns are inherently noisy and influenced by exogenous macroeconomic variables (unemployment data, geopolitical events, fiscal policy announcements) that occur concurrently with FOMC announcements.
+Economic leakage effects ($E_L$) were evaluated by correlating model stance predictions with 2-year Treasury yields and SPY equity returns across 40 FOMC events. While this event count provided substantial statistical power to identify representational shifts ($L_{\mathrm{repr}}$) across $N_{\mathrm{OOS}} = 32$ out-of-sample temporal cross-validation meetings (spanning 2016–2019), financial market returns are inherently noisy and influenced by exogenous macroeconomic variables (unemployment data, geopolitical events, fiscal policy announcements) that occur concurrently with FOMC announcements.
 
 The failure to establish statistically robust economic gains ($\Delta\mathrm{IC}$) may reflect:
 1. True decoupling: latent representational shifts do not translate into linear market predictability;
-2. Limited statistical power: subtle economic effects (e.g., $\Delta\mathrm{IC} \approx 0.01$–$0.02$) cannot be definitively distinguished from zero in a sample of 40 events.
+2. Limited statistical power: subtle economic effects (e.g., $\Delta\mathrm{IC} \approx 0.01$–$0.02$) cannot be reliably distinguished from zero in a sample of 40 events.
 
 Our conclusion that "representational leakage did not reliably propagate into economically meaningful predictive improvement" accurately reflects the empirical evidence under the preregistered design, but should not be taken as proof that market predictability is impossible under all circumstances or with non-linear trading strategies.
 
