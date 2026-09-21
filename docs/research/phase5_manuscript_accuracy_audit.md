@@ -22,15 +22,15 @@ All empirical data, model weights, evaluation metrics, and cryptographic hashes 
 
 | # | Item / Dimension | Original Phrasing / Representation | Corrected Phrasing / Representation | Scientific Rationale | Empirical Result Changed? |
 | :-: | :--- | :--- | :--- | :--- | :-: |
-| **1** | **Permutation Test Direction** | "two-sided permutation test" / "paired sign-flip permutation tests" without explicit directionality | "one-sided right-tailed paired event-level sign-flip permutation test" | Protocol v1.2.4 tests the directional hypothesis $H_1^{\mathrm{repr}}: \mu_d > 0$ (error reduction $\Delta\mathrm{MSE} > 0$). Tests count permutations where randomized mean difference exceeds or equals observed mean difference ($k/B$). | **NO** |
+| **1** | **Permutation Test Direction** | "two-sided permutation test" / "paired sign-flip permutation tests" without explicit directionality | "one-sided right-tailed paired event-level sign-flip permutation test" | Protocol v1.2.4 tests the directional hypothesis $H_1^{\mathrm{repr}}: \mu_d > 0$ (mean paired absolute-error improvement $> 0$). Tests count permutations where randomized mean difference exceeds or equals observed mean difference ($k/B$). | **NO** |
 | **2** | **OOS Event Chronology** | "32 post-cutoff FOMC events" / "post-cutoff test meetings" | "32 out-of-sample temporal cross-validation FOMC meetings (spanning 2016–2019)" | All 32 OOS evaluation events occur prior to the global dataset cutoff `2019-12-31T23:59:59Z`. "Future target" refers to the next scheduled policy rate decision after each statement date ($\Delta\text{Rate}_{t+1}$), not events occurring post-2020. | **NO** |
 | **3** | **Figure 3 Sample Independence** | Figure 3 Panel A labeled with sample size `$N=160$`, implying 160 independent events | Panel A x-axis labeled `160 branch-events`; explicit note: `32 OOS events x 5 seeds; pooled branch-events are not statistically independent; post-hoc descriptive check` | 160 points represent 32 events evaluated across 5 seeds; pooling introduces correlation within events and seeds. Must be explicitly qualified as non-independent and descriptive. | **NO** |
-| **4** | **Event Breadth Check Calibration** | "demonstrating that the signal reflects generalized representation alignment rather than an artifact of a single macroeconomic event" | "a post-hoc descriptive breadth check across out-of-sample events shows that probe MSE reductions occurred in 23 of 32 (71.9%) evaluated temporal-CV events... indicating the advantage is not concentrated in an outlier meeting (though this remains a descriptive check rather than confirmatory proof of universal alignment)" | The 23/32 meeting observation is a post-hoc descriptive check on event-level distributions, not a preregistered confirmatory proof of universal generalization. | **NO** |
+| **4** | **Event Breadth Check Calibration** | "demonstrating that the signal reflects generalized representation alignment rather than an artifact of a single macroeconomic event" | "positive paired absolute-error reductions were observed in the median across contaminated branches for 23 of 32 (71.9%) evaluated temporal-CV events... indicating the advantage is not concentrated in an outlier meeting (though this remains a descriptive check rather than confirmatory proof of universal alignment)" | The 23/32 meeting observation is a post-hoc descriptive check on event-level distributions, not a preregistered confirmatory proof of universal generalization. | **NO** |
 | **5** | **Domain Adaptation Boundaries** | "generic domain adaptation cannot account for the difference in future-rate decodability" | "The matched clean-twin design substantially reduces generic domain adaptation as an explanation by equalizing compute and broad FOMC-domain exposure. However, it cannot completely eliminate subdomain, regime, topic, or rhetorical-distribution differences between pre-2020 and post-2020 documents." | The clean-twin design matches compute budget and broad central-bank English, but cannot eliminate regime-specific vocabulary shifts (e.g., pandemic emergency easing discourse). | **NO** |
 | **6** | **Scholarly Verb Calibration** | "Refuted naive monotonic dose-response assumptions", "Established optimization randomness is a first-order determinant", "Demonstrated that temporal leakage is not monolithic" | "Did not support a strictly monotonic dose-response relationship", "Revealed substantial seed-dependent optimization heterogeneity", "Observed empirical decoupling... consistent with a layered framework" | Scientific assertions must use calibrated, objective verbs rather than overclaiming definitive refutation or universal proof from a single empirical study. | **NO** |
 | **7** | **Elimination of Local Machine Links** | Absolute URIs containing local machine paths (`file:///e:/MANTRA/...` or `file:///C:/...`) in markdown cross-references | Relative markdown links (`figures/phase4b/...`, `phase4b_results_section.md`) and scholarly textual citations | Absolute local paths break portability across environments and leak host environment paths in public archives. | **NO** |
 | **8** | **Finite-MC Reporting Precision** | Column named `Monte-Carlo Sensitivity [k/B]` listing redundant sensitivity ranges for all rows; zero p-values displayed as `0.0000 [0/2000, max 0.0005]` | Renamed column to `Finite-MC Reporting Note`; all non-zero p-values display `—`; Seed 87 $D=1.00$ ($p=0.0000$) annotated with exact finite resolution note `k=0/2000; finite-MC resolution ≈ 1/2001 = 0.00050` | Clarifies that $p=0.0000$ reflects finite simulation resolution ($k=0$ permutations out of $B=2000$) rather than zero probability, avoiding redundant notation across ordinary branches. | **NO** |
-| **9** | **Directional Economic Endpoint Interpretation** | Seed 42 negative $\Delta\mathrm{IC}$ with small bootstrap p-values ($p=0.009$ at $D=0.25$, $p=0.000$ at $D=0.50$) described as "performance even degraded significantly" without explicitly connecting to directional hypothesis | Clarified that the preregistered economic hypothesis is directional ($H_1^{\mathrm{econ}}: \Delta\mathrm{IC} > 0$); negative $\Delta\mathrm{IC}$ shifts with small bootstrap p-values represent evidence in the direction *opposite* to the hypothesized improvement, and thus do not support economic leakage | Prevents readers from misinterpreting a small two-tailed bootstrap p-value as evidence supporting economic leakage when the direction is opposite to the preregistered alternative. | **NO** |
+| **9** | **Directional Economic Endpoint Interpretation** | Seed 42 negative $\Delta\mathrm{IC}$ with small bootstrap p-values ($p=0.009$ at $D=0.25$, $p=0.000$ at $D=0.50$) described as "performance even degraded significantly" without explicitly connecting to directional hypothesis | Clarified that the preregistered economic hypothesis is directional ($H_1^{\mathrm{econ}}: \Delta\mathrm{IC} > 0$); negative $\Delta\mathrm{IC}$ shifts with small sign-tail bootstrap probabilities represent evidence in the direction *opposite* to the hypothesized improvement, and thus do not support economic leakage | Prevents readers from misinterpreting a small sign-tail bootstrap probability as evidence supporting economic leakage when the direction is opposite to the preregistered alternative. | **NO** |
 
 ---
 
@@ -53,3 +53,34 @@ Frozen Phase 4B Archive Status:
   Manifest: experiments/phase4_confirmatory/result_manifest.json (SHA-256 match: 100%)
   Compute status: ZERO re-computation, ZERO re-inference, ZERO MLM retraining.
 ```
+
+---
+
+## 5. Final Micro-Correction Closure
+
+The following targeted micro-corrections were applied across manuscript chapters:
+
+1. **Economic Bootstrap Sidedness Terminology Corrected**:
+   - Replaced "two-sided $p$-value" / "two-tailed bootstrap $p$-value" with "sign-tail bootstrap probability" or referenced 95% bootstrap confidence intervals and observed $\Delta\mathrm{IC}$ direction. The frozen evaluator computes directional tail probabilities based on the sign of observed $\Delta\mathrm{IC}$, not a symmetric two-sided rejection region.
+   - *Empirical result changed? NO*
+   - *Statistical procedure changed? NO*
+   - *Scientific code changed? NO*
+
+2. **Economic Confidence Interval Statements Corrected**:
+   - Replaced inaccurate universal assertions ("95% bootstrap confidence intervals consistently spanned zero" / "all CIs cross zero") with exact empirical descriptions: "Most 95% bootstrap confidence intervals included zero. A small number of Treasury branches, notably Seed 42 at $D=0.25$ and $D=0.50$, had intervals entirely below zero, indicating negative shifts opposite to the preregistered positive economic alternative."
+   - *Empirical result changed? NO*
+   - *Statistical procedure changed? NO*
+   - *Scientific code changed? NO*
+
+3. **MSE $\to$ Absolute-Error Terminology Corrected**:
+   - Replaced all descriptions of $L_{\mathrm{repr}}$ as "MSE reduction" or "Delta MSE" with "paired absolute-error improvement", "absolute prediction-error reduction", or "paired absolute-error reduction $d_e = |y_e - \hat{y}_{\mathrm{clean},e}| - |y_e - \hat{y}_{\mathrm{leak},e}|$".
+   - *Empirical result changed? NO*
+   - *Statistical procedure changed? NO*
+   - *Scientific code changed? NO*
+
+4. **Discussion Opening Claim Calibrated**:
+   - Replaced categorical opening ("establishes that controlled post-cutoff continued pretraining alters latent geometry... linear decodability increases out-of-sample...") with calibrated branch-level phrasing: "Phase 4B provides substantial branch-level evidence that controlled post-cutoff continued pretraining can alter financial-language-model representations in ways that increase the linear decodability of future monetary-policy variables. The effect is predominantly positive across contaminated branches but heterogeneous across optimization seeds and contamination doses."
+   - *Empirical result changed? NO*
+   - *Statistical procedure changed? NO*
+   - *Scientific code changed? NO*
+

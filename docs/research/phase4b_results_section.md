@@ -35,7 +35,7 @@ Statistical significance was determined via a preregistered one-sided right-tail
 
 ### Primary Confirmatory Findings
 Across the 20 contaminated experimental branches:
-- **Directional Consistency**: 18 of the 20 branches (90.0%) exhibited positive point estimates ($L_{\mathrm{repr}} > 0$), indicating that exposure to post-cutoff text systematically reduced probe prediction errors on future policy decisions.
+- **Directional Consistency**: 18 of the 20 branches (90.0%) exhibited positive point estimates ($L_{\mathrm{repr}} > 0$), indicating that exposure to post-cutoff text systematically reduced probe absolute prediction errors on future policy decisions.
 - **Nominal Branch-Level Significance**: 10 of the 20 branches (50.0%) achieved nominal significance at $\alpha = 0.05$ ($p < 0.05$).
 - **Dose-Response Profile**: Mean $L_{\mathrm{repr}}$ across seeds (*post-hoc descriptive*) by contamination dose was:
   - $D = 0.25$: $+0.00368 \pm 0.00165$ (2/5 branches nominal $p < 0.05$)
@@ -72,9 +72,9 @@ Disaggregating results by optimization seed reveals pronounced heterogeneity in 
 This variance is interpreted as **training-randomness sensitivity / seed-dependent leakage susceptibility**. Stochastic factors in continued pretraining (batch sampling order, MLM mask placement) materially dictate whether leaked parametric information organizes into linearly decodable representation subspaces.
 
 ### Event-Level Effect Distribution
-To evaluate the breadth of event-level improvements and confirm they were not driven by an isolated outlier meeting, event-level paired prediction error reductions $d_e$ were examined across the 32 out-of-sample FOMC events (Figure 3):
-- Each dose panel aggregates 160 branch-event observations (32 OOS events × 5 seeds). These observations are not independent statistical units and are displayed for post-hoc descriptive visualization only; the preregistered inferential unit remains the independent FOMC event. Within these descriptive distributions, positive error reductions predominate across doses: 61.3% of observations at $D=0.25$, 58.8% at $D=0.50$, 65.0% at $D=0.75$, and 62.5% at $D=1.00$ show $d_e > 0$ (Figure 3A).
-- A post-hoc descriptive breadth check found that 23 of 32 OOS events had a positive median paired delta across contaminated branches (Figure 3B). This suggests that the observed signal was not obviously concentrated in a single isolated event, but this summary is not an independent confirmatory test.
+To evaluate the breadth of event-level improvements and confirm they were not driven by an isolated outlier meeting, event-level paired absolute-error reductions $d_e$ were examined across the 32 out-of-sample FOMC events (Figure 3):
+- Each dose panel aggregates 160 branch-event observations (32 OOS events × 5 seeds). These observations are not independent statistical units and are displayed for post-hoc descriptive visualization only; the preregistered inferential unit remains the independent FOMC event. Within these descriptive distributions, positive absolute-error reductions predominate across doses: 61.3% of observations at $D=0.25$, 58.8% at $D=0.50$, 65.0% at $D=0.75$, and 62.5% at $D=1.00$ show $d_e > 0$ (Figure 3A).
+- A post-hoc descriptive breadth check found that positive paired absolute-error reductions were observed in the median across contaminated branches for 23 of 32 OOS events (Figure 3B). This indicates that the directional advantage was not concentrated in a single isolated event, but this summary is not an independent confirmatory test.
 
 ---
 
@@ -107,11 +107,11 @@ Economic leakage effects were evaluated using downstream linear stance projectio
 ### Primary Economic Endpoint: 2-Year Treasury Yields
 Across all 20 contaminated branches, the primary economic endpoint was **not supported**:
 - **Absence of Positive Economic Support**: No branch provided support for the preregistered positive economic alternative ($H_1^{\mathrm{econ}}: \Delta\mathrm{IC}_{2\mathrm{Y}} > 0$). Most bootstrap confidence intervals included zero (Table 2). Mean $\Delta\text{IC}_{2\mathrm{Y}}$ across seeds (*post-hoc descriptive*) was negative at all doses: $-0.0224$ ($D=0.25$), $-0.0182$ ($D=0.50$), $-0.0197$ ($D=0.75$), and $-0.0186$ ($D=1.00$).
-- **Directional Interpretation in Seed 42**: In Seed 42 at $D=0.25$ and $D=0.50$, bootstrap tests yielded small two-sided $p$-values ($p = 0.009$ and $p = 0.000$); however, the observed shifts were negative ($\Delta\text{IC}_{2\mathrm{Y}} = -0.0966$ and $-0.0938$, with 95% CIs entirely below zero). Because the preregistered hypothesis is strictly directional ($H_1^{\mathrm{econ}}: \Delta\mathrm{IC} > 0$), these shifts represent evidence in the opposite direction (predictive degradation), not support for the positive economic alternative.
+- **Directional Interpretation in Seed 42**: In Seed 42 at $D=0.25$ and $D=0.50$, the frozen bootstrap procedure produced small sign-tail probabilities ($p = 0.009$ and $p = 0.000$) and 95% bootstrap confidence intervals entirely below zero ($\Delta\text{IC}_{2\mathrm{Y}} = -0.0966$ and $-0.0938$). Because the preregistered economic alternative was directional ($H_1^{\mathrm{econ}}: \Delta\mathrm{IC} > 0$), these negative shifts represent evidence in the opposite direction and do not support the preregistered economic leakage hypothesis.
 
 ### Exploratory Economic Endpoint: SPY Equities
 Similarly, SPY returns showed no reliable leakage effect:
-- Mean $\Delta\text{IC}_{\mathrm{SPY}}$ was $+0.0089$ at $D=0.25$, $+0.0100$ at $D=0.50$, $+0.0108$ at $D=0.75$, and $-0.0149$ at $D=1.00$. All 95% bootstrap confidence intervals span zero.
+- Mean $\Delta\text{IC}_{\mathrm{SPY}}$ was $+0.0089$ at $D=0.25$, $+0.0100$ at $D=0.50$, $+0.0108$ at $D=0.75$, and $-0.0149$ at $D=1.00$. All 95% bootstrap confidence intervals for SPY include zero.
 
 > **Economic Empirical Verdict**:  
 > Representational leakage did not reliably propagate into economically meaningful predictive improvement under the preregistered market endpoints. The experimental data provide no basis for claiming "false alpha" or market profitability resulting from post-cutoff contamination in this setting.
@@ -138,7 +138,7 @@ Figure 4 visualizes the empirical evidence across all five evaluated layers. The
              └──────────────┬───────────┘
                             ▼
 [Layer 4: Market Outcomes (E_L 2Y & SPY)]
-  Delta IC CIs cross zero or negative, No false alpha detected
+  Delta IC CIs include zero or shift negative, No false alpha detected
 ```
 
 Under Protocol v1.2.4:
