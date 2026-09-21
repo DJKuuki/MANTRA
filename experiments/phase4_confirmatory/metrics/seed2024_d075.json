@@ -1,0 +1,16 @@
+{
+  "seed": 2024,
+  "dose": 0.75,
+  "data_mode": "EMPIRICAL",
+  "event_contrast_mean": 0.006799290771596134,
+  "permutation_p_value": 0.0135,
+  "delta_spearman": 0.21443858376557806,
+  "competence_macro_f1": null,
+  "competence_mcc": null,
+  "competence_brier": null,
+  "competence_ece": null,
+  "temporal_robustness": "NOT_EVALUATED",
+  "l_behavior": -0.000769886201830256,
+  "economic_ic_2y": -0.0026599114696449094,
+  "economic_ic_spy": -0.011541710131704581
+}

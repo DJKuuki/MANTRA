@@ -1,0 +1,8 @@
+{
+  "status": "CODE_FROZEN_AND_VERIFIED",
+  "source_tree_hash": "02fe0ced0d03a920a7f56887f1d674282d17bc108986d19d2df495b59d330bb6",
+  "scientific_code_commit": "5ec0f03f3a5393d90462aa78d018d54b08cce126",
+  "execution_repository_head": "fe22646271c14d396ca6d2555e5f21887890149a",
+  "git_commit": "fe22646271c14d396ca6d2555e5f21887890149a",
+  "git_dirty": false
+}
