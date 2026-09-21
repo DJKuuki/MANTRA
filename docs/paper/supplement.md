@@ -1,6 +1,6 @@
 # Supplementary Material: Parametric Temporal Leakage in Financial Language Models
 
-**Stage**: Phase 6 — Full Paper Assembly  
+**Stage**: Phase 6 — Paper Factual Consistency & Reference Verification Patch  
 **Repository**: `DJKuuki/MANTRA`  
 **Protocol Version**: `1.2.4`  
 **Accompanying Manuscript**: *Parametric Temporal Leakage in Financial Language Models: Probing Latent Representations Under Causally Symmetric Pretraining*  
@@ -15,7 +15,7 @@ Table S1 reports complete, unaggregated metrics across all 20 contaminated exper
 Table S1: Complete 20-Branch Contaminated Empirical Results
 Inferential Unit: 32 out-of-sample temporal cross-validation FOMC meetings (2016–2019).
 Primary Representational Test: One-sided right-tailed paired event-level sign-flip permutation test (B=2,000).
-Economic Test: 1,000 bootstrap resamples clustered by event; directional alternative Delta IC > 0.
+Economic Test: 1,000-draw event-level stationary block bootstrap; directional alternative Delta IC > 0.
 ```
 
 | Seed | Dose ($D$) | $L_{\mathrm{repr}}$ | Frozen Perm $p$ | Finite-MC Reporting Note | Nom. Sig. ($\alpha=0.05$) | $\Delta\mathrm{Spearman}$ | Binary $\Delta\mathrm{Macro\text{-}F1}$ | Binary $p$ | $L_{\mathrm{behavior}}$ | $\Delta\mathrm{IC}_{2\mathrm{Y}}$ | 95% Bootstrap CI (2Y) | $p_{2\mathrm{Y}}$ | $\Delta\mathrm{IC}_{\mathrm{SPY}}$ | 95% Bootstrap CI (SPY) | $p_{\mathrm{SPY}}$ |
@@ -43,34 +43,37 @@ Economic Test: 1,000 bootstrap resamples clustered by event; directional alterna
 
 ### Explanatory Notes for Table S1:
 1. **Nominal Significance Definition**: A branch is marked **True** if and only if its sign-flip permutation $p$-value satisfies $p < 0.05$ under the preregistered one-sided right-tailed paired event-level sign-flip permutation test ($B=2,000$, $\alpha = 0.05$) on $H_1^{\mathrm{repr}}: L_{\mathrm{repr}} > 0$. Exactly 10 of 20 branches (50.0%) reach nominal significance.
-2. **Finite-Monte-Carlo Reporting Note for $p=0.0000$**: In Seed 87 at Dose 1.00, $0$ of $B=2,000$ permutation draws exceeded the observed statistic ($k=0$), yielding $p = 0.0000$. Under finite-sample Monte-Carlo reporting resolution $\frac{k+1}{B+1}$, this corresponds to $p < 1/2001 \approx 0.00050$. For all other branches where $k > 0$, the historical permutation $p$-value is reported without modification.
+2. **Finite-Monte-Carlo Reporting Note for $p=0.0000$**: In Seed 87 at Dose 1.00, $0$ of $B=2,000$ permutation draws exceeded the observed statistic ($k=0$), yielding raw $p = 0.0000$. Under standard finite-sample Monte-Carlo reporting sensitivity $\frac{k+1}{B+1}$, this corresponds to $p_{\mathrm{plus\_one}} = 1/2001 \approx 0.00050$. For all other branches where $k > 0$, the historical permutation $p$-value is reported directly without modification.
 3. **Directional Economic Invalidation (*)**: In Seed 42 at Doses 0.25 and 0.50, the frozen bootstrap procedure produced small sign-tail probabilities ($0.009$ and $0.000$) and 95% bootstrap confidence intervals entirely below zero ($\Delta\mathrm{IC}_{2\mathrm{Y}} = -0.0966$ and $-0.0938$). Because the preregistered economic alternative was directional ($H_1^{\mathrm{econ}}: \Delta\mathrm{IC} > 0$), these negative shifts represent evidence in the opposite direction and do not support the preregistered economic leakage hypothesis.
 
 ---
 
-## S2. Causal Symmetry & Hardware Audit Ledger
+## S2. Causal Symmetry & Execution Audit Ledger
 
-Table S2 documents the operational invariants enforced across all 25 empirical branches to guarantee causal symmetry, determinism, and absence of external data leakage.
+Table S2 documents the operational invariants enforced across all 25 empirical branches to guarantee causal symmetry, paired execution reproducibility, and absence of external data leakage.
 
 ```text
-Table S2: Experimental Invariants, Causal Symmetry & Hardware Audit Ledger
+Table S2: Experimental Invariants, Causal Symmetry & Execution Audit Ledger
 ```
 
 | Property / Invariant | Preregistered Specification | Actual Execution Verification | Audit Status |
 | :--- | :--- | :--- | :---: |
 | **Architecture Invariance** | `ProsusAI/finbert` (110M params) | 12 layers, 768 hidden dim, 12 attention heads, WordPiece | **PASS** |
-| **Token Budget Invariance** | Exactly 256,000 tokens per branch | `token_budget: 256000` enforced by exact batch sequencer | **PASS** |
-| **Optimization Steps** | Exactly 100 gradient steps per branch | `max_steps: 100` across all 25 branches | **PASS** |
-| **Batch Size & Sequence Length**| Batch size 16, sequence length 160 | $16 \times 160 = 2,560$ tokens/step $\times 100 = 256,000$ tokens | **PASS** |
-| **Optimizer & Schedule** | AdamW ($\text{lr}=5\times 10^{-5}$, weight decay 0.01) | Linear warmup 10 steps, linear decay, matched across twins | **PASS** |
+| **MLM Treatment Stream Budget** | 500 blocks $\times$ 512 tokens = 256,000 tokens per branch | Constructed treatment-stream budget verified across all 25 branch manifests | **PASS** |
+| **MLM Optimizer Execution** | Batch size 16, 100 gradient steps | 100 gradient steps executed with batch size 16 | **PASS** |
+| **MLM Block Length** | 512 tokens per packed block | Exact 512-token packed blocks constructed from document corpus | **PASS** |
+| **MLM Optimizer & Schedule** | AdamW ($\text{lr}=5\times 10^{-5}$, weight decay 0.01) | Scheduler: `none`, warmup_ratio: `0.0` (0 warmup steps), matched across twins | **PASS** |
 | **MLM Masking Schedule** | 15% random dynamic masking | Masking seed coupled to branch seed $s$; identical across twin pairs | **PASS** |
-| **Downstream Classifier Init** | Fresh 3-class linear head (`id2label={0: Dovish, 1: Neutral, 2: Hawkish}`) | Initialized with seed $s$; identical weights for clean/leak pairs | **PASS** |
-| **Downstream Fine-Tuning** | 5 epochs on TDW training set ($\le 2018$) | Frozen encoder representations; head trained with AdamW | **PASS** |
+| **Downstream Training Scope** | Full model supervised fine-tuning | Full sequence-classification model (`model.train()`, `model.parameters()`) fine-tuned with AdamW | **PASS** |
+| **Downstream Hyperparameters**| 3 epochs, batch size 16, lr $2\times 10^{-5}$, weight decay 0.01 | Linear schedule with warmup ratio 0.1, max seq length 128 tokens, max steps 500 | **PASS** |
+| **Downstream Realized Steps** | 3 epochs on pre-2019 TDW training set (1,729 samples) | 108 steps/epoch $\times$ 3 epochs = 324 realized optimizer steps per branch | **PASS** |
+| **Downstream Head Init & Order** | Fresh shared 3-class head; paired sample order | Seed-coupled head init hash and sample order hash verified bit-identical across twins | **PASS** |
+| **Representation Probing Stage** | Linear Ridge probe ($\alpha=1.0$) under 4-fold temporal CV | Probe fitted on frozen extracted representations post fine-tuning | **PASS** |
 | **Pre-Cutoff Boundary** | $\le 2019\text{-}12\text{-}31\text{T}23:59:59\text{Z}$ | Max training timestamp: `2019-12-11T19:00:00Z` | **PASS** |
 | **Post-Cutoff Boundary** | $\ge 2020\text{-}01\text{-}01\text{T}00:00:00\text{Z}$ | Min contamination timestamp: `2020-01-29T19:00:00Z` (48-day buffer) | **PASS** |
 | **Corpus Overlap** | Zero text overlap | 0 duplicate documents between clean and contamination corpora | **PASS** |
-| **Hardware Platform** | Dedicated CUDA GPU | NVIDIA GPU via PyTorch FP32 deterministic math | **PASS** |
-| **Runtime Compute Volume** | $25 \times 256,000 = 6,400,000$ tokens | 6,400,000 total tokens processed across 25 branches | **PASS** |
+| **Hardware Platform & Controls**| Dedicated CUDA GPU | NVIDIA GPU via PyTorch; paired execution symmetry and reproducibility controls | **PASS** |
+| **Aggregate Treatment Volume** | $25 \times 256,000 = 6,400,000$ tokens | 6.4 million aggregate constructed treatment stream tokens | **PASS** |
 | **Protocol Conformance** | Protocol Version `1.2.4` | Enforced by protocol lock file and SHA-256 pre-execution gate | **PASS** |
 
 ---
@@ -128,20 +131,20 @@ Preserving the Phase 3 null result in the scientific record prevents publication
 ## S5. Comprehensive Publication Figure Captions
 
 ### Figure 1: Dose-Response Profiles of Representational Leakage ($L_{\mathrm{repr}}$)
-- **Path**: `docs/research/figures/phase4b/figure1_l_repr_dose_response.png` (and `.pdf`)
+- **Path**: `../research/figures/phase4b/figure1_l_repr_dose_response.png` (and `.pdf`)
 - **Caption**: *Dose-response relationship between contamination exposure ($D \in [0.00, 1.00]$) and continuous representational leakage ($L_{\mathrm{repr}}$). Individual thin colored lines show the trajectory of each optimization seed ($s \in \{13, 42, 87, 123, 2024\}$). The thick dark blue curve overlays the post-hoc descriptive across-seed mean, with the shaded light blue envelope indicating $\pm 1 \text{ standard error of the mean (SEM)}$. Representational decodability peaks in aggregate at $D = 0.75$ ($+0.00507$) before declining at $D = 1.00$ ($+0.00291$), illustrating non-monotonic response dynamics.*
 
 ### Figure 2: Seed-by-Dose Branch Significance Heatmap
-- **Path**: `docs/research/figures/phase4b/figure2_branch_significance_map.png` (and `.pdf`)
+- **Path**: `../research/figures/phase4b/figure2_branch_significance_map.png` (and `.pdf`)
 - **Caption**: *Heatmap of representational leakage point estimates ($L_{\mathrm{repr}}$) across all 20 contaminated experimental branches ($5 \text{ seeds} \times 4 \text{ doses}$). Cells are annotated with exact numerical point estimates. Asterisks denote nominal branch-level significance ($p < 0.05$) under one-sided right-tailed paired event-level sign-flip permutation tests ($B=2,000$). High susceptibility is observed in Seeds 87 and 2024, moderate isolated response in Seeds 13 and 42, and non-monotonic reversal in Seed 123.*
 
 ### Figure 3: Event-Level Error Reduction Distributions
-- **Path**: `docs/research/figures/phase4b/figure3_event_level_deltas.png` (and `.pdf`)
+- **Path**: `../research/figures/phase4b/figure3_event_level_deltas.png` (and `.pdf`)
 - **Caption**: *Event-level paired absolute-error deltas ($d_e = |y_e - \hat{y}_{C,e}| - |y_e - \hat{y}_{L,e}|$) across 32 out-of-sample temporal cross-validation FOMC meetings. **Panel A**: Violin and box plots of pooled branch-events across contamination doses. Note: Each dose panel aggregates 160 branch-events (32 OOS events $\times$ 5 seeds) that are not statistically independent; this panel is presented for post-hoc descriptive visualization only. **Panel B**: Meeting-by-meeting waterfall of median paired deltas across contaminated branches, ordered chronologically from 2016 to 2019. Exactly 23 of 32 meetings (71.9%) show positive median error reductions, confirming that directional gains were not concentrated in a single meeting.*
 
 ### Figure 4: Layered Outcome Comparison Across Analytical Tiers
-- **Path**: `docs/research/figures/phase4b/figure4_layered_outcome_comparison.png` (and `.pdf`)
-- **Caption**: *Multi-panel comparison across the five evaluated endpoints under Protocol v1.2.4: continuous representational decodability ($L_{\mathrm{repr}}$), binary policy classification ($\Delta\text{Macro-F1}$), behavioral masking sensitivity ($L_{\mathrm{behavior}}$), and downstream financial market predictability ($\Delta\mathrm{IC}$ for 2-year Treasury yields and SPY equities). Status banners illustrate systematic attenuation across layers: while $L_{\mathrm{repr}}$ exhibits substantial branch-level signal (18/20 positive, 10/20 nominally significant), the effect decouples at the behavioral tier ($\Delta\mathrm{F1} \approx 0, L_{\mathrm{behavior}} \approx 10^{-4}$) and market tier ($\Delta\mathrm{IC}$ bootstrap CIs include zero or shift negative in Seed 42).*
+- **Path**: `../research/figures/phase4b/figure4_layered_outcome_comparison.png` (and `.pdf`)
+- **Caption**: *Multi-panel comparison across the five evaluated endpoints under Protocol v1.2.4: continuous representational decodability ($L_{\mathrm{repr}}$), binary policy classification ($\Delta\text{Macro-F1}$), behavioral masking sensitivity ($L_{\mathrm{behavior}}$), and downstream financial market predictability ($\Delta\mathrm{IC}$ for 2-year Treasury yields and SPY equities). Status banners illustrate systematic attenuation across layers: while $L_{\mathrm{repr}}$ exhibits substantial branch-level signal (18/20 positive, 10/20 nominally significant), no reliable positive downstream effect was detected across the behavioral tier ($\Delta\mathrm{F1} \approx 0, L_{\mathrm{behavior}} \approx 10^{-4}$) or market tier ($\Delta\mathrm{IC}$ bootstrap CIs include zero or shift negative in Seed 42).*
 
 ---
 

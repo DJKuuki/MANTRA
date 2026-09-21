@@ -1,6 +1,6 @@
 # Adversarial Peer Review Audit: Parametric Temporal Leakage Manuscript
 
-**Stage**: Phase 6 — Full Paper Assembly  
+**Stage**: Phase 6 — Paper Factual Consistency & Reference Verification Patch  
 **Repository**: `DJKuuki/MANTRA`  
 **Protocol Version**: `1.2.4`  
 **Target Manuscript**: `docs/paper/manuscript.md`  
@@ -19,9 +19,9 @@ The objective of this review is not to smooth over empirical limitations or defe
 
 ### Reviewer Focus: Multiplicity, Pseudo-Replication, and Inferential Precision
 
-1. **Family-Wise Error Rate (FWER) and Multiplicity in Branch Reporting**:
-   - *Reviewer Critique*: The paper reports that "10 of 20 contaminated branches achieved nominal significance at $\alpha = 0.05$." However, evaluating 20 non-independent hypothesis tests without family-wise error rate control (such as Bonferroni-Holm or Benjamini-Hochberg) invites false discovery. If a standard Bonferroni threshold ($\alpha / 20 = 0.0025$) were applied, only branches with $p \le 0.0025$ (such as Seed 87 at $D=0.75$ and $D=1.00$, and Seed 2024 at $D=1.00$) would survive.
-   - *Manuscript Defense & Alignment*: The manuscript explicitly emphasizes this exact limitation in Section 1.5, Section 5.5, Section 6.2, and Section 8.1. The manuscript repeatedly clarifies that these are *nominal* branch-level tests and states explicitly: *"Because Protocol v1.2.4 omitted an omnibus aggregation rule across branches, a formal global confirmatory rejection is not claimed."* No post-hoc FWER procedure was invented to claim omnibus rejection.
+1. **Multiplicity and Multi-Testing in Branch Reporting**:
+   - *Reviewer Critique*: The paper reports that "10 of 20 contaminated branches achieved nominal significance at $\alpha = 0.05$." However, evaluating 20 non-independent hypothesis tests without multiplicity adjustment (such as family-wise error rate control via Bonferroni/Holm, or false discovery rate control via Benjamini-Hochberg) invites false discovery. If a standard Bonferroni threshold ($\alpha / 20 = 0.0025$) were applied, only branches with $p \le 0.0025$ (such as Seed 87 at $D=0.75$ and $D=1.00$, and Seed 2024 at $D=1.00$) would survive.
+   - *Manuscript Defense & Alignment*: The manuscript explicitly emphasizes this exact limitation in Section 1.5, Section 5.5, Section 6.2, and Section 8.1. The manuscript repeatedly clarifies that these are *nominal* branch-level tests and states explicitly: *"Because Protocol v1.2.4 omitted an omnibus aggregation rule across branches, a formal global confirmatory rejection is not claimed."* No post-hoc multiplicity procedure was invented to claim omnibus rejection.
    - *Audit Status*: **PASS (Strict inferential boundary preserved)**.
 
 2. **Pseudo-Replication Concerns (Figure 3 Panel A)**:
@@ -31,7 +31,7 @@ The objective of this review is not to smooth over empirical limitations or defe
 
 3. **Finite Monte-Carlo Resolution for $p = 0.0000$**:
    - *Reviewer Critique*: Reporting $p = 0.0000$ in Seed 87 at $D=1.00$ implies literal impossibility under the null, which is impossible with $B = 2,000$ permutations.
-   - *Manuscript Defense & Alignment*: The manuscript explicitly documents the finite Monte-Carlo resolution caveat in Section 5.4, Table S1 Note 2, and the accuracy audit: $0$ exceedances out of $2,000$ yields $p < 1/2001 \approx 0.00050$.
+   - *Manuscript Defense & Alignment*: The manuscript explicitly documents the finite Monte-Carlo resolution caveat in Section 5.4, Table S1 Note 2, and the accuracy audit: $0$ exceedances out of $2,000$ yields $p_{\mathrm{plus\_one}} = 1/2001 \approx 0.00050$.
    - *Audit Status*: **PASS (Mathematical precision preserved)**.
 
 ---
@@ -84,7 +84,7 @@ The objective of this review is not to smooth over empirical limitations or defe
 
 1. **Practical Significance vs. Statistical Significance**:
    - *Reviewer Critique*: Does positive representational leakage ($L_{\mathrm{repr}} \approx 0.005$) translate into a tradable market advantage?
-   - *Manuscript Defense & Alignment*: The entire thesis of the paper argues the opposite: the manuscript highlights that $L_{\mathrm{repr}}$ **decoupled completely** at the market tier. Section 6.7 and Section 7.5 explicitly document that downstream Information Coefficients against 2-year Treasury yields and SPY equities failed to support the positive economic alternative. The paper directly rejects claims of "false alpha."
+   - *Manuscript Defense & Alignment*: The entire thesis of the paper argues that representation leakage did not translate into reliable positive gains at the market tier. Section 6.7 and Section 7.5 explicitly document that downstream Information Coefficients against 2-year Treasury yields and SPY equities did not support the preregistered positive economic alternative. The paper directly rejects claims of "false alpha."
    - *Audit Status*: **PASS (Strong anti-overclaiming posture)**.
 
 2. **Seed 42 Negative Treasury Shift Interpretation**:
@@ -96,6 +96,29 @@ The objective of this review is not to smooth over empirical limitations or defe
    - *Reviewer Critique*: Traditional quantitative researchers might dismiss parametric leakage as merely ordinary look-ahead bias with a fancy name.
    - *Manuscript Defense & Alignment*: Section 1.1–1.3 and Section 3.1 clearly formulate the distinction: look-ahead bias involves future data entering the runtime feature pipeline $X_t$, whereas parametric leakage occurs when the runtime pipeline is 100% clean but future information is embedded in model weights $\theta$.
    - *Audit Status*: **PASS (Conceptual contribution well-delineated)**.
+
+---
+
+## Factual Consistency Corrections After Full-Paper Assembly
+
+During the factual consistency and reference verification audit (Phase 6 patch), several transcription errors from earlier drafting drafts were identified and corrected to ensure 100% parity with frozen execution truth:
+
+1. **MLM Treatment Stream Construction vs. Optimizer Execution**:
+   - *Prior Transcription Error*: The initial assembly implied that MLM execution processed $16 \times 160 \times 100 = 256,000$ tokens with a sequence length of 160.
+   - *Factual Correction*: In Protocol v1.2.4, the treatment stream consists of 500 packed blocks of 512 tokens (yielding the constructed 256,000-token treatment budget), whereas the MLM optimizer executed 100 gradient steps with a batch size of 16. The aggregate constructed treatment budget across 25 branches is 6.4M tokens ($25 \times 256,000$), which is distinct from cumulative optimizer token throughput.
+2. **Downstream Supervised Fine-Tuning Recipe**:
+   - *Prior Transcription Error*: The initial assembly stated that downstream fine-tuning was 5 epochs with a frozen encoder and trained head.
+   - *Factual Correction*: Frozen configuration `downstream_training` specifies 3 epochs, batch size 16, learning rate $2\times 10^{-5}$, weight decay 0.01, linear scheduler with warmup ratio 0.1, and max sequence length 128 tokens. Production code executes full-model fine-tuning (`model.train()`, `AdamW(model.parameters(), ...)`), yielding 324 realized optimizer steps across 1,729 TDW training samples ($\le 2018$).
+3. **Representation Probing vs. Fine-Tuning Distinction**:
+   - *Factual Clarification*: Downstream stance fine-tuning updates full model parameters. Subsequently, representations are extracted from anchor paragraphs and frozen inputs are provided to linear Ridge probes ($\alpha = 1.0$) under 4-fold temporal cross-validation.
+4. **MLM Optimization Schedule**:
+   - *Prior Transcription Error*: Supplement S2 previously stated that MLM used linear warmup 10 steps and linear decay.
+   - *Factual Correction*: MLM used scheduler `none` and warmup ratio `0.0` (constant learning rate $5\times 10^{-5}$). Linear warmup was used strictly in the downstream fine-tuning stage.
+5. **Economic Bootstrap Methodology**:
+   - *Prior Transcription Error*: Referenced "clustered bootstrap by event".
+   - *Factual Correction*: The production evaluator implements a 1,000-draw event-level stationary block bootstrap.
+6. **Bibliographic and Citation Integrity**:
+   - *Factual Correction*: Re-audited all 26 citations against primary venues. Corrected `jang2022temporal` to its full 8-author list from ICLR 2022 proceedings. Replaced the conflated `luu2022timeqa` with Kelvin Luu et al.'s actual temporal misalignment study from NAACL 2022 (`luu2022temporal`). Verified 2026 references on arXiv and conference proceedings.
 
 ---
 
