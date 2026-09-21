@@ -1,0 +1,5900 @@
+{
+  "seed": 123,
+  "dose": 0.0,
+  "requested_dose": 0.0,
+  "realized_dose": 0.0,
+  "token_budget": 256000,
+  "pre_cutoff_tokens": 256000,
+  "post_cutoff_tokens": 0,
+  "total_tokens": 256000,
+  "forced_repetition_ratio": 0.0,
+  "unique_source_document_count": 53,
+  "clean_corpus_sha256": "5202f14b340c3212dc48c13e1ba7a8a814cb472a4c25df072bed14b7a3f19e4c",
+  "contamination_corpus_sha256": "54b3e84e8ef958e78032815a6cc76e1ca68cb0428afe71b390a583ee60e25c58",
+  "treatment_stream_sha256": "dbd9119f476a927e6f2d66efc3060aa0e4caf2e7f050b35542ca5b093f844c8a",
+  "base_checkpoint": "ProsusAI/finbert",
+  "base_revision": "4556d13015211d73dccd3fdd39d39232506f3e43",
+  "tokenizer_name": "ProsusAI/finbert",
+  "tokenizer_revision": "4556d13015211d73dccd3fdd39d39232506f3e43",
+  "initial_model_hash": "4586b0a658223d2f3cde726bb1e2ca27d01da5838f964253e12ddc80ec68555f",
+  "post_mlm_model_hash": "3d5f68e25a46797590a6058112c4ad4b06059a9ff0b0e04ae62f1ed80365f1f0",
+  "mask_schedule_hash": "4dbeada686d0f4a52be6a57a12740d95993752f438feff68e763a4de0a3ad21c",
+  "downstream_initial_head_hash": "04520059fe7e29ae0f6e6627df35a4414787939cd5506273fc7086e4703b5b7f",
+  "downstream_sample_order_hash": "fd7769b6046542f1af8d51d8d742fa612e6a779e3511579c3961970314f68989",
+  "mlm_steps": 100,
+  "optimizer": "AdamW",
+  "learning_rate": 5e-05,
+  "weight_decay": 0.01,
+  "downstream_hyperparameters": {
+    "epochs": 3,
+    "batch_size": 16,
+    "learning_rate": 2e-05,
+    "weight_decay": 0.01,
+    "optimizer": "AdamW",
+    "scheduler": "linear",
+    "warmup_ratio": 0.1,
+    "max_seq_length": 128
+  },
+  "treatment_block_manifest": [
+    {
+      "block_index": 0,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 1,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13",
+        "fomc-statement-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 2,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 3,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 4,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 5,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 6,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 7,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 8,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 9,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 10,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 11,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 12,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 13,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 14,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 15,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 16,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 17,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 18,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13"
+      ]
+    },
+    {
+      "block_index": 19,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-06-13",
+        "fomc-statement-2016-12-14"
+      ]
+    },
+    {
+      "block_index": 20,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2016-12-14"
+      ]
+    },
+    {
+      "block_index": 21,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13",
+        "fomc-statement-2016-12-14"
+      ]
+    },
+    {
+      "block_index": 22,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 23,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 24,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 25,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 26,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 27,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 28,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 29,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 30,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 31,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 32,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 33,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 34,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 35,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 36,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 37,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 38,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 39,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-12-13",
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 40,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 41,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 42,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 43,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 44,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 45,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 46,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 47,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 48,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 49,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 50,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 51,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 52,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 53,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 54,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 55,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 56,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26"
+      ]
+    },
+    {
+      "block_index": 57,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-09-26",
+        "fomc-statement-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 58,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2017-03-15",
+        "fomc-statement-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 59,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2017-03-15"
+      ]
+    },
+    {
+      "block_index": 60,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2017-03-15",
+        "fomc-statement-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 61,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31",
+        "fomc-statement-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 62,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 63,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 64,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 65,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 66,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 67,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 68,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 69,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 70,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 71,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 72,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 73,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 74,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 75,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 76,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 77,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 78,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 79,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 80,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 81,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 82,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 83,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 84,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 85,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 86,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 87,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-07-31",
+        "fomc-statement-2016-09-21"
+      ]
+    },
+    {
+      "block_index": 88,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2016-09-21"
+      ]
+    },
+    {
+      "block_index": 89,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2016-09-21",
+        "fomc-statement-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 90,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 91,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20",
+        "fomc-statement-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 92,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 93,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 94,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 95,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 96,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 97,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 98,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 99,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 100,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 101,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 102,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 103,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 104,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 105,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 106,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 107,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 108,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 109,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 110,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 111,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20"
+      ]
+    },
+    {
+      "block_index": 112,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-09-20",
+        "fomc-statement-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 113,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 114,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14",
+        "fomc-statement-2019-07-31"
+      ]
+    },
+    {
+      "block_index": 115,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 116,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 117,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 118,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 119,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 120,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 121,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 122,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 123,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 124,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 125,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 126,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 127,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 128,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 129,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 130,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 131,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 132,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 133,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 134,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14"
+      ]
+    },
+    {
+      "block_index": 135,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-06-14",
+        "fomc-statement-2016-06-15"
+      ]
+    },
+    {
+      "block_index": 136,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2016-06-15"
+      ]
+    },
+    {
+      "block_index": 137,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2015-01-28",
+        "fomc-statement-2016-06-15"
+      ]
+    },
+    {
+      "block_index": 138,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2015-01-28"
+      ]
+    },
+    {
+      "block_index": 139,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2015-01-28",
+        "fomc-statement-2015-09-17"
+      ]
+    },
+    {
+      "block_index": 140,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2015-09-17"
+      ]
+    },
+    {
+      "block_index": 141,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2015-09-17",
+        "fomc-statement-2016-04-27"
+      ]
+    },
+    {
+      "block_index": 142,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2016-04-27"
+      ]
+    },
+    {
+      "block_index": 143,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2016-04-27",
+        "fomc-statement-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 144,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2016-01-27",
+        "fomc-statement-2017-12-13"
+      ]
+    },
+    {
+      "block_index": 145,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2016-01-27"
+      ]
+    },
+    {
+      "block_index": 146,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2016-01-27",
+        "fomc-statement-2016-07-27"
+      ]
+    },
+    {
+      "block_index": 147,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2016-07-27"
+      ]
+    },
+    {
+      "block_index": 148,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2016-07-27",
+        "fomc-statement-2018-11-08"
+      ]
+    },
+    {
+      "block_index": 149,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2018-11-08",
+        "fomc-statement-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 150,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 151,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01",
+        "fomc-statement-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 152,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 153,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 154,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 155,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 156,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 157,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 158,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 159,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 160,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 161,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 162,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 163,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 164,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 165,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 166,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 167,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 168,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 169,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 170,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 171,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 172,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 173,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 174,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03",
+        "fomc-minutes-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 175,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 176,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 177,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 178,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 179,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 180,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 181,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 182,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 183,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 184,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 185,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 186,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 187,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 188,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 189,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 190,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 191,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 192,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 193,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 194,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 195,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-05-03",
+        "fomc-statement-2015-03-18"
+      ]
+    },
+    {
+      "block_index": 196,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2015-03-18",
+        "fomc-statement-2015-10-28"
+      ]
+    },
+    {
+      "block_index": 197,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2015-10-28"
+      ]
+    },
+    {
+      "block_index": 198,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2015-10-28",
+        "fomc-statement-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 199,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 200,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01",
+        "fomc-statement-2019-05-01"
+      ]
+    },
+    {
+      "block_index": 201,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 202,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 203,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 204,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 205,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 206,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 207,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 208,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 209,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 210,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 211,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 212,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 213,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 214,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 215,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 216,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 217,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01"
+      ]
+    },
+    {
+      "block_index": 218,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-11-01",
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 219,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 220,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 221,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 222,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 223,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 224,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 225,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 226,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 227,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 228,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 229,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 230,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 231,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 232,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 233,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 234,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 235,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 236,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 237,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 238,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 239,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 240,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 241,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 242,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 243,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 244,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02",
+        "fomc-minutes-2019-09-18"
+      ]
+    },
+    {
+      "block_index": 245,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 246,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 247,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 248,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 249,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 250,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 251,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 252,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 253,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 254,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 255,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 256,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 257,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 258,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 259,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 260,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 261,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 262,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 263,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 264,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-05-02",
+        "fomc-statement-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 265,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2015-12-16",
+        "fomc-statement-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 266,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2015-12-16"
+      ]
+    },
+    {
+      "block_index": 267,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21",
+        "fomc-statement-2015-12-16"
+      ]
+    },
+    {
+      "block_index": 268,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 269,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 270,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 271,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 272,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 273,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 274,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 275,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 276,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 277,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 278,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 279,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 280,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 281,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 282,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 283,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 284,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21"
+      ]
+    },
+    {
+      "block_index": 285,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-03-21",
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 286,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 287,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 288,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 289,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 290,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 291,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 292,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 293,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 294,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 295,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 296,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 297,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 298,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 299,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 300,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 301,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 302,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 303,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 304,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 305,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01"
+      ]
+    },
+    {
+      "block_index": 306,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-08-01",
+        "fomc-statement-2017-05-03"
+      ]
+    },
+    {
+      "block_index": 307,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2017-05-03",
+        "fomc-statement-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 308,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 309,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2015-06-17",
+        "fomc-statement-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 310,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2015-06-17"
+      ]
+    },
+    {
+      "block_index": 311,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2015-06-17",
+        "fomc-statement-2015-07-29"
+      ]
+    },
+    {
+      "block_index": 312,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2015-07-29",
+        "fomc-statement-2017-02-01"
+      ]
+    },
+    {
+      "block_index": 313,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2017-02-01"
+      ]
+    },
+    {
+      "block_index": 314,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30",
+        "fomc-statement-2017-02-01"
+      ]
+    },
+    {
+      "block_index": 315,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 316,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 317,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 318,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 319,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 320,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 321,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 322,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 323,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 324,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 325,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 326,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 327,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 328,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 329,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 330,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 331,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 332,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 333,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 334,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 335,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 336,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 337,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 338,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 339,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 340,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 341,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 342,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 343,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30"
+      ]
+    },
+    {
+      "block_index": 344,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-10-30",
+        "fomc-statement-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 345,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 346,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2016-11-02",
+        "fomc-statement-2018-05-02"
+      ]
+    },
+    {
+      "block_index": 347,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2016-11-02"
+      ]
+    },
+    {
+      "block_index": 348,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19",
+        "fomc-statement-2016-11-02"
+      ]
+    },
+    {
+      "block_index": 349,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 350,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 351,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 352,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 353,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 354,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 355,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 356,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 357,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 358,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 359,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 360,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 361,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 362,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 363,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 364,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 365,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 366,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 367,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 368,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26",
+        "fomc-minutes-2019-06-19"
+      ]
+    },
+    {
+      "block_index": 369,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 370,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 371,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 372,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 373,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 374,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 375,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 376,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 377,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 378,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 379,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 380,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 381,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 382,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 383,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 384,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 385,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26"
+      ]
+    },
+    {
+      "block_index": 386,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2017-07-26",
+        "fomc-statement-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 387,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 388,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2018-12-19",
+        "fomc-statement-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 389,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20",
+        "fomc-statement-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 390,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 391,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 392,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 393,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 394,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 395,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 396,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 397,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 398,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 399,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 400,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 401,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 402,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 403,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 404,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 405,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 406,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 407,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 408,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 409,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 410,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 411,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20"
+      ]
+    },
+    {
+      "block_index": 412,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-03-20",
+        "fomc-statement-2016-03-16"
+      ]
+    },
+    {
+      "block_index": 413,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2016-03-16"
+      ]
+    },
+    {
+      "block_index": 414,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19",
+        "fomc-statement-2016-03-16"
+      ]
+    },
+    {
+      "block_index": 415,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 416,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 417,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 418,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 419,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 420,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 421,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 422,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 423,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 424,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 425,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 426,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 427,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 428,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 429,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 430,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 431,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 432,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 433,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 434,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19"
+      ]
+    },
+    {
+      "block_index": 435,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-12-19",
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 436,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 437,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 438,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 439,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 440,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 441,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 442,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 443,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 444,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 445,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 446,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 447,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 448,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 449,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 450,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 451,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 452,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 453,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 454,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 455,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 456,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 457,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 458,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 459,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 460,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 461,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 462,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 463,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 464,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 465,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 466,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 467,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 468,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30"
+      ]
+    },
+    {
+      "block_index": 469,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2019-01-30",
+        "fomc-statement-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 470,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-statement-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 471,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 472,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 473,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 474,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 475,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 476,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 477,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 478,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 479,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 480,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 481,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 482,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 483,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 484,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 485,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 486,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 487,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 488,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 489,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 490,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 491,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 492,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 493,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 494,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 495,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 496,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 497,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 498,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    },
+    {
+      "block_index": 499,
+      "dose": 0.0,
+      "block_type": "pre_only",
+      "token_count": 512,
+      "pre_tokens": 512,
+      "post_tokens": 0,
+      "source_document_ids": [
+        "fomc-minutes-2018-01-31"
+      ]
+    }
+  ],
+  "event_stance_scores": [
+    -0.4029696583747864,
+    -0.43604427576065063,
+    -0.5722295641899109,
+    -0.5630097389221191,
+    -0.5792009234428406,
+    -0.6094143986701965,
+    -0.5661300420761108,
+    -0.31502580642700195,
+    -0.6940733790397644,
+    -0.6951178312301636,
+    -0.6817577481269836,
+    -0.6893701553344727,
+    -0.683533787727356,
+    -0.5299479961395264,
+    -0.3985818326473236,
+    -0.41052213311195374,
+    -0.49496927857398987,
+    -0.3567564785480499,
+    -0.4860307276248932,
+    -0.36053913831710815,
+    -0.42798107862472534,
+    -0.3114738464355469,
+    -0.381357878446579,
+    -0.47802841663360596,
+    -0.26848721504211426,
+    -0.2408040314912796,
+    -0.1839989423751831,
+    0.12146929651498795,
+    -0.024195313453674316,
+    0.27015453577041626,
+    0.13246959447860718,
+    0.23403480648994446,
+    -0.2026257961988449,
+    -0.39185667037963867,
+    -0.41568851470947266,
+    -0.4584203362464905,
+    -0.49562057852745056,
+    -0.560020387172699,
+    -0.4238101840019226,
+    -0.31873664259910583
+  ],
+  "event_sensitivities": [
+    0.0015867330133914948,
+    0.0011877228505909442,
+    0.004438166134059429,
+    0.003106968983775005,
+    0.0031181365600787105,
+    0.0028322677942924203,
+    0.0012772847665473818,
+    0.0057114616356557235,
+    0.0016179205937078222,
+    0.002833181046298705,
+    0.005488557342323475,
+    0.003903930922388099,
+    0.00553909415320959,
+    0.002273727787542157,
+    0.004947607111535035,
+    0.00518973077123519,
+    0.001827519023208879,
+    0.006184889384894632,
+    0.007781386174610816,
+    0.006615606317063793,
+    0.005935543496161699,
+    0.004615686751640169,
+    0.00457655587233603,
+    0.00833235727623105,
+    0.0034160182549385354,
+    0.0031262579432222992,
+    0.002682485443074256,
+    0.0013896704513172153,
+    0.0006606801362067927,
+    0.0008940677689679433,
+    0.0004586983450280968,
+    0.0012519168703875039,
+    0.004649369516603959,
+    0.0043891848423906294,
+    0.004349977786963184,
+    0.00010504339377348515,
+    0.0001036854948324617,
+    0.00011090459520346485,
+    8.318767550008488e-05,
+    0.002240824115688156
+  ],
+  "competence_macro_f1": null,
+  "competence_mcc": null,
+  "competence_brier": null,
+  "competence_ece": null,
+  "competence_provenance": "NOT_EVALUATED_NO_EVAL_SPLIT",
+  "temporal_robustness": "NOT_EVALUATED",
+  "behavioral_sensitivity": {
+    "mask_sensitivity": 0.003329507540911436,
+    "sensitivity_entity": 0.003329726867377758,
+    "sensitivity_person": 4.2747706174850464e-07,
+    "sensitivity_date": 0.0,
+    "sensitivities_by_level": {
+      "level_1": 0.003329726867377758,
+      "level_2": 0.0033301543444395065,
+      "level_3": 0.003329507540911436
+    },
+    "per_sample_sensitivities": [
+      0.0019196933135390282,
+      0.0037117991596460342,
+      0.002239165361970663,
+      2.0814419258385897e-05,
+      4.219281254336238e-05,
+      0.00018404750153422356,
+      0.003727397881448269,
+      0.001963278278708458,
+      2.1697778720408678e-05,
+      4.219281254336238e-05,
+      2.8989277780056e-05,
+      0.009680042043328285,
+      0.012417908757925034,
+      2.1697778720408678e-05,
+      4.219281254336238e-05,
+      5.4649513913318515e-05,
+      0.0029983960557729006,
+      0.012417908757925034,
+      2.1697778720408678e-05,
+      4.219281254336238e-05,
+      7.745338371023536e-05,
+      0.0029983960557729006,
+      0.012450942769646645,
+      2.1697778720408678e-05,
+      4.219281254336238e-05,
+      6.341974949464202e-05,
+      0.001583085861057043,
+      0.012450942769646645,
+      2.1697778720408678e-05,
+      4.219281254336238e-05,
+      0.00012792169582098722,
+      0.0059353201650083065,
+      0.0002592913806438446,
+      2.1697778720408678e-05,
+      4.219281254336238e-05,
+      1.6459496691823006e-05,
+      0.022963963449001312,
+      0.0008981218561530113,
+      0.004567312076687813,
+      0.00011145129974465817,
+      0.0006757713854312897,
+      0.00266588875092566,
+      6.917945574969053e-05,
+      0.004567312076687813,
+      0.00011145129974465817,
+      0.0008489775937050581,
+      0.008358117192983627,
+      0.0002800470683723688,
+      0.004567312076687813,
+      0.00011145129974465817,
+      7.833697600290179e-05,
+      0.02240563929080963,
+      0.0002800470683723688,
+      0.004567312076687813,
+      0.00011145129974465817,
+      0.00017619074787944555,
+      0.01438465341925621,
+      0.0002800470683723688,
+      0.004567312076687813,
+      0.00011145129974465817,
+      4.0489365346729755e-05,
+      0.022696170955896378,
+      0.0002800470683723688,
+      0.004567312076687813,
+      0.00011145129974465817,
+      3.6842364352196455e-05,
+      0.005548031069338322,
+      0.0011050021275877953,
+      0.004567312076687813,
+      0.00011145129974465817,
+      0.0015853489749133587,
+      0.018164578825235367,
+      0.0003093443810939789,
+      0.004567312076687813,
+      0.00011145129974465817,
+      0.0005957474932074547,
+      0.018164578825235367,
+      0.002509564161300659,
+      0.004567312076687813,
+      0.00011145129974465817,
+      0.00010881584603339434,
+      0.004136212635785341,
+      0.0002138032577931881,
+      0.004567312076687813,
+      0.00011145129974465817,
+      5.54440775886178e-05,
+      0.006107307504862547,
+      0.00386175699532032,
+      0.020788487046957016,
+      0.00011145129974465817,
+      0.0018068645149469376,
+      0.015238042920827866,
+      0.0009620850905776024,
+      0.020788487046957016,
+      0.00011145129974465817,
+      6.679489160887897e-05,
+      0.0075300694443285465,
+      0.0014859940856695175,
+      0.020788487046957016,
+      0.0032066861167550087,
+      6.130256224423647e-05,
+      0.0075300694443285465,
+      0.00036730198189616203,
+      0.020788487046957016,
+      0.0009305564453825355,
+      2.7579077141126618e-05,
+      0.0011073444038629532,
+      0.00036730198189616203,
+      0.020788487046957016,
+      0.0007877212483435869,
+      4.558428190648556e-05,
+      0.0010524042882025242,
+      0.00036730198189616203,
+      0.020788487046957016,
+      0.0006290017627179623,
+      3.302376717329025e-05,
+      0.008779100142419338,
+      0.0037288181483745575,
+      0.020788487046957016,
+      0.00025471270782873034,
+      0.00470616202801466,
+      0.0007020346820354462,
+      0.008001163601875305,
+      5.8894394896924496e-05,
+      0.001027632737532258,
+      0.003417341038584709,
+      0.008001163601875305,
+      0.00042497366666793823,
+      0.0016952799633145332,
+      0.0006085245404392481,
+      0.008001163601875305,
+      0.0004996946081519127,
+      0.0012827563332393765,
+      0.0036963429301977158,
+      7.988793367985636e-05,
+      3.571802517399192e-05,
+      0.0012827563332393765,
+      0.0012443582527339458,
+      7.988793367985636e-05,
+      3.284745616838336e-05,
+      0.0012827563332393765,
+      0.002180779352784157,
+      7.988793367985636e-05,
+      4.343001637607813e-05,
+      0.0012827563332393765,
+      0.0004287190968170762,
+      7.988793367985636e-05,
+      7.734820246696472e-05,
+      0.0026461416855454445,
+      0.00220428965985775,
+      7.988793367985636e-05,
+      0.0009072110988199711,
+      0.01296100951731205,
+      7.988793367985636e-05,
+      0.00012665707617998123,
+      0.01296100951731205,
+      7.988793367985636e-05,
+      9.035909897647798e-06,
+      0.01296100951731205,
+      7.988793367985636e-05,
+      4.504577191255521e-07,
+      0.00032760563772171736,
+      7.988793367985636e-05,
+      1.222954597324133e-05,
+      8.542785508325323e-06,
+      0.0002212632680311799,
+      7.988793367985636e-05,
+      0.0001563727855682373,
+      5.2360701374709606e-05,
+      0.0001406994415447116,
+      0.00022119563072919846,
+      7.988793367985636e-05,
+      1.8353748600929976e-06,
+      0.00010557231144048274,
+      0.00014676712453365326,
+      7.988793367985636e-05,
+      5.233323463471606e-07,
+      3.288747029728256e-05,
+      0.008840152993798256,
+      7.988793367985636e-05,
+      1.0368064977228642e-05
+    ]
+  },
+  "economic_ic_2y": 0.048068400130011575,
+  "economic_ic_spy": -0.120859533736874,
+  "data_mode": "EMPIRICAL",
+  "scientific_code_commit": "5ec0f03f3a5393d90462aa78d018d54b08cce126",
+  "execution_repository_head": "fe22646271c14d396ca6d2555e5f21887890149a",
+  "source_tree_hash": "02fe0ced0d03a920a7f56887f1d674282d17bc108986d19d2df495b59d330bb6",
+  "protocol_lock_sha256": "652b18e1a0454f976bee0e96be40875b033e854c185f2b0535a7d7a02a1cb369",
+  "protocol_version": "1.2.4",
+  "l_repr": 0.0,
+  "event_contrast_mean": 0.0,
+  "permutation_p_value": 1.0,
+  "delta_spearman": 0.0,
+  "l_behavior": 0.0,
+  "l_behavior_event": 0.0,
+  "l_behavior_mean": 0.0,
+  "l_behavior_median": 0.0,
+  "l_behavior_std": 0.0,
+  "delta_ic_2y": 0.0,
+  "delta_ic_spy": 0.0,
+  "n_oos_events": 32,
+  "target_type": "continuous",
+  "model_type": "ridge_regression",
+  "behavioral_inference": "DESCRIPTIVE_ONLY",
+  "behavioral_multiple_testing": "NOT_APPLICABLE",
+  "behavioral_significance_testing": false
+}
