@@ -1,9 +1,9 @@
 # Reference Verification & Manuscript Characterization Audit Ledger
 
-**Stage**: Phase 6 — Paper Factual Consistency & Reference Verification Patch  
+**Stage**: Phase 6 — Final Paper Factual Micro-Closure  
 **Repository**: `DJKuuki/MANTRA`  
 **Protocol Version**: `1.2.4`  
-**Audit Date**: 2026-09-21  
+**Audit Date**: 2026-09-22  
 **Verification Standard**: Primary bibliographic source (ACL Anthology, ICLR/OpenReview, USENIX, Nature, AMS, Elsevier, Wiley, SSRN, arXiv).  
 
 ---
@@ -37,15 +37,15 @@
 | `shah2023trillion` | Trillion Dollar Words: A New Financial Dataset, Task & Market Analysis | Agam Shah, Suvan Paturi, Sudheer Chava | 2023 | Proceedings of ACL 2023 (Volume 1: Long Papers), pp. 6664–6679 | ACL Anthology (2023.acl-long.368) | [10.18653/v1/2023.acl-long.368](https://doi.org/10.18653/v1/2023.acl-long.368) | **YES** | **YES** | Introduces Trillion Dollar Words dataset used for stance fine-tuning; verified in Sec. 2.5, 5.1. |
 | `tang2026mind` | Mind the Shift: Decoding Monetary Policy Stance from FOMC Statements with Large Language Models | Yixuan Tang, Yi Yang | 2026 | arXiv preprint (Mar 2026) | arXiv | [arXiv:2603.14313](https://arxiv.org/abs/2603.14313) | **YES** | **YES** | Introduces Delta-Consistent Scoring (DCS) for FOMC statements; verified in Sec. 2.5. |
 | `xue2026temporal` | Temporal Leakage in Financial News NLP: A Multi-Architecture Audit with a Regime-Specific M&A Signal | Chenhao Xue, Raslen Guesmi, Siwei Feng, Yucheng Gong, Jacob Xavier Sundram, Jordan Pang, Lan Wang, Julian Kaljuvee | 2026 | arXiv preprint (Aug 2026) | arXiv | [arXiv:2608.17223](https://arxiv.org/abs/2608.17223) | **YES** | **YES** | Audits 16 architectures; documents $1.1\times$ to $6.5\times$ MCC inflation from random splits; verified in Sec. 1.1, 2.1. |
-| `zhang2026all` | All Leaks Count, Some Count More: Interpretable Temporal Contamination Detection and Mitigation in LLM Backtesting | Zeyu Zhang, Ryan Chen, Bradly C. Stadie | 2026 | Findings of the Association for Computational Linguistics: EMNLP 2026 / arXiv preprint | arXiv / EMNLP Findings | [arXiv:2602.17234](https://arxiv.org/abs/2602.17234) | **YES** | **YES** | Introduces Shapley-DCLR and TimeSPEC for temporal contamination detection and mitigation; verified in Sec. 1.3, 2.6. |
+| `zhang2026all` | All Leaks Count, Some Count More: Interpretable Temporal Contamination Detection and Mitigation in LLM Backtesting | Zeyu Zhang, Ryan Chen, Bradly C. Stadie | 2026 | arXiv preprint (arXiv:2602.17234; accepted to Findings of EMNLP 2026, proceedings pending) | arXiv / EMNLP Findings | [arXiv:2602.17234](https://arxiv.org/abs/2602.17234) | **PARTIAL** | **YES** | Introduces Shapley-DCLR and TimeSPEC for temporal contamination detection and mitigation; verified in Sec. 1.3, 2.6. Bibliographic status set to PARTIAL pending formal publication in ACL Anthology. |
 
 ---
 
 ## 2. Bibliographic Audit Summary
 
 - **Total References**: 26
-- **Fully Verified (YES)**: 26 (100%)
-- **Partially Verified (PARTIAL)**: 0
+- **Fully Verified (YES)**: 25 (96.2%)
+- **Partially Verified (PARTIAL)**: 1 (3.8%) (`zhang2026all`, accepted to Findings of EMNLP 2026; formal ACL Anthology proceedings pending)
 - **Unverified (NO)**: 0
 - **Corrected Bibliographic Entries**:
   - `jang2022temporal`: Expanded to full, accurate 8-author list from ICLR 2022 official proceedings.
@@ -53,6 +53,6 @@
   - `benhenda2026lookahead`: Confirmed arXiv preprint status (`arXiv:2601.13770`).
   - `tang2026mind`: Confirmed arXiv preprint status (`arXiv:2603.14313`).
   - `xue2026temporal`: Confirmed arXiv preprint status (`arXiv:2608.17223`).
-  - `zhang2026all`: Confirmed accepted to Findings of EMNLP 2026 (`arXiv:2602.17234`).
+  - `zhang2026all`: Classified as arXiv preprint (`arXiv:2602.17234`) with note of acceptance to Findings of EMNLP 2026 pending ACL Anthology proceedings release.
 - **Undefined Citation Keys in Manuscript**: 0
 - **Duplicate BibTeX Keys**: 0

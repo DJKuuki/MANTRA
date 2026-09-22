@@ -1,6 +1,6 @@
 # Adversarial Peer Review Audit: Parametric Temporal Leakage Manuscript
 
-**Stage**: Phase 6 — Paper Factual Consistency & Reference Verification Patch  
+**Stage**: Phase 6 — Final Paper Factual Micro-Closure  
 **Repository**: `DJKuuki/MANTRA`  
 **Protocol Version**: `1.2.4`  
 **Target Manuscript**: `docs/paper/manuscript.md`  
@@ -41,12 +41,12 @@ The objective of this review is not to smooth over empirical limitations or defe
 ### Reviewer Focus: Domain Adaptation Confounds, Temporal Chronology, and Baseline Provenance
 
 1. **Domain Adaptation vs. Temporal Leakage Confound**:
-   - *Reviewer Critique*: The post-cutoff text consists of central-bank communications from 2020–2022. During this period, the Federal Reserve adopted unprecedented rhetoric regarding pandemic emergency lending and zero-rate policies. Could the linear probe's improved performance reflect adaptation to specific modern rhetorical patterns rather than temporal leakage of policy direction?
+   - *Reviewer Critique*: The post-cutoff text consists of central-bank communications from 2020–early 2023 (specifically 2020-01-29 through 2023-01-04). During this period, the Federal Reserve adopted unprecedented rhetoric regarding pandemic emergency lending and zero-rate policies. Could the linear probe's improved performance reflect adaptation to specific modern rhetorical patterns rather than temporal leakage of policy direction?
    - *Manuscript Defense & Alignment*: The twin-model design pairs contaminated models with an active clean twin receiving the exact same token budget and gradient steps on contemporary pre-cutoff FOMC documents, equalizing broad central-bank domain adaptation. However, Section 7.6 and Section 8.6 explicitly concede that this design *cannot eliminate regime-specific vocabulary shifts or topic distributions introduced by post-2020 documents*. The manuscript refrains from overclaiming that domain adaptation was 100% eliminated.
    - *Audit Status*: **PASS (Causal boundary accurately stated)**.
 
 2. **Temporal Chronology Precision ("Future" vs. "Post-Cutoff")**:
-   - *Reviewer Critique*: A naive reader might believe that the linear probe was evaluated on FOMC meetings occurring in 2020–2022. If so, evaluating on the contamination text itself would be trivial data leakage.
+   - *Reviewer Critique*: A naive reader might believe that the linear probe was evaluated on FOMC meetings occurring in 2020–early 2023. If so, evaluating on the contamination text itself would be trivial data leakage.
    - *Manuscript Defense & Alignment*: The manuscript repeatedly clarifies in Section 3.1, Section 5.1, and Table S1 that the 32 out-of-sample evaluation events occurred between **January 2016 and December 2019**, strictly *prior* to the global cutoff `2019-12-31T23:59:59Z`. "Future" refers strictly to the *next policy decision relative to each historical statement* ($\Delta\text{Rate}_{t+1}$).
    - *Audit Status*: **PASS (Chronology strictly disambiguated)**.
 
@@ -101,24 +101,24 @@ The objective of this review is not to smooth over empirical limitations or defe
 
 ## Factual Consistency Corrections After Full-Paper Assembly
 
-During the factual consistency and reference verification audit (Phase 6 patch), several transcription errors from earlier drafting drafts were identified and corrected to ensure 100% parity with frozen execution truth:
+During the factual consistency and reference verification audit (Phase 6 patch and final micro-closure), several transcription errors from earlier drafting drafts were identified and corrected to ensure 100% parity with frozen execution truth:
 
 1. **MLM Treatment Stream Construction vs. Optimizer Execution**:
    - *Prior Transcription Error*: The initial assembly implied that MLM execution processed $16 \times 160 \times 100 = 256,000$ tokens with a sequence length of 160.
    - *Factual Correction*: In Protocol v1.2.4, the treatment stream consists of 500 packed blocks of 512 tokens (yielding the constructed 256,000-token treatment budget), whereas the MLM optimizer executed 100 gradient steps with a batch size of 16. The aggregate constructed treatment budget across 25 branches is 6.4M tokens ($25 \times 256,000$), which is distinct from cumulative optimizer token throughput.
 2. **Downstream Supervised Fine-Tuning Recipe**:
-   - *Prior Transcription Error*: The initial assembly stated that downstream fine-tuning was 5 epochs with a frozen encoder and trained head.
-   - *Factual Correction*: Frozen configuration `downstream_training` specifies 3 epochs, batch size 16, learning rate $2\times 10^{-5}$, weight decay 0.01, linear scheduler with warmup ratio 0.1, and max sequence length 128 tokens. Production code executes full-model fine-tuning (`model.train()`, `AdamW(model.parameters(), ...)`), yielding 324 realized optimizer steps across 1,729 TDW training samples ($\le 2018$).
+   - *Prior Transcription Error*: The initial assembly stated that downstream fine-tuning was 5 epochs with a frozen encoder and trained head, with early drafts also attempting an unverified arithmetic derivation of optimizer steps ($1729 / 16 \times 3 \approx 324$).
+   - *Factual Correction*: Frozen configuration `downstream_training` specifies 3 epochs, batch size 16, learning rate $2\times 10^{-5}$, weight decay 0.01, linear scheduler with warmup ratio 0.1, and max sequence length 128 tokens (`max_steps: 500`). Production code executes full-model fine-tuning (`model.train()`, `AdamW(model.parameters(), ...)`) under paired within-seed sample ordering (`paired_within_seed`). Unpersisted runtime step estimates have been excised from the manuscript to maintain strict fidelity to the execution configuration.
 3. **Representation Probing vs. Fine-Tuning Distinction**:
    - *Factual Clarification*: Downstream stance fine-tuning updates full model parameters. Subsequently, representations are extracted from anchor paragraphs and frozen inputs are provided to linear Ridge probes ($\alpha = 1.0$) under 4-fold temporal cross-validation.
-4. **MLM Optimization Schedule**:
-   - *Prior Transcription Error*: Supplement S2 previously stated that MLM used linear warmup 10 steps and linear decay.
-   - *Factual Correction*: MLM used scheduler `none` and warmup ratio `0.0` (constant learning rate $5\times 10^{-5}$). Linear warmup was used strictly in the downstream fine-tuning stage.
+4. **MLM Masking and Optimization Schedule**:
+   - *Prior Transcription Error*: Supplement S2 previously referenced generic "dynamic random masking" and stated that MLM used linear warmup 10 steps and linear decay.
+   - *Factual Correction*: MLM masking uses a 15% mask probability implemented via a pre-generated boolean mask schedule that is deterministically fixed across dose branches within each seed (`mask_schedule_hash`), though distinct across seeds. The MLM optimizer used scheduler `none` and warmup ratio `0.0` (constant learning rate $5\times 10^{-5}$). Linear warmup was used strictly in the downstream fine-tuning stage.
 5. **Economic Bootstrap Methodology**:
    - *Prior Transcription Error*: Referenced "clustered bootstrap by event".
    - *Factual Correction*: The production evaluator implements a 1,000-draw event-level stationary block bootstrap.
 6. **Bibliographic and Citation Integrity**:
-   - *Factual Correction*: Re-audited all 26 citations against primary venues. Corrected `jang2022temporal` to its full 8-author list from ICLR 2022 proceedings. Replaced the conflated `luu2022timeqa` with Kelvin Luu et al.'s actual temporal misalignment study from NAACL 2022 (`luu2022temporal`). Verified 2026 references on arXiv and conference proceedings.
+   - *Factual Correction*: Re-audited all 26 citations against primary venues. Corrected `jang2022temporal` to its full 8-author list from ICLR 2022 proceedings. Replaced the conflated `luu2022timeqa` with Kelvin Luu et al.'s actual temporal misalignment study from NAACL 2022 (`luu2022temporal`). Verified 2026 references on arXiv and conference proceedings. Conservatively classified `zhang2026all` as an arXiv preprint pending formal publication in the official ACL Anthology for Findings of EMNLP 2026 (marked PARTIAL in bibliographic metadata audit).
 
 ---
 

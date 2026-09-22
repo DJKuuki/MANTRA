@@ -63,10 +63,10 @@ Table S2: Experimental Invariants, Causal Symmetry & Execution Audit Ledger
 | **MLM Optimizer Execution** | Batch size 16, 100 gradient steps | 100 gradient steps executed with batch size 16 | **PASS** |
 | **MLM Block Length** | 512 tokens per packed block | Exact 512-token packed blocks constructed from document corpus | **PASS** |
 | **MLM Optimizer & Schedule** | AdamW ($\text{lr}=5\times 10^{-5}$, weight decay 0.01) | Scheduler: `none`, warmup_ratio: `0.0` (0 warmup steps), matched across twins | **PASS** |
-| **MLM Masking Schedule** | 15% random dynamic masking | Masking seed coupled to branch seed $s$; identical across twin pairs | **PASS** |
+| **MLM Masking Schedule** | 15% mask probability; seeded deterministic mask schedule | Pre-generated boolean mask schedule fixed within each seed across dose branches (`mask_schedule_hash`); distinct across seeds | **PASS** |
 | **Downstream Training Scope** | Full model supervised fine-tuning | Full sequence-classification model (`model.train()`, `model.parameters()`) fine-tuned with AdamW | **PASS** |
 | **Downstream Hyperparameters**| 3 epochs, batch size 16, lr $2\times 10^{-5}$, weight decay 0.01 | Linear schedule with warmup ratio 0.1, max seq length 128 tokens, max steps 500 | **PASS** |
-| **Downstream Realized Steps** | 3 epochs on pre-2019 TDW training set (1,729 samples) | 108 steps/epoch $\times$ 3 epochs = 324 realized optimizer steps per branch | **PASS** |
+| **Downstream Training Schedule**| 3 epochs on pre-2019 TDW training set (batch size 16, max_steps 500) | Enforced via runtime configuration; paired batch order within seed | **PASS** |
 | **Downstream Head Init & Order** | Fresh shared 3-class head; paired sample order | Seed-coupled head init hash and sample order hash verified bit-identical across twins | **PASS** |
 | **Representation Probing Stage** | Linear Ridge probe ($\alpha=1.0$) under 4-fold temporal CV | Probe fitted on frozen extracted representations post fine-tuning | **PASS** |
 | **Pre-Cutoff Boundary** | $\le 2019\text{-}12\text{-}31\text{T}23:59:59\text{Z}$ | Max training timestamp: `2019-12-11T19:00:00Z` | **PASS** |

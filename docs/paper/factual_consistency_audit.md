@@ -22,7 +22,7 @@ This audit ledger systematically contrasts claims in the initial Phase 6 full-pa
 | **MLM Optimizer Steps** | `configs/phase4_confirmatory.yaml:54` (`max_steps: 100`) | 100 steps ($16 \times 160 \times 100$) | 100 optimizer gradient steps | **VERIFIED** |
 | **MLM Learning Rate** | `configs/phase4_confirmatory.yaml:49` (`learning_rate: 5.0e-5`) | $5 \times 10^{-5}$ | $5 \times 10^{-5}$ (AdamW) | **VERIFIED** |
 | **MLM Weight Decay** | `configs/phase4_confirmatory.yaml:50` (`weight_decay: 0.01`) | 0.01 | 0.01 | **VERIFIED** |
-| **MLM Masking Ratio** | `configs/phase4_confirmatory.yaml:51` (`mask_ratio: 0.15`) | 15% | 15% random dynamic masking | **VERIFIED** |
+| **MLM Masking Schedule** | `configs/phase4_confirmatory.yaml:51` (`mask_ratio: 0.15`) | "15% random dynamic masking" | 15% mask probability with a seed-coupled deterministic mask schedule fixed across dose branches within each seed | **VERIFIED** |
 | **MLM Scheduler** | `configs/phase4_confirmatory.yaml:55` (`scheduler: "none"`) | "linear decay" | `none` (constant learning rate) | **VERIFIED** |
 | **MLM Warmup Ratio** | `configs/phase4_confirmatory.yaml:56` (`warmup_ratio: 0.0`) | "linear warmup 10 steps" | `0.0` (0 warmup steps) | **VERIFIED** |
 | **Downstream Training Scope** | `twin_pipeline.py:758,789` (`model.train()`, `model.parameters()`) | "Frozen encoder + trained head" | Full model sequence-classification fine-tuning | **VERIFIED** |
@@ -34,7 +34,7 @@ This audit ledger systematically contrasts claims in the initial Phase 6 full-pa
 | **Downstream Scheduler** | `configs/phase4_confirmatory.yaml:83` (`scheduler: "linear"`) | Unspecified | `linear` | **VERIFIED** |
 | **Downstream Warmup** | `configs/phase4_confirmatory.yaml:84` (`warmup_ratio: 0.1`) | Unspecified | `0.1` (10% linear warmup) | **VERIFIED** |
 | **Downstream Max Seq Len** | `configs/phase4_confirmatory.yaml:85` (`max_seq_length: 128`) | 160 tokens | 128 tokens | **VERIFIED** |
-| **Downstream Realized Steps**| 1,729 TDW pre-2019 samples / batch 16 = 108 steps $\times$ 3 | Unreported | 3 epochs, yielding 324 realized optimizer steps | **VERIFIED** |
+| **Downstream Training Schedule**| `configs/phase4_confirmatory.yaml:78,86` (`epochs: 3`, `max_steps: 500`) | 5 epochs / "324 realized steps" inferred from invalid 1729/16=108 | 3 epochs, batch size 16, max_steps=500 (paired order); unpersisted step count removed | **VERIFIED** |
 | **Downstream Head Init** | `configs/phase4_confirmatory.yaml:87` (`fresh_shared_within_seed`) | Matched initialization | Fresh 3-class linear head shared within seed | **VERIFIED** |
 | **Downstream Sample Order** | `configs/phase4_confirmatory.yaml:88` (`paired_within_seed`) | Paired order | Identical batch ordering within seed (`DataLoader` seed) | **VERIFIED** |
 | **Representation Probe** | `configs/phase4_confirmatory.yaml:62,63` (`ridge_regression`, `alpha: 1.0`) | Linear Ridge ($\alpha=1.0$) on representations | Linear Ridge ($\alpha=1.0$) on frozen extracted representations | **VERIFIED** |
