@@ -1,325 +1,262 @@
-# MANTRA
+# MANTRA — Parametric Temporal Leakage Research Fork
 
-**Memory-Augmented Neural Trading Retrieval Agents**
+> **This fork is no longer maintained as a user-facing trading-agent application tutorial.**  
+> It has been repurposed into a reproducible research artifact for studying **parametric temporal leakage in financial language models**.
 
-A multi-agent LLM framework for equity analysis, built on [TradingAgents](https://github.com/TauricResearch/TradingAgents) with a persistent memory system, FinBERT-based sentiment preprocessing, and a backtesting engine.
+This repository began as a fork of [RubiscoYHY/MANTRA](https://github.com/RubiscoYHY/MANTRA), itself built on [TradingAgents](https://github.com/TauricResearch/TradingAgents). The upstream application code remains in the repository history, but the focus of this fork is now a controlled empirical study of a different question:
 
----
+> **Can a financial language model encode post-cutoff information in its parameters even when its runtime inputs are temporally clean, and if so, where does that leakage become detectable?**
 
-## Installation
-
-```bash
-git clone https://github.com/RubiscoYHY/MANTRA.git
-cd MANTRA
-conda create -n mantra python=3.13
-conda activate mantra
-pip install -e .
-```
-
-To use FinBERT sentiment preprocessing (recommended):
-
-```bash
-pip install transformers torch
-```
-
-FinBERT weights (~440 MB) are downloaded automatically on first run and cached at `~/.cache/huggingface/`. If you skip this step, the Social Media Analyst will fall back to passing raw posts directly to the LLM.
-
-**GPU acceleration (CUDA / Apple Silicon):** MANTRA automatically detects the best available device at runtime — `cuda` on NVIDIA GPUs, `mps` on Apple M-series, `cpu` otherwise. FinBERT inference and BGE embeddings both use this device without any manual configuration.
-
-> **Windows (NVIDIA GPU):** `pip install torch` fetches the CPU-only wheel by default on Windows. To enable CUDA, install the GPU-enabled build from [pytorch.org/get-started/locally](https://pytorch.org/get-started/locally/) and select your CUDA version. Example for CUDA 12.1:
-> ```powershell
-> pip install torch --index-url https://download.pytorch.org/whl/cu121
-> pip install transformers
-> ```
-> Everything else in the setup is identical — `cp` is a valid alias in PowerShell and works as shown above.
-
-### Environment Variables
-
-API keys live in a local `.env` file. Copy the template and fill in the keys
-for the providers you use — every entry point (`main.py`, `mantra` CLI,
-`mantragui`) loads it automatically at startup via `python-dotenv`:
-
-```bash
-cp .env.example .env
-```
-
-```bash
-# LLM providers (set the ones you use)
-ANTHROPIC_API_KEY=sk-ant-...    # Claude (recommended for manager layer)
-GOOGLE_API_KEY=AIza...          # Gemini
-OPENAI_API_KEY=sk-...           # OpenAI
-HF_TOKEN=hf_...                 # HuggingFace Inference API
-XAI_API_KEY=...                 # xAI (Grok)
-OPENROUTER_API_KEY=...          # OpenRouter
-
-# Data vendors
-ALPHA_VANTAGE_API_KEY=...       # News (default vendor; free key, 25 req/day)
-API_NINJAS_KEY=...              # Earnings call transcripts (free key)
-EDGAR_USER_AGENT=...            # Optional: "Your Name you@example.com" for SEC
-```
-
-`.env` is gitignored, so keys never end up in commits, shell history, or
-shell profiles. Keep them out of `~/.zshrc` and out of inline
-`export KEY=...` commands — both leak easily (dotfile syncs, screen shares,
-`history`).
-
-> **Note:** A variable already exported in your shell takes precedence over
-> the `.env` value — useful for one-off overrides on servers or CI, where
-> injecting secrets via the environment is the norm.
-
-You only need keys for the providers you actually use. For fully local inference, Ollama requires no API key.
-
-### Supported LLM Providers
-
-MANTRA uses a dual-LLM architecture: a **deep-thinking** model for the manager layer (Research Manager, Portfolio Manager) and a **quick-thinking** model for everything else (analysts, researchers, trader, risk debate).
-
-| Provider | `provider` value | Key |
-|----------|-----------------|-----|
-| OpenAI | `"openai"` | `OPENAI_API_KEY` |
-| Anthropic | `"anthropic"` | `ANTHROPIC_API_KEY` |
-| Google | `"google"` | `GOOGLE_API_KEY` |
-| xAI | `"xai"` | `XAI_API_KEY` |
-| OpenRouter | `"openrouter"` | `OPENROUTER_API_KEY` |
-| HuggingFace | `"huggingface"` | `HF_TOKEN` |
-| Ollama (local) | `"ollama"` | none |
+The project develops a clean/contaminated twin-model design, a preregistered event-level evaluation protocol, a 25-branch confirmatory experiment, and a full manuscript around this question.
 
 ---
 
-## GUI
+## Research question
 
-```bash
-mantragui
+Conventional look-ahead bias occurs when future information enters a model through runtime inputs, labels, retrieval, or feature engineering.
+
+This fork studies a harder case:
+
+**Parametric temporal leakage** — future information that has already entered the model weights through pretraining or continued pretraining.
+
+A historically clean prompt or backtest input does not guarantee a historically clean model if the checkpoint itself has seen later data. Prompting a model to “pretend it is 2018” may change its surface behavior, but it cannot establish that the parameters are free of later information.
+
+The project therefore separates several layers that are often conflated:
+
+```text
+Future text exposure
+        ↓
+Representation leakage (L_repr)
+        ↓
+Behavioral leakage (L_behavior)
+        ↓
+Economic leakage-induced effect (E_L)
 ```
 
-This launches a Flask-based web dashboard at `http://127.0.0.1:5720` and opens your browser automatically. The GUI provides:
+with **task competence (`C`)** and **temporal robustness (`R_T`)** treated as separate control dimensions rather than folded into a single leakage score.
 
-- **Configuration form** — select run mode (single-day / backtest), ticker(s), date range, analyst team, research depth, and LLM providers/models.
-- **Live dashboard** — real-time agent pipeline status, activity log, memory stats, and token usage via Server-Sent Events.
-- **Results view** — final trading decision with confidence, full analysis report, and backtest charts.
+A useful consequence is the null-model insight:
+
+> A useless constant model can have almost zero measured temporal leakage simply because it encodes almost nothing.  
+> **Low leakage is not equivalent to a good temporal model.**
 
 ---
 
-## CLI
+## What this fork added
 
-```bash
-mantra
-```
+Relative to the upstream MANTRA repository, this fork developed a dedicated temporal-leakage research stack around financial NLP:
 
-The interactive CLI walks through up to eight steps: ticker, analysis date, output language, analyst team selection, research depth, quick-think LLM, parallel execution toggle (local providers only), and deep-think LLM. Provider and model are selected independently at each step.
+- a formal distinction between **external look-ahead leakage** and **parametric temporal leakage**;
+- point-in-time FOMC event, policy-history, clean-sham, contamination, and market datasets;
+- deterministic clean/contaminated **twin-model construction** with matched architecture and compute;
+- contamination-dose experiments over multiple optimization seeds;
+- representation-level future-target probes under grouped temporal cross-validation;
+- behavioral masking-sensitivity and economic Information-Coefficient endpoints;
+- event-level permutation and bootstrap inference;
+- protocol locking, code-freeze checks, provenance hashes, branch manifests, and archived result manifests;
+- an engineering pilot followed by a preregistered confirmatory execution;
+- manuscript figures, statistical interpretation, limitations, supplementary material, and reference/factual-consistency audits.
 
-When a local provider (Ollama or HuggingFace) is selected for the analyst layer, an additional step asks whether to run analysts in parallel. A red warning is displayed because concurrent local inference can exhaust GPU/CPU memory on consumer hardware. Cloud providers skip this step and run analysts in parallel automatically.
-
-To run a backtest:
-
-```bash
-mantra --mode backtest
-```
-
-The backtest CLI prompts for ticker, date range, and model configuration, then runs day-by-day analysis. Results are saved automatically to `results/{TICKER}-{start}-{end}/`.
+The original GUI / CLI / trading-agent installation walkthrough is intentionally no longer the purpose of this README.
 
 ---
 
-## Python API
+## Confirmatory experiment
 
-### Single-day analysis
+The final confirmatory study is frozen under **Protocol v1.2.4**.
 
-```python
-from tradingagents.graph.trading_graph import TradingAgentsGraph
-from tradingagents.default_config import DEFAULT_CONFIG
-from dotenv import load_dotenv
+### Core design
 
-load_dotenv()
+| Item | Frozen design |
+|---|---|
+| Base encoder | `ProsusAI/finbert` |
+| Pinned revision | `4556d13015211d73dccd3fdd39d39232506f3e43` |
+| Global temporal cutoff | `2019-12-31T23:59:59Z` |
+| Post-cutoff contamination corpus | `2020-01-29` → `2023-01-04` |
+| Seeds | `13, 42, 87, 123, 2024` |
+| Doses | `0, 0.25, 0.50, 0.75, 1.00` |
+| Total branches | `25` |
+| Contaminated branches | `20` |
+| Treatment-stream budget | `256,000` tokens / branch |
+| MLM execution | `100` optimizer steps / branch |
+| Downstream transfer | full-model fine-tuning, `3` epochs |
+| Primary representation probe | Ridge, `alpha = 1.0` |
+| Temporal CV | 4-fold grouped expanding-window |
+| OOS inferential units | `32` independent FOMC meeting events / branch |
+| Permutation test | 2,000-draw one-sided right-tailed paired sign-flip |
+| Economic bootstrap | 1,000-draw event-level stationary block bootstrap |
 
-config = DEFAULT_CONFIG.copy()
-config["deep_think_provider"]  = "anthropic"
-config["deep_think_llm"]       = "claude-opus-4-6"
-config["quick_think_provider"] = "google"
-config["quick_think_llm"]      = "gemini-2.5-flash"
-# Analysts run in parallel by default for cloud providers.
-# Set to False to force sequential execution, or True to enable parallel even for local models.
-# config["parallel_analysts"] = False
+The clean and contaminated branches within a seed share the same base initialization, architecture, tokenizer revision, treatment budget, optimization recipe, mask schedule, downstream head initialization, and sample ordering. The controlled difference is the **temporal composition of the continued-pretraining treatment stream**.
 
-ta = TradingAgentsGraph(debug=True, config=config)
-_, decision = ta.propagate("NVDA", "2024-05-10")
-print(decision)
+This design substantially reduces generic compute/domain-adaptation confounding, but it does **not** claim that post-cutoff temporal composition can be perfectly separated from associated regime, topic, vocabulary, or rhetorical distribution shifts.
+
+---
+
+## Main result
+
+The strongest empirical signal appears at the **representation level**.
+
+Across the 20 contaminated branches:
+
+- **18 / 20** had `L_repr > 0`;
+- **10 / 20** had nominal branch-level `p < 0.05` under the preregistered one-sided event-level sign-flip test;
+- the dose response was **non-monotonic**;
+- the magnitude varied substantially across optimization seeds.
+
+Post-hoc descriptive mean `L_repr` by contamination dose:
+
+| Dose | Mean `L_repr` |
+|---:|---:|
+| 0.25 | +0.00368 |
+| 0.50 | +0.00373 |
+| 0.75 | +0.00507 |
+| 1.00 | +0.00291 |
+
+Because Protocol v1.2.4 did **not** preregister a single omnibus decision rule across seeds and doses, these branch-level results are **not presented as a formal global rejection of `H0_repr`**.
+
+![Representational leakage dose response](docs/research/figures/phase4b/figure1_l_repr_dose_response.png)
+
+### Downstream layers
+
+| Layer | Result |
+|---|---|
+| Continuous representation leakage | **Substantial branch-level evidence** |
+| Binary future policy-change co-primary | **Not supported** |
+| Behavioral masking sensitivity | **Descriptive / minimal shift** |
+| 2Y Treasury economic endpoint | **Preregistered positive alternative not supported** |
+| SPY economic endpoint | **Exploratory positive effect not supported** |
+| Competence `C` | `NOT_EVALUATED_NO_EVAL_SPLIT` |
+| Temporal robustness `R_T` | `NOT_EVALUATED` |
+
+The empirical record is therefore consistent with a **layered** view of temporal leakage: controlled post-cutoff exposure can alter future-target decodability in latent representations without necessarily producing a robust downstream classification or market-prediction advantage.
+
+![Layered outcome comparison](docs/research/figures/phase4b/figure4_layered_outcome_comparison.png)
+
+---
+
+## Why the twin design matters
+
+Simply comparing a recent checkpoint with an old checkpoint confounds temporal exposure with architecture, tokenizer changes, model scale, optimization, and general model quality.
+
+This project instead constructs matched twins within each seed:
+
+```text
+shared base checkpoint
+        │
+        ├── clean twin ───── pre-cutoff sham treatment
+        │
+        └── contaminated ─── matched treatment with post-cutoff token dose
+
+same architecture
+same tokenizer/revision
+same treatment budget
+same MLM update count
+same mask schedule within seed
+same downstream initialization/order
 ```
 
-`propagate()` returns a tuple `(state, decision)`. The second element is a dictionary:
+The intended causal estimand is therefore the **incremental effect of controlled post-cutoff continued pretraining relative to a matched clean twin**.
 
-```python
-{
-    "signal":     "BUY",    # BUY | OVERWEIGHT | HOLD | UNDERWEIGHT | SELL
-    "confidence": 0.82,     # float in [0, 1]
-    "horizon":    "short"   # investment horizon
-}
+Importantly, the study does not claim that the original FinBERT checkpoint is cryptographically free of every possible historical temporal signal. The experiment estimates the incremental treatment effect of the controlled post-cutoff exposure.
+
+---
+
+## Research timeline
+
+| Stage | Purpose | Status |
+|---|---|---|
+| Methodology / Pre-experiment gates | formal definitions, leakage taxonomy, PIT requirements | Complete |
+| Phase 2 / 2.1 | datasets, anchors, policy/market infrastructure | Complete |
+| Phase 3 | engineering pilot and pipeline validation | Complete |
+| Phase 4A | confirmatory data, preregistration, protocol/code freeze | Complete |
+| Phase 4B | 25-branch empirical confirmatory execution | **Closed** |
+| Phase 5 | results, figures, statistical interpretation | **Closed** |
+| Phase 6 | full paper assembly + factual/reference verification | **Closed** |
+
+No additional Phase 4B model training or post-hoc confirmatory repair is planned in this repository state.
+
+---
+
+## Start here
+
+### Paper
+
+- **Full manuscript:** [`docs/paper/manuscript.md`](docs/paper/manuscript.md)
+- **Supplement:** [`docs/paper/supplement.md`](docs/paper/supplement.md)
+- **Reference audit:** [`docs/paper/reference_audit.md`](docs/paper/reference_audit.md)
+- **Factual-consistency audit:** [`docs/paper/factual_consistency_audit.md`](docs/paper/factual_consistency_audit.md)
+- **Adversarial manuscript self-review:** [`docs/paper/manuscript_self_review.md`](docs/paper/manuscript_self_review.md)
+
+Current manuscript title:
+
+> **Parametric Temporal Leakage in Financial Language Models: Probing Latent Representations Under Causally Symmetric Pretraining**
+
+### Results and interpretation
+
+- [`docs/research/phase4b_results_section.md`](docs/research/phase4b_results_section.md)
+- [`docs/research/phase4b_discussion.md`](docs/research/phase4b_discussion.md)
+- [`docs/research/phase4b_limitations.md`](docs/research/phase4b_limitations.md)
+- [`docs/research/phase4b_manuscript_tables.md`](docs/research/phase4b_manuscript_tables.md)
+
+### Frozen empirical archive
+
+- **Canonical full results:** [`experiments/phase4_confirmatory/results/phase4_confirmatory_results.json`](experiments/phase4_confirmatory/results/phase4_confirmatory_results.json)
+- **Result manifest:** [`experiments/phase4_confirmatory/result_manifest.json`](experiments/phase4_confirmatory/result_manifest.json)
+- **Per-branch manifests:** [`experiments/phase4_confirmatory/manifests/`](experiments/phase4_confirmatory/manifests/)
+- **Preregistration:** [`configs/phase4_preregistration.yaml`](configs/phase4_preregistration.yaml)
+- **Protocol lock:** [`configs/phase4_protocol_lock.json`](configs/phase4_protocol_lock.json)
+
+The archived full result file is hash-bound in the result manifest together with the 25 branch manifests, metrics, provenance, and reporting artifacts.
+
+---
+
+## Reproducibility identifiers
+
+The confirmatory study is tied to the following frozen identifiers:
+
+```text
+Protocol version:       1.2.4
+Scientific code freeze: 5ec0f03f3a5393d90462aa78d018d54b08cce126
+Locked source-tree SHA:  02fe0ced0d03a920a7f56887f1d674282d17bc108986d19d2df495b59d330bb6
+Protocol-lock SHA-256:   652b18e1a0454f976bee0e96be40875b033e854c185f2b0535a7d7a02a1cb369
+Historical execution:   2534b1aca7e431cbacd3e02c20dc120d4ca01212
+Phase 4B closure:       5d82a7a321f6ce2441e449b5fff7ec482681819e
+Paper factual closure:  92a1e063a03506e147cfffbef4e2c6f2bdd77b99
 ```
 
-The first element `state` is the full LangGraph state dict containing all intermediate agent reports, which you can inspect for debugging.
+The current manuscript is deliberately conservative where the preregistration was conservative: branch-level evidence is reported as branch-level evidence, post-hoc summaries are labeled descriptive, and no unregistered global significance test is introduced after the fact.
 
-### Google Colab / Jupyter
+---
 
-**Setup (run once at the top of your notebook):**
+## Repository note
 
-```python
-# Clone and install
-!git clone https://github.com/RubiscoYHY/MANTRA.git
-%cd MANTRA
-!pip install -e . -q
+The repository still contains the original MANTRA / TradingAgents-derived application code because the temporal-leakage study was developed on top of that codebase and its financial NLP infrastructure.
 
-# Install transformers — torch is already CUDA-enabled in Colab, so skip reinstalling it
-!pip install transformers -q
-```
+If you are looking for the original trading-agent application and its installation / GUI / CLI documentation, refer to the upstream projects instead:
 
-Colab runtimes (T4, A100, L4) ship with a CUDA-enabled PyTorch pre-installed. MANTRA's auto-detection picks this up automatically — FinBERT inference and BGE embeddings will run on the GPU without any extra configuration.
+- [RubiscoYHY/MANTRA](https://github.com/RubiscoYHY/MANTRA)
+- [TauricResearch/TradingAgents](https://github.com/TauricResearch/TradingAgents)
 
-**API keys and usage:**
+This fork's root documentation intentionally focuses on the **temporal-leakage research artifact** rather than end-user software operation.
 
-Set keys directly via `os.environ` before initializing the graph (`.env` files are not available in Colab). Set `debug=False` to suppress the live-streaming output:
+---
 
-```python
-import os
-os.environ["ANTHROPIC_API_KEY"] = "sk-ant-..."
-os.environ["GOOGLE_API_KEY"] = "AIza..."
+## Research status
 
-from tradingagents.graph.trading_graph import TradingAgentsGraph
-from tradingagents.default_config import DEFAULT_CONFIG
-
-config = DEFAULT_CONFIG.copy()
-config["deep_think_provider"]  = "anthropic"
-config["deep_think_llm"]       = "claude-opus-4-6"
-config["quick_think_provider"] = "google"
-config["quick_think_llm"]      = "gemini-2.5-flash"
-
-ta = TradingAgentsGraph(debug=False, config=config)
-_, decision = ta.propagate("AAPL", "2024-03-15")
-print(decision["signal"], decision["confidence"])
-```
-
-> **Note:** If you restart the Colab runtime, re-run the `%cd MANTRA` cell before importing — Python's working directory resets on restart.
-
-### Backtesting
-
-Use `run_backtest()` to run analysis across a date range. The memory system accumulates across days; each day's reflections become available to subsequent days.
-
-```python
-from tradingagents.graph.trading_graph import TradingAgentsGraph
-from tradingagents.default_config import DEFAULT_CONFIG
-
-config = DEFAULT_CONFIG.copy()
-config["deep_think_provider"]  = "anthropic"
-config["deep_think_llm"]       = "claude-opus-4-6"
-config["quick_think_provider"] = "google"
-config["quick_think_llm"]      = "gemini-2.5-flash"
-config["run_mode"]             = "backtest"
-
-ta = TradingAgentsGraph(debug=False, config=config)
-results = ta.run_backtest("NVDA", "2024-01-02", "2024-03-29")
-```
-
-`run_backtest()` returns a DataFrame with columns `date`, `signal`, `confidence`, and `actual_return`. It also writes the following to `results/{TICKER}-{start}-{end}/`:
-
-- `backtest_{TICKER}_{timestamp}.csv` — the full day-by-day results
-- `analysis.png` — four-panel chart: equity curves, position stacking, confidence distribution, and calibration plot
-- `metrics.csv` — Sharpe ratio, cumulative return, max drawdown, and win rate for each strategy (TA-Signal, TA-Filtered, TA-Scaled) against five traditional baselines
-
-To regenerate charts from an existing CSV:
-
-```python
-import pandas as pd
-from tradingagents.graph.backtest_analyze import _build_figure, _download_ohlcv, _write_metrics_csv
-
-df = pd.read_csv("results/NVDA-2024-01-02-2024-03-29/backtest_NVDA_....csv")
-prices = _download_ohlcv("NVDA", "2024-01-02", "2024-04-08")
-fig, values = _build_figure(df=df, ticker="NVDA", ohlcv=prices,
-                            initial_capital=10000.0, threshold=0.65, rf_annual=0.05)
-fig.savefig("nvda_analysis.png", dpi=150, bbox_inches="tight")
-_write_metrics_csv(values, "nvda_metrics.csv", rf_annual=0.05)
-```
+**Empirical study:** closed  
+**Results archive:** frozen  
+**Scientific code:** frozen for the confirmatory experiment  
+**Manuscript:** assembled and factually audited; ready for human scientific editing  
+**Reference audit:** 25 fully verified entries + 1 conservatively partial publication-status entry at the current paper closure
 
 ---
 
 ## Disclaimer
 
-This project is intended solely for academic research. Nothing in this repository constitutes financial, investment, or trading advice. Past simulated performance does not guarantee future results.
+This repository is an academic research artifact. It does not provide financial, investment, or trading advice. The economic endpoints in the confirmatory study did **not** establish a reliable positive market-predictive advantage from the measured representation-level leakage signal.
 
 ---
 
-## Configuration Reference
+## Acknowledgements
 
-Key fields in `DEFAULT_CONFIG` (all optional — defaults shown):
-
-| Field | Default | Description |
-|-------|---------|-------------|
-| `deep_think_provider` | `"anthropic"` | Manager layer LLM provider |
-| `deep_think_llm` | `"claude-opus-4-6"` | Manager layer model name |
-| `quick_think_provider` | `"google"` | Analyst / researcher / trader layer provider |
-| `quick_think_llm` | `"gemini-3-flash-preview"` | Analyst layer model name |
-| `backend_url` | `None` | Base URL for OpenAI-compatible endpoints (Ollama, vLLM) |
-| `parallel_analysts` | `None` | `None` = auto-detect, `True` = force parallel, `False` = force sequential |
-| `max_debate_rounds` | `1` | Bull / Bear debate rounds |
-| `max_risk_discuss_rounds` | `1` | Risk team debate rounds |
-| `output_language` | `"English"` | Language for analyst reports and final decision |
-| `run_mode` | `"single"` | `"single"` for one-day analysis, `"backtest"` for multi-day |
-
-**`parallel_analysts` auto-detection:**
-- Cloud providers (`google`, `anthropic`, `openai`, `xai`, `openrouter`) → **parallel by default**: all 4 analysts (market / social / news / fundamentals) run concurrently in separate threads, each with its own isolated message history.
-- Local providers (`ollama`, `huggingface`) → **sequential by default**: concurrent local inference is hardware-limited and can cause contention.
-- Override anytime: `config["parallel_analysts"] = True` or `False`.
-
-> **Note:** The risk-analyst debate (Aggressive → Conservative → Neutral) always runs sequentially regardless of this setting. Each analyst must be able to rebut the previous speaker's argument within the same round, which requires the original sequential ordering.
-
----
-
-## Key Modifications
-
-### FinBERT Sentiment Preprocessing
-
-Before passing social media content (Reddit, StockTwits) to the LLM, all posts are labeled with `ProsusAI/finbert`, a financial domain BERT model fine-tuned for sentiment classification. The raw posts are aggregated into a structured Bullish/Bearish/Neutral distribution summary, compressing noisy unstructured input into a concise signal. This reduces token cost and prevents the LLM from anchoring on emotionally charged language.
-
-### Causal Memory System
-
-The memory system is built on [MemPalace](https://github.com/milla-jovovich/mempalace), using ChromaDB for vector storage and SQLite for structured numerical records. Unstructured memories (analyst reflections, sentiment summaries) are embedded with `BAAI/bge-base-en-v1.5` for semantic retrieval.
-
-A strict causal isolation mechanism prevents future information leakage: every read operation filters on `valid_from <= analysis_date`, and reflection memories written on day T are assigned `valid_from = T+1`, so they only become retrievable on subsequent days. This ensures that in backtest mode, agents reason solely on information available as of the analysis date.
-
-### Backtesting Engine
-
-A full backtesting pipeline supports batch analysis over arbitrary date ranges and multiple tickers. Signals are converted to positions via a bounded-stack strategy (matching the original TradingAgents paper) and a confidence-weighted variant. Performance is benchmarked against Buy & Hold, SMA, MACD, KDJ+RSI, and ZMR baselines, with Sharpe ratio, max drawdown, and cumulative return reported for each. Output includes a four-panel chart and a metrics CSV generated automatically after each backtest run.
-
----
-
-## Roadmap
-
-### Expanded Fundamental Data with FinBERT Labeling
-
-The next step is to bring FOMC meeting minutes, 10-K, 10-Q, and 8-K filings into the agent pipeline using the same preprocessing approach: FinBERT labels each document chunk before it is stored in the memory system. This allows the Fundamentals Analyst to retrieve semantically relevant historical filings while the causal isolation mechanism continues to prevent future data from leaking into past analysis dates.
-
-### Portfolio Optimization and Position Sizing
-
-Two planned enhancements address position sizing and signal calibration. The portfolio optimizer (Modification G) will construct Markowitz and risk-parity weights across multiple tickers simultaneously, using LLM-derived confidence scores to set expected return direction while relying entirely on historical price covariance for risk estimation. A companion isotonic regression calibrator will remap raw confidence scores to empirical accuracy using accumulated backtest outcomes, feeding better-calibrated inputs to the optimizer.
-
-The budget manager (Modification H) extends the current five-tier signal to a six-tier rating (All In / Buy / Overweight / Hold / Underweight / Sell) with rule-based position sizing: each rating maps to a fixed fraction of available capital with hard caps, and All In triggers only when a strict set of confluence conditions are met. This layer is active only in backtest mode; single-day analysis is unaffected.
-
----
-
-## Citation
-
-If you use this project, please also cite the original works it builds on:
-
-```bibtex
-@misc{xiao2025tradingagentsmultiagentsllmfinancial,
-      title={TradingAgents: Multi-Agents LLM Financial Trading Framework},
-      author={Yijia Xiao and Edward Sun and Di Luo and Wei Wang},
-      year={2025},
-      eprint={2412.20138},
-      archivePrefix={arXiv},
-      primaryClass={q-fin.TR},
-      url={https://arxiv.org/abs/2412.20138}
-}
-```
-
-```
-MemPalace — milla-jovovich
-https://github.com/milla-jovovich/mempalace
-MIT License
-```
+This work was developed from the codebase of [RubiscoYHY/MANTRA](https://github.com/RubiscoYHY/MANTRA), which builds on [TradingAgents](https://github.com/TauricResearch/TradingAgents). Their original software contributions remain acknowledged; the temporal-leakage methodology, confirmatory research pipeline, archived experiment, and manuscript materials are additions developed in this fork.
